@@ -17,6 +17,8 @@ export const MODULOS = [
 export async function criarApp(db: Banco, producao = false) {
   const app = Fastify({ logger: producao });
   await app.register(cookie);
+  // Quem abrir a porta da API no navegador é levado ao site (em desenvolvimento, o Vite na 5174).
+  if (!producao) app.get('/', async (_req, resp) => resp.redirect('http://localhost:5174/'));
   app.get('/api/saude', async () => ({ ok: true, versao: '0.1.0', modulos: MODULOS.map((m) => m.nome) }));
   for (const m of MODULOS) await m.rotas(app, { db, producao });
   return app;
