@@ -17,3 +17,7 @@ dados-privados/
 *.db
 *.db-wal
 *.db-shm
+
+# build do front
+dist/
+web/dist/

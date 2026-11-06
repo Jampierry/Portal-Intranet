@@ -2,10 +2,10 @@
 
 | Módulo | Status | Nota |
 |---|---|---|
-| shell | 🟡 | Falta: hambúrguer no topo da barra esquerda e barra superior fixa (Entregas 10–11) |
-| inicio | ✅ a conferir | Página recriada; carrossel ok |
-| aplicacoes | ✅ | Só Meu RH cadastrado |
-| comunicados | 🟡 | Lista/busca/filtros ok; sem detalhe/gestão |
+| shell (App, Menu, tema) | ✅ | Menu com botão no topo da barra, topo fixo, lançador à direita, temas do PREMIA |
+| inicio | ✅ a conferir | Comunicados recentes + carrossel, dados da API |
+| aplicacoes | ✅ | Só Meu RH; favoritos no localStorage |
+| comunicados | 🟡 | Lista/busca/filtros; sem detalhe/gestão |
 | documentos | 🟡 | Catálogo fictício, sem arquivos |
 
 Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.

@@ -4,6 +4,6 @@
 
 **Status:** Pronto; só Meu RH cadastrado.
 
-**Arquivos:** componentes em `components/`, dados fictícios em `data/`, testes em `tests/` (a criar).
+**Arquivos:** telas em `web/src/aplicacoes/`, API em `api/`, dados fictícios (seed) em `data/`, testes em `tests/`.
 
 Regras: ver `../../CLAUDE.md`. Trabalhar um módulo por vez.

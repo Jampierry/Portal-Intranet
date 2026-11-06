@@ -9,7 +9,7 @@ Portal interno responsivo que reúne aplicações web, comunicados, documentos, 
 Produção/confecção · lideranças · RH/Pessoas · design/produto/qualidade · comercial/administrativo · administradores/editores.
 
 ## 3. Escopo
-**Protótipo atual (frontend estático, dados fictícios):** Início, Comunicados, Aplicações (Meu RH), Documentos (catálogo sem arquivos), lançador global de apps, cabeçalho universal, menu esquerdo colapsável, carrossel de destaques.
+**Protótipo atual (React + Vite com API e banco, dados fictícios):** Início, Comunicados, Aplicações (Meu RH), Documentos (catálogo sem arquivos), lançador global de apps, cabeçalho universal, menu esquerdo colapsável, carrossel de destaques.
 
 **Fora do primeiro corte:** substituir ERP/folha/ponto/CRM; documentos pessoais ou dados sensíveis; chat, rede social, push, offline; férias/aprovações/avaliação; ranking ou gamificação; login real, papéis, CRUD, APIs corporativas, SSO/VPN.
 

@@ -4,6 +4,6 @@ Leia este índice no início de cada sessão. Atualize os arquivos ao final (gat
 
 - [Estado e ponto de parada](estado-e-ponto-de-parada.md) — onde paramos e o próximo passo
 - [Status dos módulos](modulos-status.md) — shell, inicio, aplicacoes, comunicados, documentos
-- [Decisões-chave](decisoes-chave.md) — npm, modulos/, estático, marca provisória, regras de abertura de links
+- [Decisões-chave](decisoes-chave.md) — stack do PREMIA (Vite+React, Fastify+SQLite), temas, marca provisória, regras de abertura de links
 - [Gatilhos](gatilhos.md) — retomar, enviar, salvar ponto de parada, melhorias futuras
 - Contexto completo: `../../CLAUDE.md`, `../requisitos.md`, `../roteiro-modulos.md`, `../decisoes.md`

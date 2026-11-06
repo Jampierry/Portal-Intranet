@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal Intranet | Di Paula</title>
+    <script>
+      // Aplica tema e estilo salvos antes da primeira pintura (evita o "piscar" ao recarregar).
+      try {
+        var c = JSON.parse(localStorage.getItem('portal.tema') || '{}');
+        var r = document.documentElement;
+        var escuro = c.modo === 'escuro' || ((c.modo || 'auto') === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+        r.dataset.tema = escuro ? 'escuro' : 'claro';
+        r.dataset.estilo = ['bordo', 'meianoite', 'ardosia', 'grafite', 'oceano'].indexOf(c.estilo) >= 0 ? c.estilo : 'bordo';
+        var z = (c.escala >= 80 && c.escala <= 150) ? Math.round(c.escala) / 100 : 1;
+        r.style.zoom = z;
+        r.style.setProperty('--zoom', z);
+      } catch (e) {}
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/icone.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="raiz"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

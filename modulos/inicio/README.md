@@ -4,6 +4,6 @@
 
 **Status:** Página recriada; carrossel pronto. Conferir visual.
 
-**Arquivos:** componentes em `components/`, dados fictícios em `data/`, testes em `tests/` (a criar).
+**Arquivos:** telas em `web/src/inicio/`, API em `api/`, dados fictícios (seed) em `data/`, testes em `tests/`.
 
 Regras: ver `../../CLAUDE.md`. Trabalhar um módulo por vez.

@@ -4,7 +4,10 @@
       "Bash(npm run dev)",
       "Bash(npm run typecheck)",
       "Bash(npm run build)",
+      "Bash(npm test)",
       "Bash(npm install)",
+      "Bash(npm run banco:migrar)",
+      "Bash(npm run banco:seed)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)"
