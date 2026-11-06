@@ -1,0 +1,23 @@
+import Fastify from 'fastify';
+import cookie from '@fastify/cookie';
+import type { Banco } from './db.ts';
+import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
+import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
+import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
+import { rotasInicio } from '../../modulos/inicio/api/index.ts';
+
+/** Cada módulo exporta uma função de rotas e entra aqui. */
+export const MODULOS = [
+  { nome: 'aplicacoes', rotas: rotasAplicacoes },
+  { nome: 'comunicados', rotas: rotasComunicados },
+  { nome: 'documentos', rotas: rotasDocumentos },
+  { nome: 'inicio', rotas: rotasInicio },
+];
+
+export async function criarApp(db: Banco, producao = false) {
+  const app = Fastify({ logger: producao });
+  await app.register(cookie);
+  app.get('/api/saude', async () => ({ ok: true, versao: '0.1.0', modulos: MODULOS.map((m) => m.nome) }));
+  for (const m of MODULOS) await m.rotas(app, { db, producao });
+  return app;
+}

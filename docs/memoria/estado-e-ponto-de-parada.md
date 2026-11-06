@@ -8,6 +8,8 @@
 - A página **Início** foi recriada (o export não a trazia) — conferir visualmente com `docs/origem-manus/design/`.
 - Pasta original `Plano de implantação/` mantida intacta; apagar só com autorização do usuário.
 
+- Servidor + banco criados (Fastify, SQLite, `infra/migracoes` 001-base e 002-portal; seed fictício). Tabelas: usuarios, sessoes, auditoria, departamentos, contatos, aplicacoes, favoritos, comunicados, documentos, periodos_destaque, destaques. API de leitura em `modulos/*/api`. O site ainda não consome a API.
+
 ## Próximo passo
 1. Usuário abre a pasta `Portal-Intranet` no VS Code e confere (`npm run dev`).
 2. Dizer **enviar** para o primeiro push.

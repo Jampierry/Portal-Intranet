@@ -13,6 +13,9 @@ Antes de começar a trabalhar: `git pull`. Ao terminar: commit + `git push` (ou 
 ## Comandos
 `npm run dev` · `npm run typecheck` · `npm run build` (gera `out/`)
 
+## API e banco de dados (Node 24+)
+`npm run banco:migrar` cria as tabelas · `npm run banco:seed` carrega dados fictícios (usuário `admin` / `admin123`, só dev) · `npm run api` sobe a API em http://localhost:3100 (`/api/saude`, `/api/comunicados`, `/api/aplicacoes`, `/api/documentos`, `/api/destaques`). O banco é `dados-privados/portal.db` e não vai para o Git; em outra máquina rode migrar + seed.
+
 ## Documentação
 Comece por [CLAUDE.md](CLAUDE.md) e [docs/memoria/MEMORY.md](docs/memoria/MEMORY.md). Requisitos em [docs/requisitos.md](docs/requisitos.md); ordem de trabalho em [docs/roteiro-modulos.md](docs/roteiro-modulos.md).
 

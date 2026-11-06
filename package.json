@@ -2,14 +2,18 @@
   "name": "dpintra",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api": "npm run dev -w servidor",
+    "banco:migrar": "npm run migrar -w servidor",
+    "banco:seed": "npm run seed -w servidor"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -21,5 +25,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "typescript": "5.9.3"
-  }
+  },
+  "workspaces": [
+    "servidor"
+  ]
 }

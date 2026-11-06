@@ -39,6 +39,10 @@
     "Plano de implantação",
     "docs",
     "out",
-    "node_modules"
+    "node_modules",
+    "servidor",
+    "infra",
+    "modulos/acessos",
+    "modulos/*/api"
   ]
 }

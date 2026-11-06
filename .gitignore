@@ -11,3 +11,9 @@ build/
 
 # Pasta de origem (cópia em docs/origem-manus); fica só no disco
 Plano de implantação/
+
+# Banco e dados privados: nunca no Git
+dados-privados/
+*.db
+*.db-wal
+*.db-shm

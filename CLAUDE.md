@@ -4,6 +4,7 @@ Portal interno responsivo (desktop + celular) da Di Paula: comunicados, aplicaç
 
 ## Comandos (npm — não usar pnpm)
 - `npm install` · `npm run dev` (http://localhost:3000) · `npm run typecheck` · `npm run build` (gera `out/`)
+- API/banco (igual ao PREMIA: Fastify + SQLite nativo `node:sqlite`, Node 24+): `npm run api` (porta 3100) · `npm run banco:migrar` · `npm run banco:seed` (admin/admin123, só dev). Migrações em `infra/migracoes/NNN-nome.sql`; banco em `dados-privados/portal.db` (fora do Git). Rotas de cada módulo em `modulos/<nome>/api/index.ts`, registradas em `servidor/src/app.ts`.
 - Antes de dizer "pronto": rodar `typecheck` e `build` e conferir a saída.
 
 ## Estrutura e regra de trabalho
