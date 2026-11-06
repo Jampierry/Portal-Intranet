@@ -1,0 +1,8 @@
+{
+  "routes": [
+    { "path": "/", "title": "Início" },
+    { "path": "/aplicacoes/", "title": "Aplicações" },
+    { "path": "/comunicados/", "title": "Comunicados" },
+    { "path": "/documentos/", "title": "Documentos" }
+  ]
+}
