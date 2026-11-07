@@ -379,6 +379,10 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 
 .pilulas.filtros button { white-space: nowrap; }
 
+/* Menu recolhido: só os ícones (os nomes ficam na dica do mouse) */
+.menu.mini .nitem .lbl, .menu.mini .nitem small, .menu.mini .menu-label, .menu.mini .sbfoot { display: none; }
+.menu.mini .nitem { padding: 0; }
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 

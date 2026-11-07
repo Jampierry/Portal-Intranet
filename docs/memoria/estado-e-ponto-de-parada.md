@@ -19,7 +19,7 @@
 - Modo compacto (bloco "Modo compacto" no fim de `portal.css`): fonte base 13px, menu 216px com rótulo "ESPAÇO DE TRABALHO", busca de 36px com selo ENTER, cartões/botões/abas/barra de aplicativos menores, comunicados do Início em linha (capa + texto). Referência: protótipo compacto anterior + telas de `docs/origem-manus/design`.
 - Barra superior universal: levemente escurecida (tom do destaque; adaptada ao escuro), "Bem-vindo(a), nome" à esquerda, aviso da tela no meio (mapa `AVISOS` em `App.tsx`; os avisos saíram do corpo das telas), versão, busca à direita e ícones pequenos. Perfil saiu do menu lateral: fica só no avatar do topo.
 - **Sem fotos**: capas são blocos de cor do tema (`web/src/Capa.tsx`, aceita `foto` quando houver URL).
-- Verificado por screenshot (escuro): Início, Comunicados, celular. **Falta conferir**: modo claro e os outros 4 estilos, Aplicações/Documentos, menu recolhido.
+- Verificado por screenshot (escuro): Início, Comunicados, celular. Conferido por screenshot: 6 estilos × claro/escuro (Início), menu recolhido (corrigido: só ícones), celular (Aplicações), Documentos, detalhe de comunicado.
 
 ## Módulos 4 e 5 (2026-11-06)
 - Comunicados: detalhe pronto. API `GET /api/comunicados/:slug` (404 para rascunho/arquivado), tela com corpo em parágrafos e "Mais em <categoria>", endereço `#comunicados/<slug>` (os cartões são links; Voltar do navegador funciona).
