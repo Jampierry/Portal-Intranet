@@ -8,7 +8,8 @@
     "start": "node src/main.ts",
     "migrar": "node src/cli/migrar.ts",
     "seed": "node src/cli/seed.ts",
-    "admin": "node src/cli/admin.ts"
+    "admin": "node src/cli/admin.ts",
+    "demo": "node src/cli/demo.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

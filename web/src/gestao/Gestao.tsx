@@ -9,7 +9,7 @@ import type { PerfilAcesso } from '../sessao';
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
 
-interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null }
+interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null }
 function Comunicados() {
   const { dados } = useLista<Com>('/api/gestao/comunicados');
   const categorias = [...new Set((dados ?? []).map((c) => c.categoria))];
@@ -20,6 +20,7 @@ function Comunicados() {
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo (aparece nos cartões)', obrigatorio: true, max: 300 },
         { chave: 'corpo', rotulo: 'Texto completo', tipo: 'area', max: 5000, dica: 'Separe os parágrafos com uma linha em branco.' },
+        { chave: 'imagem', rotulo: 'Imagem de capa (endereço, opcional)', max: 300, dica: 'Ex.: /demo/capa-pessoas.svg. Vazio = capa em cor do tema.' },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'prioridade', rotulo: 'Prioridade', tipo: 'select', opcoes: [['normal', 'Normal'], ['urgente', 'Urgente (aparece no sino)']], metade: true },
         { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['publicado', 'Publicado'], ['arquivado', 'Arquivado']], metade: true },
@@ -32,11 +33,11 @@ function Comunicados() {
         { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <><Selo texto={x} tom={t} />{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
         { titulo: 'Publicado em', ver: (r) => dataCurta(r.publicado_em) || '—' },
       ]}
-      valoresNovos={{ titulo: '', resumo: '', corpo: '', categoria: '', prioridade: 'normal', status: 'rascunho', exibir_de: '', exibir_ate: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
+      valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exibir_de: '', exibir_ate: '' }}
+      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
       podeApagar={() => true}
       acoesExtra={(r, salvar) => {
-        const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), categoria: r.categoria, prioridade: r.prioridade, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) };
+        const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) };
         return r.status === 'publicado'
           ? <button className="btn btn-sec btn-pequeno" onClick={() => void salvar({ ...base, status: 'arquivado' })}>Arquivar</button>
           : <button className="btn btn-verde btn-pequeno" onClick={() => void salvar({ ...base, status: 'publicado' })}>Publicar</button>;
@@ -55,6 +56,7 @@ function Documentos() {
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
+        { chave: 'imagem', rotulo: 'Imagem de capa (endereço, opcional)', max: 300, dica: 'Ex.: /demo/capa-pessoas.svg. Vazio = capa em cor do tema.' },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'formato', rotulo: 'Formato', obrigatorio: true, max: 40, dica: 'Ex.: PDF, Planilha', metade: true },
         { chave: 'versao', rotulo: 'Versão', max: 20, metade: true },

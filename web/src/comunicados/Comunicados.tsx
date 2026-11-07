@@ -12,7 +12,7 @@ const iconeDe = (c: string) => ICONE_CAT[c] ?? 'comunicados';
 export function CartaoComunicado({ c }: { c: Comunicado }) {
   return (
     <article className="cartao-com">
-      <Capa semente={c.slug} icone={iconeDe(c.categoria)} classe="capa-card">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
+      <Capa semente={c.slug} icone={iconeDe(c.categoria)} foto={c.imagem} classe="capa-card">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
       <div className="cartao-com-corpo">
         <small className="cat">{c.categoria}</small>
         <h3><a className="cobre-cartao" href={`#comunicados/${encodeURIComponent(c.slug)}`}>{c.titulo}</a></h3>
@@ -43,7 +43,7 @@ function ComunicadoDetalhe({ slug }: { slug: string }) {
     <>
       {voltar}
       <article className="detalhe-com">
-        <Capa semente={c.slug} icone={iconeDe(c.categoria)} classe="capa-detalhe">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
+        <Capa semente={c.slug} icone={iconeDe(c.categoria)} foto={c.imagem} classe="capa-detalhe">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
         <div className="detalhe-corpo">
           <small className="cat">{c.categoria}</small>
           <h1>{c.titulo}</h1>
@@ -96,7 +96,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
                 <p>{destaque.resumo}</p>
                 <a className="btn btn-pri" href={`#comunicados/${encodeURIComponent(destaque.slug)}`}>Saiba mais <Icone nome="seta" tamanho={16} /></a>
               </div>
-              <Capa semente={destaque.slug} icone={iconeDe(destaque.categoria)} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
+              <Capa semente={destaque.slug} icone={iconeDe(destaque.categoria)} foto={destaque.imagem} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
             </section>
           )}
           {resto.length > 0 && (

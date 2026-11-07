@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 
 export interface Aplicacao { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string }
-export interface Comunicado { slug: string; titulo: string; resumo: string; categoria: string; prioridade: string; publicado_em: string | null }
+export interface Comunicado { slug: string; titulo: string; resumo: string; categoria: string; prioridade: string; imagem?: string | null; publicado_em: string | null }
 export interface Documento { slug: string; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; link_oficial: string | null; revisado_em: string | null }
-export interface Destaque { tipo: 'mes' | 'ano'; rotulo: string; nome: string; area: string; iniciais: string; apresentacao: string }
+export interface Destaque { tipo: 'mes' | 'ano'; rotulo: string; nome: string; area: string; iniciais: string; apresentacao: string; foto?: string | null }
 
 /** Busca uma lista na API; `dados` é null enquanto carrega e `erro` traz a mensagem se falhar. */
 export function useLista<T>(url: string) {

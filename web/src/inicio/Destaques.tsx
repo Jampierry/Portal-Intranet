@@ -54,7 +54,7 @@ export function Destaques() {
             <div className="pessoas">
               {visiveis.map((d) => (
                 <article className="pessoa" key={d.nome}>
-                  <Capa semente={d.nome} icone="pessoas" classe="capa-pessoa"><span className="iniciais-capa">{d.iniciais}</span></Capa>
+                  <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
                   <div><h3>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
                 </article>
               ))}

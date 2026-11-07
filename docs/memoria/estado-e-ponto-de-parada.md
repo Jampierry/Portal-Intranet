@@ -9,6 +9,11 @@
 - **Visual:** estilo de tema **Di Paula** (padrão) + 5 estilos antigos, claro/escuro, modo compacto, barra superior universal com aviso da tela, Capa em cor no lugar de fotos.
 - **Verificação:** `npm run typecheck` (web + servidor), `npm run build` e `npm test` (41 testes: API com banco em memória, contraste dos temas, regra de links) passam.
 
+## Dados e imagens de demonstração (2026-11-07)
+- `npm run demo` = gera imagens (`scripts/gerar-imagens-demo.mjs` → `web/public/demo/`, 12 capas e 12 avatares em SVG, abstratos, sem pessoas reais) + migra + seed + `servidor/src/cli/demo.ts` (13 comunicados em vários estados, 7 documentos, 5 destaques novos, usuários `ana.demo` (editor), `bruno.demo` e `carla.demo` (consulta), senha `demo12345`, contatos extras). Pode repetir sem duplicar; não roda em produção.
+- Migração `004-imagens.sql`: `comunicados.imagem`. Campo "Imagem de capa" na Gestão; destaques usam `foto_aprovada` (exposta como `foto`).
+- Falta conferir por screenshot as telas com as imagens.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
 2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.

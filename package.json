@@ -18,7 +18,9 @@
     "admin:criar": "npm run admin -w servidor --",
     "test": "node --test web/test/*.test.ts modulos/*/tests/*.test.ts",
     "build": "npm run build -w web",
-    "typecheck": "tsc --noEmit -p web && tsc --noEmit -p servidor"
+    "typecheck": "tsc --noEmit -p web && tsc --noEmit -p servidor",
+    "demo:imagens": "node scripts/gerar-imagens-demo.mjs",
+    "demo": "npm run demo:imagens && npm run banco:migrar && npm run banco:seed && npm run demo -w servidor"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

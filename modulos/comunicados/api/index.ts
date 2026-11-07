@@ -10,19 +10,19 @@ const VISIVEL = "status = 'publicado' AND (exibir_de IS NULL OR exibir_de <= dat
 
 export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/comunicados', async () =>
-    db.prepare(`SELECT slug, titulo, resumo, categoria, prioridade, publicado_em FROM comunicados WHERE ${VISIVEL} ORDER BY publicado_em DESC, id DESC`).all(),
+    db.prepare(`SELECT slug, titulo, resumo, categoria, prioridade, imagem, publicado_em FROM comunicados WHERE ${VISIVEL} ORDER BY publicado_em DESC, id DESC`).all(),
   );
 
   // Detalhe: só comunicados visíveis (rascunho, arquivado e fora da janela não aparecem).
   app.get<{ Params: { slug: string } }>('/api/comunicados/:slug', async (req, resp) => {
-    const c = db.prepare(`SELECT slug, titulo, resumo, corpo, categoria, prioridade, publicado_em FROM comunicados WHERE slug = ? AND ${VISIVEL}`).get(req.params.slug);
+    const c = db.prepare(`SELECT slug, titulo, resumo, corpo, categoria, prioridade, imagem, publicado_em FROM comunicados WHERE slug = ? AND ${VISIVEL}`).get(req.params.slug);
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     return c;
   });
 
   // ----- Gestão (editor e admin) -----
   const gestao = { preHandler: exigir('admin', 'editor') };
-  const CAMPOS = 'id, slug, titulo, resumo, corpo, categoria, prioridade, status, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em';
+  const CAMPOS = 'id, slug, titulo, resumo, corpo, categoria, prioridade, imagem, status, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em';
   const hoje = () => new Date().toISOString().slice(0, 10);
 
   function ler(c: Record<string, unknown>) {
@@ -34,6 +34,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
       resumo: String(texto(c, 'resumo', 'Resumo', { max: 300 })),
       corpo: texto(c, 'corpo', 'Texto', { max: 5000, opcional: true }),
       categoria: String(texto(c, 'categoria', 'Categoria', { max: 40 })),
+      imagem: texto(c, 'imagem', 'Imagem', { max: 300, opcional: true }),
       prioridade: escolha(c, 'prioridade', 'Prioridade', PRIORIDADES, 'normal'),
       status: escolha(c, 'status', 'Situação', STATUS, 'rascunho'),
       exibir_de, exibir_ate,
@@ -47,9 +48,9 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM comunicados WHERE slug = ?').get(s), d.titulo);
     const agora = new Date().toISOString();
     const r = db.prepare(
-      `INSERT INTO comunicados (slug, titulo, resumo, corpo, categoria, prioridade, status, autor_id, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(slug, d.titulo, d.resumo, d.corpo, d.categoria, d.prioridade, d.status, req.usuario!.id, d.exibir_de, d.exibir_ate, d.status === 'publicado' ? hoje() : null, agora, agora);
+      `INSERT INTO comunicados (slug, titulo, resumo, corpo, imagem, categoria, prioridade, status, autor_id, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(slug, d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, req.usuario!.id, d.exibir_de, d.exibir_ate, d.status === 'publicado' ? hoje() : null, agora, agora);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'comunicado_criado', { id, titulo: d.titulo, status: d.status });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
@@ -63,8 +64,8 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     // A data de publicação nasce na primeira vez que vira "publicado" e não muda depois.
     const publicado_em = atual.publicado_em ?? (d.status === 'publicado' ? hoje() : null);
     db.prepare(
-      `UPDATE comunicados SET titulo = ?, resumo = ?, corpo = ?, categoria = ?, prioridade = ?, status = ?, exibir_de = ?, exibir_ate = ?, publicado_em = ?, atualizado_em = ? WHERE id = ?`,
-    ).run(d.titulo, d.resumo, d.corpo, d.categoria, d.prioridade, d.status, d.exibir_de, d.exibir_ate, publicado_em, new Date().toISOString(), id);
+      `UPDATE comunicados SET titulo = ?, resumo = ?, corpo = ?, imagem = ?, categoria = ?, prioridade = ?, status = ?, exibir_de = ?, exibir_ate = ?, publicado_em = ?, atualizado_em = ? WHERE id = ?`,
+    ).run(d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, d.exibir_de, d.exibir_ate, publicado_em, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'comunicado_alterado', { id, titulo: d.titulo, de: atual.status, para: d.status });
     return db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id);
   });

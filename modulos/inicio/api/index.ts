@@ -17,7 +17,7 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
   app.get('/api/destaques', async () =>
     db
       .prepare(
-        "SELECT p.tipo, p.rotulo, d.nome, d.area, d.iniciais, d.apresentacao FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id WHERE d.status = 'aprovado' AND p.status = 'publicado' ORDER BY p.tipo, d.id",
+        "SELECT p.tipo, p.rotulo, d.nome, d.area, d.iniciais, d.apresentacao, d.foto_aprovada AS foto FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id WHERE d.status = 'aprovado' AND p.status = 'publicado' ORDER BY p.tipo, d.id",
       )
       .all(),
   );
