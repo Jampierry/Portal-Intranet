@@ -9,6 +9,7 @@ import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
 import { Aplicacoes } from './aplicacoes/Aplicacoes';
 import { Documentos } from './documentos/Documentos';
+import { Lancador } from './aplicacoes/Lancador';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
 
@@ -56,6 +57,7 @@ export function App() {
   const [tela, setTela] = useState<Tela>(telaDoEndereco);
   const [gaveta, setGaveta] = useState(false);
   const [perfilAberto, setPerfilAberto] = useState(false);
+  const [lancador, setLancador] = useState(false);
   const [busca, setBusca] = useState('');
   const [favoritos, setFavoritos] = useState<string[]>(lerFavoritos);
   const { config, mudar } = useTema();
@@ -66,6 +68,12 @@ export function App() {
   const favs = (apps ?? []).filter((a) => favoritos.includes(a.slug));
 
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setOffline(true)); }, []);
+  useEffect(() => {
+    if (!lancador) return;
+    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') setLancador(false); };
+    addEventListener('keydown', tecla);
+    return () => removeEventListener('keydown', tecla);
+  }, [lancador]);
   useEffect(() => { const f = () => setTela(telaDoEndereco()); addEventListener('popstate', f); return () => removeEventListener('popstate', f); }, []);
   useEffect(() => { try { localStorage.setItem(CHAVE_FAV, JSON.stringify(favoritos)); } catch { /* vale só nesta sessão */ } }, [favoritos]);
 
@@ -98,17 +106,21 @@ export function App() {
           </div>
           <span className="versao" title="Estado da API"><i aria-hidden="true" />Online · v{saude?.versao ?? '…'}</span>
           <PainelTema config={config} mudar={mudar} />
+          <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} ir={() => irPara('comunicados')} />
           <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Meu perfil" title={perfil.nome}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={38} /></button>
         </header>
 
-        <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
-          {tela === 'inicio' && <Inicio irPara={irPara} perfil={perfil} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
-          {tela === 'comunicados' && <Comunicados busca={busca} limparBusca={() => setBusca('')} />}
-          {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
-          {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
-          <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Conteúdo de demonstração</span></footer>
-        </main>
+        <div className="meio">
+          <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
+            {tela === 'inicio' && <Inicio irPara={irPara} perfil={perfil} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
+            {tela === 'comunicados' && <Comunicados busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+            {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
+            <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Conteúdo de demonstração</span></footer>
+          </main>
+          <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />
+        </div>
       </div>
 
       <nav className="abas-mobile" aria-label="Navegação principal">

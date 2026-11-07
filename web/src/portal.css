@@ -183,6 +183,41 @@ button.ucard:hover { background: var(--menu-hover); }
 .cartao-doc h3 { font-size: 15px; }
 .cartao-doc p { margin: 3px 0; color: var(--suave); font-size: 13px; }
 
+/* ===== Barra lateral direita de aplicativos ===== */
+.meio { flex: 1; min-height: 0; display: flex; }
+.meio .conteudo { flex: 1; min-width: 0; }
+.lancador { flex: none; width: 68px; background: var(--card); border-left: 1px solid var(--linha-suave); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 10px; overflow-y: auto; overflow-x: hidden; transition: width .18s; }
+.lancador.aberto { width: 320px; align-items: stretch; }
+.lancador-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lancador-topo h2 { font-size: 18px; letter-spacing: -.02em; padding-left: 4px; }
+.lancador-mini { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 4px; border-top: 1px solid var(--linha-suave); width: 100%; }
+.lancador-ico { position: relative; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--vinho-claro); color: var(--vinho-texto); border: 0; cursor: pointer; text-decoration: none; }
+.lancador-ico:hover { background: color-mix(in srgb, var(--vinho) 24%, var(--card)); }
+.lancador-ico .dica { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 8px; background: var(--menu); color: var(--menu-texto); opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 5; }
+.lancador-ico:hover .dica, .lancador-ico:focus-visible .dica { opacity: 1; }
+.lancador-corpo { display: flex; flex-direction: column; gap: 10px; }
+.lancador-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lancador-item { display: flex; align-items: center; gap: 8px; }
+.lancador-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--linha-suave); background: var(--card); color: var(--texto); text-decoration: none; }
+.lancador-link:hover { background: var(--hover); }
+.lancador-link .icone { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--vinho-claro); color: var(--vinho-texto); }
+.lancador-link .texto { flex: 1; min-width: 0; }
+.lancador-link b { display: block; font-size: 14px; }
+.lancador-link small { color: var(--suave); }
+.lancador-item .icone-btn { width: 34px; height: 34px; border-radius: 50%; flex: none; }
+.lancador-item .icone-btn[aria-pressed=true] { color: var(--vinho-texto); background: var(--vinho-claro); }
+.lancador-item .icone-btn[aria-pressed=true] svg { fill: currentColor; }
+.icone-btn.lancador-mob { display: none; }
+.cortina-lancador { display: none; }
+@media (max-width: 860px) {
+  .meio { display: block; }
+  .icone-btn.lancador-mob { display: flex; }
+  .lancador { display: none; }
+  .lancador.aberto { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: 0; width: min(340px, 90vw); box-shadow: -12px 0 32px rgba(0, 0, 0, .3); }
+  .cortina-lancador { display: block; position: fixed; z-index: 30; inset: 0; background: rgba(10, 8, 12, .5); }
+}
+@media (prefers-reduced-motion: reduce) { .lancador { transition: none; } }
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 
