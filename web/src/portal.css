@@ -541,3 +541,36 @@ span.canal { color: var(--suave); }
 .campo-imagem-acoes label.btn { cursor: pointer; }
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; }
 .campo-imagem-acoes:focus-within label.btn { outline: 2px solid var(--vinho-texto); outline-offset: 2px; }
+
+/* ===== Início cabe na altura da janela (computador): os blocos encolhem com a altura, sobrando um respiro no fim ===== */
+@media (min-width: 1181px) {
+  .hero { min-height: 0; height: clamp(150px, 27vh, 253px); }
+  .hero-texto { padding: clamp(12px, 2.6vh, 26px) 30px; gap: clamp(4px, 1vh, 10px); justify-content: center; }
+  .hero h2 { font-size: clamp(24px, 4.4vh, 42px); }
+  .hero-texto p { font-size: clamp(12px, 1.6vh, 14px); }
+  .hero-arte, .hero-marca { padding: clamp(12px, 2.4vh, 20px); }
+  .capa-pessoa { height: clamp(48px, 9.5vh, 92px); }
+  .pontos { margin-top: clamp(6px, 1.4vh, 14px); }
+  .conteudo { padding-bottom: 24px; }
+}
+@media (min-width: 1181px) and (max-height: 820px) {
+  .pessoa p, .hero-texto p { display: none; }
+  .grade-com.linha .cartao-com p { -webkit-line-clamp: 1; }
+  /* Só uma linha de comunicados: os que não cabem lado a lado ficam de fora (Ver todos mostra o resto) */
+  .inicio-principal .grade-com.linha { grid-template-rows: auto; grid-auto-rows: 0; gap: 0 14px; overflow: hidden; }
+}
+@media (min-width: 1181px) and (max-height: 700px) {
+  .hero-texto .eyebrow { display: none; }
+  .cartao-sec { padding-top: 10px; padding-bottom: 10px; }
+  .grade-com.linha .cartao-com p { display: none; }
+}
+@media (min-width: 1181px) and (max-height: 760px) {
+  :root { --espaco: 12px; }
+  .hero { height: clamp(130px, 23vh, 253px); }
+  .capa-pessoa { height: clamp(44px, 8vh, 92px); }
+}
+@media (min-width: 1181px) and (max-height: 700px) {
+  .pessoas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pessoas .pessoa:nth-child(3) { display: none; }
+  .pessoa .area { margin: 0; }
+}
