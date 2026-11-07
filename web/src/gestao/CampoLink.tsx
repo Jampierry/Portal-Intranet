@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FocusEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 
@@ -22,6 +22,25 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio }: { rot
   const [externo, setExterno] = useState(() => valor !== '' && !valor.startsWith('#'));
   const raiz = useRef<HTMLDivElement>(null);
   const campoBusca = useRef<HTMLInputElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<CSSProperties>({});
+
+  // O painel é "fixed": fica por cima do pop-up (não aumenta a rolagem dele) e abre para cima se faltar espaço embaixo.
+  const abrirPainel = () => {
+    if (aberto) { setAberto(false); return; }
+    const r = botao.current!.getBoundingClientRect();
+    const abaixo = innerHeight - r.bottom - 12, acima = r.top - 12;
+    const paraCima = abaixo < 240 && acima > abaixo;
+    const max = Math.max(160, Math.min(360, paraCima ? acima : abaixo));
+    setPos({ position: 'fixed', left: r.left, width: r.width, maxHeight: max, ...(paraCima ? { bottom: innerHeight - r.top + 4 } : { top: r.bottom + 4 }) });
+    setAberto(true);
+  };
+  useEffect(() => {
+    if (!aberto) return;
+    const fechar = (e: Event) => { if (!(e.target instanceof Node) || !raiz.current?.contains(e.target)) setAberto(false); };
+    addEventListener('resize', fechar); addEventListener('scroll', fechar, true);
+    return () => { removeEventListener('resize', fechar); removeEventListener('scroll', fechar, true); };
+  }, [aberto]);
 
   // Comunicados publicados (se a pessoa não tiver acesso à lista, ficam só as páginas).
   useEffect(() => { api<Com[]>('/api/comunicados').then(setComs).catch(() => setComs([])); }, []);
@@ -45,12 +64,11 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio }: { rot
     <div className="campo-link" ref={raiz} onBlur={fecharSeFora} onKeyDown={(e) => { if (e.key === 'Escape' && aberto) { e.stopPropagation(); e.preventDefault(); setAberto(false); } }}>
       <label htmlFor={id}>{rotulo}{obrigatorio ? ' *' : ''}</label>
       <div className="campo-link-caixa">
-      <button id={id} type="button" className="campo-link-botao" aria-haspopup="listbox" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>
+      <button id={id} ref={botao} type="button" className="campo-link-botao" aria-haspopup="listbox" aria-expanded={aberto} onClick={abrirPainel}>
         <span className={atual || externo ? '' : 'suave'}>{texto}</span>
-        <Icone nome="busca" tamanho={15} />
       </button>
       {aberto && (
-        <div className="campo-link-painel" role="dialog" aria-label="Escolher o destino do botão">
+        <div className="campo-link-painel" style={pos} role="dialog" aria-label="Escolher o destino do botão">
           <input ref={campoBusca} type="search" placeholder="Pesquisar comunicado ou página…" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Pesquisar" />
           <ul role="listbox">
             <li><button type="button" role="option" aria-selected={valor === '' && !externo} onClick={() => escolher('')}><i>Sem link</i></button></li>

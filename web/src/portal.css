@@ -798,10 +798,13 @@ span.canal { color: var(--suave); }
 .campo-link { display: grid; gap: 4px; }
 .campo-link-caixa { position: relative; }
 .campo-link > label { font-weight: 600; }
-.campo-link-botao { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+.campo-link-botao { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; width: 100%; height: var(--h-campo); padding: 0 8px 0 10px; border: 1px solid var(--campo); border-radius: 8px; background: var(--card); color: var(--texto); font: 500 13px var(--fonte); cursor: pointer; }
+.campo-link-botao::after { content: ''; flex: none; width: 10px; height: 10px; background: currentColor; opacity: .7; clip-path: polygon(0 25%, 100% 25%, 50% 80%); }
+.campo-link-botao[aria-expanded=true] { border-color: var(--vinho); }
 .campo-link-botao span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.campo-link-painel { position: absolute; z-index: 40; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--card); border: 1px solid var(--linha); border-radius: 12px; box-shadow: 0 12px 28px rgba(0, 0, 0, .18); padding: 8px; display: grid; gap: 6px; }
-.campo-link-painel ul { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; display: grid; gap: 1px; }
+.campo-link-painel { z-index: 60; background: var(--card); border: 1px solid var(--campo); border-radius: 8px; box-shadow: 0 12px 28px rgba(0, 0, 0, .22); padding: 6px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.campo-link-painel ul { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; gap: 1px; align-content: start; }
+.campo-link-painel li.grupo > ul { overflow: visible; }
 .campo-link-painel li.grupo > span { display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); padding: 6px 8px 2px; }
 .campo-link-painel li.vazio { padding: 8px; color: var(--suave); }
 .campo-link-painel button[role=option] { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
