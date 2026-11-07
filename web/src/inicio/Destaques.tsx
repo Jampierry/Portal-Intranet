@@ -9,7 +9,7 @@ const POR_VEZ = 3;
 
 /** Carrossel do colaborador destaque (mês/ano). Compacto = uma pessoa por vez. Rotação lenta, pausável e desligada com movimento reduzido. Sem ranking. */
 export function Destaques({ compacto = false }: { compacto?: boolean }) {
-  const porVez = compacto ? 1 : POR_VEZ;
+  const porVez = POR_VEZ;
   const { dados } = useLista<Destaque>('/api/destaques');
   const [tipo, setTipo] = useState<'mes' | 'ano'>('mes');
   const [i, setI] = useState(0);
@@ -34,7 +34,7 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
   }, [girando, paginas]);
 
   const mover = (d: -1 | 1) => setI((x) => (x + d + paginas) % paginas);
-  const visiveis = itens.slice(pag * porVez, pag * porVez + porVez);
+  const grupos = Array.from({ length: paginas }, (_, p) => itens.slice(p * porVez, p * porVez + porVez));
 
   return (
     <section className={`cartao-sec destaques${compacto ? ' compacto' : ''}`} aria-labelledby="dest-titulo">
@@ -53,13 +53,19 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
         <>
           <div className="carrossel" aria-live={girando ? 'off' : 'polite'}>
             <button className="seta-car" onClick={() => mover(-1)} aria-label="Colaborador anterior"><Icone nome="esq" /></button>
-            <div className="pessoas">
-              {visiveis.map((d) => (
-                <article className="pessoa" key={d.nome}>
-                  <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
-                  <div><h3>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
-                </article>
-              ))}
+            <div className="pessoas-janela">
+              <div className="pessoas-trilho" style={{ transform: `translateX(-${pag * 100}%)` }}>
+                {grupos.map((g, p) => (
+                  <div className="pessoas" key={p} aria-hidden={p !== pag}>
+                    {g.map((d) => (
+                      <article className="pessoa" key={d.nome}>
+                        <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
+                        <div><h3 title={d.nome}>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
+                      </article>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
             <button className="seta-car" onClick={() => mover(1)} aria-label="Próximo colaborador"><Icone nome="dir" /></button>
           </div>

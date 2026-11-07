@@ -33,7 +33,7 @@
 ## Banners, missão/visão/valores e colaborador destaque (2026-11-07)
 - **Banners** (migração 006, `modulos/banners`): carrossel "Novidades da semana" no topo do Início; cadastro em Publicar › Banners (imagem, título, subtítulo, botão/link interno `#comunicados/slug` ou https, ordem, janela de datas). Sem banner ativo, aparece a faixa padrão. Gira a cada 6,5 s, pausa com mouse/foco/botão, respeita "reduzir movimento".
 - **Missão, visão e valores** (migração 007, `modulos/institucional`): editável em Publicar › Missão, Visão e Valores (valores = um por linha, até 8). Aparece no Início à esquerda; some se tudo estiver vazio. Textos do demo são de exemplo: **trocar pelo texto oficial**.
-- **Colaborador Destaque** (singular: é o título do reconhecimento e o bloco agora mostra uma pessoa por vez): bloco compacto alinhado à direita, ao lado de missão/visão/valores. Renomeado no Início, Publicar e Ajuda.
+- **Colaborador Destaque** (singular: é o título do reconhecimento e o bloco mostra 3 pessoas por vez, em páginas que deslizam com animação, giro automático de 7,2 s, setas, pontos e pausa): bloco compacto alinhado à direita, ao lado de missão/visão/valores. Renomeado no Início, Publicar e Ajuda.
 - Início continua cabendo na altura da janela (testado de 1366×650 a 1920×950). Testes: 52.
 
 ## Como retomar

@@ -652,3 +652,19 @@ span.canal { color: var(--suave); }
   .mvv-bloco p { -webkit-line-clamp: 2; }
   .mvv-valores h3 { display: none; }
 }
+
+/* ===== Colaborador destaque: 3 por vez, páginas deslizando (carrossel animado) ===== */
+.pessoas-janela { overflow: hidden; min-width: 0; }
+.pessoas-trilho { display: flex; transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
+.pessoas-trilho > .pessoas { flex: 0 0 100%; min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .pessoas-trilho { transition: none; } }
+.linha-mvv { grid-template-columns: minmax(0, 1fr) 400px; }
+.destaques.compacto .carrossel { grid-template-columns: 26px minmax(0, 1fr) 26px; gap: 4px; flex: 1 1 auto; align-items: center; }
+.destaques.compacto .seta-car { width: 26px; height: 26px; }
+.destaques.compacto .pessoas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.destaques.compacto .pessoa { gap: 6px; text-align: center; align-items: stretch; }
+.destaques.compacto .pessoa .capa-pessoa { flex: none; width: 100%; height: auto; aspect-ratio: 1; min-height: 0; border-radius: 12px; }
+.destaques.compacto .pessoa h3 { font-size: 12.5px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.destaques.compacto .pessoa .area { font-size: 11px; margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.destaques.compacto .pessoa p { display: none; }
+@media (max-width: 1180px) { .linha-mvv { grid-template-columns: minmax(0, 1fr); } }
