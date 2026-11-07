@@ -7,7 +7,7 @@ import { Avatar, usePerfil } from './perfil';
 import { JanelaConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
 import { podeGerir, useSessao, type Usuario } from './sessao';
-import { Gestao } from './gestao/Gestao';
+import { Publicar, Configuracoes } from './gestao/Gestao';
 import { Pessoas } from './pessoas/Pessoas';
 import { Ajuda } from './ajuda/Ajuda';
 import { dataCurta, useLista, type Comunicado } from './dados';
@@ -25,15 +25,18 @@ const AVISOS: Record<Tela, string> = {
   inicio: 'Aplicativos: use a barra da direita. No computador abrem em nova aba; no celular, use Voltar do navegador.',
   comunicados: 'Avisos publicados pelas áreas responsáveis.',
   documentos: 'Os arquivos ficam nos sistemas de origem: abra pelo link oficial de cada documento.',
-  gestao: 'Todas as alterações feitas aqui ficam registradas na auditoria.',
+  publicar: 'O que for publicado aparece no portal conforme a situação e a janela de exibição.',
+  configuracoes: 'Usuários, perfis e auditoria do portal. Só o administrador acessa.',
   pessoas: 'Contatos por área: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
 };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'documentos', 'gestao', 'pessoas', 'ajuda'];
+const TELAS: Tela[] = ['inicio', 'comunicados', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
-  const [t, slug] = location.hash.slice(1).split('/');
+  let [t, slug] = location.hash.slice(1).split('/');
+  // Endereços antigos (#gestao/...) levam à tela nova correspondente.
+  if (t === 'gestao') t = ['usuarios', 'auditoria'].includes(slug) ? 'configuracoes' : 'publicar';
   return TELAS.includes(t as Tela) ? { tela: t as Tela, slug: slug ? decodeURIComponent(slug) : undefined } : { tela: 'inicio' };
 };
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
@@ -77,6 +80,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { config, mudar } = useTema();
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
+  const admin = usuario.perfil === 'admin';
   const { dados: comunicados } = useLista<Comunicado>('/api/comunicados');
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente');
 
@@ -106,7 +110,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        mostrarGestao={gere} />
+        mostrarPublicar={gere} mostrarConfig={admin} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
@@ -132,8 +136,10 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'pessoas' && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && <Ajuda irPara={irPara} />}
-            {tela === 'gestao' && gere && <Gestao perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('gestao', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
-            {tela === 'gestao' && !gere && <p className="erro">Você não tem acesso à gestão do portal.</p>}
+            {tela === 'publicar' && gere && <Publicar perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+            {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
+            {tela === 'configuracoes' && admin && <Configuracoes aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
+            {tela === 'configuracoes' && !admin && <p className="erro">Só o administrador acessa as configurações.</p>}
             <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Portal Intranet</span></footer>
           </main>
           <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />

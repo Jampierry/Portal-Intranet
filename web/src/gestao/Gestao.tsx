@@ -175,30 +175,61 @@ function Aplicativos({ perfil, busca, limparBusca, favoritos, alternarFavorito }
   );
 }
 
-type Aba = 'comunicados' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes' | 'usuarios' | 'auditoria';
-const ABAS: [Aba, string, PerfilAcesso[]][] = [
-  ['comunicados', 'Comunicados', ['admin', 'editor']], ['documentos', 'Documentos', ['admin', 'editor']], ['destaques', 'Pessoas em destaque', ['admin', 'editor']], ['contatos', 'Contatos', ['admin', 'editor']],
-  ['aplicacoes', 'Aplicativos', ['admin', 'editor']], ['usuarios', 'Usuários', ['admin']], ['auditoria', 'Auditoria', ['admin']],
+type AbaPub = 'comunicados' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
+const ABAS_PUBLICAR: [AbaPub, string][] = [
+  ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['destaques', 'Colaboradores Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
-/** Gestão do portal: editor cuida do conteúdo; o admin master também cria usuários, aplicações e vê a auditoria. */
-export function Gestao({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
+/** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaboradores destaque, contatos e aplicativos). */
+export function Publicar({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
   perfil: PerfilAcesso; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
-  const abas = ABAS.filter(([, , quem]) => quem.includes(perfil));
-  const aba: Aba = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
+  const aba: AbaPub = ABAS_PUBLICAR.find(([id]) => id === pedida)?.[0] ?? ABAS_PUBLICAR[0][0];
   return (
     <>
-      <Cabecalho titulo="Gestão" sub={perfil === 'admin' ? 'Conteúdo, aplicativos, usuários e auditoria do portal.' : 'Publique comunicados, documentos e reconhecimentos.'} />
-      <div className="abas abas-gestao" role="tablist" aria-label="Áreas da gestão">
-        {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+      <Cabecalho titulo="Publicar" sub="Publique comunicados, documentos, colaboradores destaque, contatos e aplicativos." />
+      <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
+        {ABAS_PUBLICAR.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'comunicados' && <Comunicados />}
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}
       {aba === 'aplicacoes' && <Aplicativos perfil={perfil} busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
-      {(aba === 'usuarios' || aba === 'auditoria') && <Administracao parte={aba} />}
+    </>
+  );
+}
+
+type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
+const PERFIS_INFO: [string, string, string][] = [
+  ['Administrador', 'admin', 'Tudo o que o editor faz, mais usuários, cadastro de aplicativos, apagar itens publicados e auditoria.'],
+  ['Editor', 'editor', 'Publica e edita comunicados, documentos, colaboradores destaque e contatos, e vê o catálogo de aplicativos.'],
+  ['Consulta', 'consulta', 'Só lê o portal: comunicados, documentos, aplicativos e contatos.'],
+];
+
+function Perfis() {
+  return (
+    <section className="cartao-sec">
+      <p className="suave">Cada usuário tem um perfil. Para mudar o perfil de alguém, use a aba Usuários.</p>
+      <div className="rolagem"><table className="dados">
+        <thead><tr><th>Perfil</th><th>Código</th><th>O que pode fazer</th></tr></thead>
+        <tbody>{PERFIS_INFO.map(([nome, cod, desc]) => <tr key={cod}><td data-rotulo="Perfil"><b>{nome}</b></td><td data-rotulo="Código">{cod}</td><td data-rotulo="O que pode fazer">{desc}</td></tr>)}</tbody>
+      </table></div>
+    </section>
+  );
+}
+
+/** Configurações (só administrador): usuários, perfis e auditoria. */
+export function Configuracoes({ aba: pedida, aoMudarAba }: { aba?: string; aoMudarAba: (a: string) => void }) {
+  const aba: AbaCfg = ABAS_CONFIG.find(([id]) => id === pedida)?.[0] ?? ABAS_CONFIG[0][0];
+  return (
+    <>
+      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso e auditoria do portal." />
+      <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
+        {ABAS_CONFIG.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+      </div>
+      {aba === 'perfis' ? <Perfis /> : <Administracao parte={aba} />}
     </>
   );
 }

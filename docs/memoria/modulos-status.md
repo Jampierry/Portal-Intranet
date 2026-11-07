@@ -10,6 +10,7 @@
 | aplicacoes | ✅ | Barra da direita (favoritos por usuário no servidor) + Gestão › Aplicativos (cadastro: admin) |
 | pessoas | ✅ | Contatos por área, sem dados pessoais; gestão na aba Contatos |
 | ajuda | ✅ | FAQ em `web/src/ajuda/Ajuda.tsx` (texto no código) |
-| gestão | ✅ | Tela com abas por perfil; abas acessíveis por endereço (`#gestao/usuarios`) |
+| publicar | ✅ | Editor/admin: abas Comunicados, Documentos, Colaboradores Destaque, Contatos, Aplicativos (`#publicar/<aba>`; código em `web/src/gestao/Gestao.tsx`, rotas da API seguem em `/api/gestao/*`) |
+| configurações | ✅ | Só admin: abas Usuários, Perfis (tabela informativa) e Auditoria (`#configuracoes/<aba>`). Endereços antigos `#gestao/...` redirecionam |
 
 Testes: 41 (API com banco em memória + contraste + links). Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.

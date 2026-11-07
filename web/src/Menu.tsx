@@ -1,20 +1,20 @@
 import { Icone, IconeSistema } from './icones';
 
-export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'gestao' | 'pessoas' | 'ajuda';
+export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'pessoas' | 'ajuda';
 
-// Item: [id, nome]. A Gestão só aparece para editor e administrador (e é onde ficam os aplicativos).
+// Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];
 const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['pessoas', 'Pessoas'], ['ajuda', 'Ajuda']];
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
-  mostrarGestao: boolean;
+  mostrarPublicar: boolean; mostrarConfig: boolean;
 }
 
-/** Menu lateral esquerdo: marca e navegação. Os aplicativos ficam na barra da direita; o cadastro deles, em Gestão › Aplicativos. */
+/** Menu lateral esquerdo: marca e navegação. Os aplicativos ficam na barra da direita; o cadastro deles, em Publicar › Aplicativos. */
 export function Menu(p: Props) {
   const mini = p.recolhido;
-  const itens: Item[] = [...ITENS.slice(0, 3), ...(p.mostrarGestao ? ([['gestao', 'Gestão']] as Item[]) : []), ...ITENS.slice(3)];
+  const itens: Item[] = [...ITENS.slice(0, 3), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(3), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
   return (
     <aside className={`menu${mini ? ' mini' : ''}${p.gavetaAberta ? ' aberto' : ''}`} aria-label="Menu">
       <div className="sbtop">

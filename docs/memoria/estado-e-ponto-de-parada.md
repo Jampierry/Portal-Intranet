@@ -21,6 +21,10 @@
 - `MCP/` (zimbra-mcp, com token) entrou no `.gitignore`.
 - Testes: 43. Conferência por screenshot (Playwright-core em pasta temporária + Edge): Início ok; demais telas e celular geradas, falta revisar.
 
+## Menu reorganizado (2026-11-07)
+- **Publicar** (editor/admin): Comunicados, Documentos, Colaboradores Destaque (antes "Pessoas em destaque", renomeado também no Início e na Ajuda), Contatos, Aplicativos. **Configurações** (só admin; antes "Gestão"): Usuários, Perfis, Auditoria. Menu: Publicar após Documentos; Configurações no fim.
+- Aba **Perfis** é informativa (3 perfis fixos). Falta, se quiser, perfis editáveis.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
 2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.

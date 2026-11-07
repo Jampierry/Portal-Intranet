@@ -37,7 +37,7 @@ export function Destaques() {
   return (
     <section className="cartao-sec destaques" aria-labelledby="dest-titulo">
       <div className="sec-topo">
-        <h2 id="dest-titulo"><Icone nome="pessoas" tamanho={24} /> Pessoas em destaque</h2>
+        <h2 id="dest-titulo"><Icone nome="pessoas" tamanho={24} /> Colaboradores Destaque</h2>
         <div className="abas" role="tablist" aria-label="Período dos destaques" ref={abas}>
           {(['mes', 'ano'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tipo === t} onClick={() => { setTipo(t); setI(0); }}>{ROTULOS[t]}</button>
