@@ -6,7 +6,7 @@ import { useLista } from '../dados';
 export interface Campo {
   chave: string;
   rotulo: string;
-  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check';
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem';
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
@@ -44,14 +44,74 @@ function CampoForm({ c, valor, mudar }: { c: Campo; valor: string | boolean; mud
   const id = `f-${c.chave}`;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
+  if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
+  if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
     <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
       {c.tipo === 'area' ? <textarea rows={5} {...comum} onChange={(e) => mudar(e.target.value)} />
         : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
-        : <input type={c.tipo === 'data' ? 'date' : 'text'} list={c.sugestoes ? `${id}-lista` : undefined} {...comum} onChange={(e) => mudar(e.target.value)} />}
-      {c.sugestoes && <datalist id={`${id}-lista`}>{c.sugestoes.map((s) => <option key={s} value={s} />)}</datalist>}
+        : <input type={c.tipo === 'data' ? 'date' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
       {c.dica && <small className="suave">{c.dica}</small>}
     </label>
+  );
+}
+
+/** Escolher a imagem de capa em qualquer pasta do computador ou da rede (seletor do navegador); o arquivo é enviado ao portal. */
+function CampoImagem({ c, id, valor, mudar }: { c: Campo; id: string; valor: string; mudar: (v: string) => void }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const escolher = async (arq: File | undefined) => {
+    if (!arq) return;
+    setErro('');
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) return setErro('Use uma imagem PNG, JPG, WebP ou GIF.');
+    if (arq.size > 5 * 1024 * 1024) return setErro('A imagem passa de 5 MB. Escolha uma menor.');
+    setEnviando(true);
+    try {
+      const r = await fetch('/api/gestao/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({})) as { url?: string; erro?: string };
+      if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
+      mudar(j.url);
+    } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
+  };
+  return (
+    <div className="campo-imagem">
+      <span className="rotulo-campo" id={`${id}-rot`}>{c.rotulo}</span>
+      <div className="campo-imagem-linha">
+        {valor ? <img className="campo-imagem-previa" src={valor} alt="Prévia da imagem escolhida" /> : <span className="campo-imagem-vazia">Sem imagem</span>}
+        <div className="campo-imagem-acoes">
+          <label className="btn btn-sec btn-pequeno" htmlFor={id} style={{ margin: 0 }}>{enviando ? 'Enviando…' : valor ? 'Trocar imagem…' : 'Escolher imagem…'}</label>
+          <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" aria-labelledby={`${id}-rot`} disabled={enviando}
+            onChange={(e) => { void escolher(e.target.files?.[0]); e.target.value = ''; }} />
+          {valor && <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar('')}>Remover</button>}
+        </div>
+      </div>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      <small className="suave">{c.dica ?? 'PNG, JPG, WebP ou GIF, até 5 MB. Escolha no seu computador ou numa pasta da rede. Sem imagem = capa em cor do tema.'}</small>
+    </div>
+  );
+}
+
+const NOVA = '__nova__';
+/** Seleção entre valores já usados, com opção de digitar um novo (visual igual ao dos outros selects). */
+function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: string; mudar: (v: string) => void }) {
+  const lista = c.sugestoes!;
+  const [nova, setNova] = useState(() => valor !== '' && !lista.includes(valor));
+  const opcoes = valor && !lista.includes(valor) && !nova ? [...lista, valor] : lista;
+  return (
+    <div className={c.metade ? 'meia' : undefined}>
+      <label htmlFor={id}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
+        <select id={id} required={c.obrigatorio} value={nova ? NOVA : valor}
+          onChange={(e) => { if (e.target.value === NOVA) { setNova(true); mudar(''); } else { setNova(false); mudar(e.target.value); } }}>
+          <option value="" disabled>Selecione…</option>
+          {opcoes.map((s) => <option key={s} value={s}>{s}</option>)}
+          <option value={NOVA}>＋ Nova categoria…</option>
+        </select>
+      </label>
+      {nova && <label htmlFor={`${id}-nova`}>Nome da nova categoria
+        <input id={`${id}-nova`} type="text" autoFocus required={c.obrigatorio} maxLength={c.max} value={valor} onChange={(e) => mudar(e.target.value)} />
+      </label>}
+      {c.dica && <small className="suave">{c.dica}</small>}
+    </div>
   );
 }
 

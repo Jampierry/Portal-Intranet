@@ -20,7 +20,7 @@ function Comunicados() {
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo (aparece nos cartões)', obrigatorio: true, max: 300 },
         { chave: 'corpo', rotulo: 'Texto completo', tipo: 'area', max: 5000, dica: 'Separe os parágrafos com uma linha em branco.' },
-        { chave: 'imagem', rotulo: 'Imagem de capa (endereço, opcional)', max: 300, dica: 'Ex.: /demo/capa-pessoas.svg. Vazio = capa em cor do tema.' },
+        { chave: 'imagem', rotulo: 'Imagem de capa (opcional)', tipo: 'imagem' },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'prioridade', rotulo: 'Prioridade', tipo: 'select', opcoes: [['normal', 'Normal'], ['urgente', 'Urgente (aparece no sino)']], metade: true },
         { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['publicado', 'Publicado'], ['arquivado', 'Arquivado']], metade: true },
@@ -56,7 +56,6 @@ function Documentos() {
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
-        { chave: 'imagem', rotulo: 'Imagem de capa (endereço, opcional)', max: 300, dica: 'Ex.: /demo/capa-pessoas.svg. Vazio = capa em cor do tema.' },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'formato', rotulo: 'Formato', obrigatorio: true, max: 40, dica: 'Ex.: PDF, Planilha', metade: true },
         { chave: 'versao', rotulo: 'Versão', max: 20, metade: true },

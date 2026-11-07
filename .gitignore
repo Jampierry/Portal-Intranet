@@ -21,3 +21,6 @@ dados-privados/
 # build do front
 dist/
 web/dist/
+
+# Projeto separado (servidor MCP do Zimbra): contém token e credenciais, nunca no Git
+MCP/

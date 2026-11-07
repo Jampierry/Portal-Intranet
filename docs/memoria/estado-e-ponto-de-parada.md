@@ -14,6 +14,13 @@
 - Migração `004-imagens.sql`: `comunicados.imagem`. Campo "Imagem de capa" na Gestão; destaques usam `foto_aprovada` (exposta como `foto`).
 - Falta conferir por screenshot as telas com as imagens.
 
+## Ajustes de 2026-11-07 (tarde)
+- Campo **Categoria** da Gestão virou seletor com "＋ Nova categoria…" (`Crud.tsx`, `SeletorComNova`), sem o popup nativo do `datalist`.
+- **Imagem de capa**: botão "Escolher imagem…" (arquivo do computador ou de pasta da rede), com prévia e "Remover". Módulo novo `modulos/imagens` (`POST /api/gestao/imagens` para admin/editor, `GET /api/imagens/:nome` com login); só PNG/JPG/WebP/GIF até 5 MB, conferido pelos primeiros bytes (SVG recusado de propósito); arquivos em `dados-privados/imagens` (ou `PASTA_IMAGENS`). Campo removido de Documentos (a API não usa).
+- Início: o bloco **Documentos recentes** termina na mesma linha dos Comunicados (`contain: size` na coluna da direita) e rola por dentro com barra fina; no celular/tablet volta ao normal.
+- `MCP/` (zimbra-mcp, com token) entrou no `.gitignore`.
+- Testes: 43. Conferência por screenshot (Playwright-core em pasta temporária + Edge): Início ok; demais telas e celular geradas, falta revisar.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
 2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.

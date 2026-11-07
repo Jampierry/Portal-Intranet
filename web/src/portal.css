@@ -459,7 +459,12 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
 
 /* A coluna da direita acompanha a altura da coluna da esquerda: o último cartão cresce até o mesmo limite inferior. */
 .inicio-grade { align-items: stretch; }
-.inicio-lateral > .cartao-sec:last-child { flex: 1; }
+.inicio-lateral { contain: size; } /* a coluna da direita não aumenta a linha: quem manda na altura é a coluna da esquerda */
+.inicio-lateral > * { flex: none; }
+.inicio-lateral > .cartao-sec:last-child { flex: 1 1 0; min-height: 190px; display: flex; flex-direction: column; }
+.inicio-lateral > .cartao-sec:last-child .mini-lista { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--texto) 28%, transparent) transparent; }
+.inicio-lateral > .cartao-sec:last-child .mini-lista::-webkit-scrollbar { width: 6px; }
+.inicio-lateral > .cartao-sec:last-child .mini-lista::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--texto) 28%, transparent); border-radius: 6px; }
 .inicio-lateral .sec-topo { flex-wrap: nowrap; }
 .inicio-lateral .sec-topo h2 { font-size: 15.5px; white-space: nowrap; }
 .inicio-lateral .link-ver { white-space: nowrap; }
@@ -491,6 +496,9 @@ span.canal { color: var(--suave); }
   .inicio-grade, .com-layout { grid-template-columns: minmax(0, 1fr); }
   .inicio-lateral, .com-lateral { flex-direction: row; flex-wrap: wrap; }
   .inicio-lateral > *, .com-lateral > * { flex: 1 1 300px; }
+  .inicio-lateral { contain: none; }
+  .inicio-lateral > .cartao-sec:last-child { min-height: 0; }
+  .inicio-lateral > .cartao-sec:last-child .mini-lista { overflow: visible; }
 }
 @media (max-width: 860px) {
   .corpo { height: auto; min-height: 100vh; }
@@ -522,3 +530,14 @@ span.canal { color: var(--suave); }
   .sec-topo .abas { margin-left: 0; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .cartao-com { transition: none; } .cartao-com:hover { transform: none; } }
+
+/* Campo de imagem da Gestão (escolher arquivo do computador ou da rede) */
+.campo-imagem { margin: 0 0 10px; }
+.campo-imagem .rotulo-campo { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.campo-imagem-linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.campo-imagem-previa, .campo-imagem-vazia { width: 120px; height: 68px; border-radius: 8px; border: 1px solid var(--linha); object-fit: cover; flex: none; }
+.campo-imagem-vazia { display: grid; place-items: center; font-size: 12px; color: var(--suave); background: var(--afundado); }
+.campo-imagem-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.campo-imagem-acoes label.btn { cursor: pointer; }
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; }
+.campo-imagem-acoes:focus-within label.btn { outline: 2px solid var(--vinho-texto); outline-offset: 2px; }
