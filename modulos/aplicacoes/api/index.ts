@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigir } from '../../acessos/api/guard.ts';
-import { corpoObjeto, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
+import { buscarIcone } from './favicon.ts';
+import { ErroValidacao, corpoObjeto, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
-const CAMPOS = 'slug, nome, descricao, categoria, url, acesso, icone, responsavel, ativo';
+const CAMPOS = 'slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo';
 
 export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/aplicacoes', async () => db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 ORDER BY nome`).all());
@@ -25,6 +26,13 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   // ----- Gestão do catálogo (somente admin: cada app é um link para sistema externo) -----
   const admin = { preHandler: exigir('admin') };
 
+  /** Ícone próprio: só imagens guardadas pelo portal (ou vazio = ícone padrão). */
+  function logo(c: Record<string, unknown>): string | null {
+    const v = texto(c, 'logo', 'Ícone do aplicativo', { max: 100, opcional: true });
+    if (v && !/^\/api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)$/.test(v)) throw new ErroValidacao('Ícone do aplicativo: use "Escolher imagem" ou "Buscar do aplicativo".');
+    return v;
+  }
+
   function ler(c: Record<string, unknown>) {
     return {
       nome: String(texto(c, 'nome', 'Nome', { min: 2, max: 60 })),
@@ -33,18 +41,28 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
       url: String(urlHttp(c, 'url', 'Endereço (URL)', false)),
       acesso: String(texto(c, 'acesso', 'Condição de acesso', { max: 200 })),
       icone: texto(c, 'icone', 'Ícone', { max: 20, opcional: true }) ?? 'apps',
+      logo: logo(c),
       responsavel: texto(c, 'responsavel', 'Responsável', { max: 80, opcional: true }),
       ativo: c.ativo === undefined ? 1 : c.ativo ? 1 : 0,
     };
   }
+
+  // Traz o ícone do próprio aplicativo (favicon do endereço informado) e guarda no portal.
+  app.post('/api/gestao/aplicacoes/icone', admin, async (req, resp) => {
+    const url = String(urlHttp(corpoObjeto(req.body), 'url', 'Endereço (URL)', false));
+    const logo = await buscarIcone(url);
+    if (!logo) return resp.code(404).send({ erro: 'Não encontramos o ícone deste aplicativo. Envie uma imagem pelo botão "Escolher imagem".' });
+    auditar(db, req.usuario!.id, 'aplicacao_icone_buscado', { url });
+    return { logo };
+  });
 
   app.get('/api/gestao/aplicacoes', admin, async () => db.prepare(`SELECT ${CAMPOS} FROM aplicacoes ORDER BY nome`).all());
 
   app.post('/api/gestao/aplicacoes', admin, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(s), d.nome);
-    db.prepare('INSERT INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone, responsavel, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(slug, d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.responsavel, d.ativo);
+    db.prepare('INSERT INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(slug, d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo);
     auditar(db, req.usuario!.id, 'aplicacao_criada', { slug, nome: d.nome });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(slug));
   });
@@ -52,8 +70,8 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   app.put<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', admin, async (req, resp) => {
     if (!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(req.params.slug)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     const d = ler(corpoObjeto(req.body));
-    db.prepare('UPDATE aplicacoes SET nome = ?, descricao = ?, categoria = ?, url = ?, acesso = ?, icone = ?, responsavel = ?, ativo = ? WHERE slug = ?')
-      .run(d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.responsavel, d.ativo, req.params.slug);
+    db.prepare('UPDATE aplicacoes SET nome = ?, descricao = ?, categoria = ?, url = ?, acesso = ?, icone = ?, logo = ?, responsavel = ?, ativo = ? WHERE slug = ?')
+      .run(d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo, req.params.slug);
     auditar(db, req.usuario!.id, 'aplicacao_alterada', { slug: req.params.slug, ativo: d.ativo });
     return db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(req.params.slug);
   });

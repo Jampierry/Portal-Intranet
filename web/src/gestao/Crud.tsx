@@ -12,6 +12,8 @@ export interface Campo {
   dica?: string;
   max?: number;
   sugestoes?: string[];
+  /** Só para tipo 'imagem': busca a imagem sozinha a partir de outro campo (ex.: ícone do aplicativo a partir do endereço). */
+  auto?: { endpoint: string; origem: string; rotulo: string };
   metade?: boolean;
 }
 export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode }
@@ -40,11 +42,11 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
   );
 }
 
-function CampoForm({ c, valor, mudar }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void }) {
+function CampoForm({ c, valor, mudar, todos }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
-  if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
+  if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} todos={todos} />;
   if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
     <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
@@ -57,9 +59,27 @@ function CampoForm({ c, valor, mudar }: { c: Campo; valor: string | boolean; mud
 }
 
 /** Escolher a imagem de capa em qualquer pasta do computador ou da rede (seletor do navegador); o arquivo é enviado ao portal. */
-function CampoImagem({ c, id, valor, mudar }: { c: Campo; id: string; valor: string; mudar: (v: string) => void }) {
+const urlPlausivel = (v: string) => {
+  try { const u = new URL(v); return /^https?:$/.test(u.protocol) && /\.[a-z]{2,}$/i.test(u.hostname); } catch { return false; }
+};
+
+function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; valor: string; mudar: (v: string) => void; todos: Valores }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const tentadas = useRef(new Set<string>());
+  const origem = c.auto ? String(todos[c.auto.origem] ?? '') : '';
+  const buscar = async (silencioso: boolean) => {
+    if (!c.auto) return;
+    tentadas.current.add(origem); setErro(''); setEnviando(true);
+    try { const r = await api<{ logo: string }>(c.auto.endpoint, { url: origem }); mudar(r.logo); }
+    catch (x) { if (!silencioso) setErro((x as Error).message); } finally { setEnviando(false); }
+  };
+  // Ao informar o endereço do aplicativo, tenta trazer o ícone dele sozinho (uma vez por endereço, só se ainda não há imagem).
+  useEffect(() => {
+    if (!c.auto || valor || !urlPlausivel(origem) || tentadas.current.has(origem)) return;
+    const t = setTimeout(() => void buscar(true), 1500);
+    return () => clearTimeout(t);
+  }, [origem, valor]); // eslint-disable-line react-hooks/exhaustive-deps
   const escolher = async (arq: File | undefined) => {
     if (!arq) return;
     setErro('');
@@ -82,6 +102,7 @@ function CampoImagem({ c, id, valor, mudar }: { c: Campo; id: string; valor: str
           <label className="btn btn-sec btn-pequeno" htmlFor={id} style={{ margin: 0 }}>{enviando ? 'Enviando…' : valor ? 'Trocar imagem…' : 'Escolher imagem…'}</label>
           <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" aria-labelledby={`${id}-rot`} disabled={enviando}
             onChange={(e) => { void escolher(e.target.files?.[0]); e.target.value = ''; }} />
+          {c.auto && <button type="button" className="btn btn-sec btn-pequeno" disabled={enviando || !urlPlausivel(origem)} onClick={() => void buscar(false)}>{c.auto.rotulo}</button>}
           {valor && <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar('')}>Remover</button>}
         </div>
       </div>
@@ -177,7 +198,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
           <div className="grade2">
             {campos.map((c) => (
               <div key={c.chave} className={c.metade ? undefined : 'cheia'}>
-                <CampoForm c={c} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit({ ...edit, v: { ...edit.v, [c.chave]: valor } })} />
+                <CampoForm c={c} todos={edit.v} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit({ ...edit, v: { ...edit.v, [c.chave]: valor } })} />
               </div>
             ))}
           </div>

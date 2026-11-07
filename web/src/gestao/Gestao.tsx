@@ -130,7 +130,7 @@ function Contatos() {
   );
 }
 
-interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; responsavel: string | null; ativo: number }
+interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; logo: string | null; responsavel: string | null; ativo: number }
 function CadastroAplicacoes() {
   return (
     <Crud<App> base="/api/gestao/aplicacoes" rotuloItem="aplicação" idDe={(r) => r.slug}
@@ -142,7 +142,8 @@ function CadastroAplicacoes() {
         { chave: 'url', rotulo: 'Endereço (http/https)', obrigatorio: true, max: 500 },
         { chave: 'acesso', rotulo: 'Condição de acesso', obrigatorio: true, max: 200, dica: 'Ex.: Acesso restrito a colaboradores' },
         { chave: 'responsavel', rotulo: 'Responsável', max: 80, metade: true },
-        { chave: 'icone', rotulo: 'Ícone', tipo: 'select', opcoes: [['apps', 'Aplicações'], ['users', 'Pessoas']], metade: true },
+        { chave: 'logo', rotulo: 'Ícone do aplicativo', tipo: 'imagem', auto: { endpoint: '/api/gestao/aplicacoes/icone', origem: 'url', rotulo: 'Buscar do aplicativo' }, dica: 'Ao informar o endereço, o portal tenta trazer o ícone do próprio aplicativo. Se não achar (ex.: sistema que exige login), use "Escolher imagem". Sem imagem, vale o ícone padrão abaixo.' },
+        { chave: 'icone', rotulo: 'Ícone padrão (quando não há imagem)', tipo: 'select', opcoes: [['apps', 'Aplicações'], ['users', 'Pessoas']], metade: true },
         { chave: 'ativo', rotulo: 'Ativa (aparece no portal)', tipo: 'check' },
       ]}
       colunas={[
@@ -151,8 +152,8 @@ function CadastroAplicacoes() {
         { titulo: 'Endereço', ver: (r) => <span className="trunca" title={r.url}>{r.url}</span> },
         { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativa' : 'Inativa'} tom={r.ativo ? 'ok' : 'neutro'} /> },
       ]}
-      valoresNovos={{ nome: '', categoria: '', descricao: '', url: 'https://', acesso: '', responsavel: '', icone: 'apps', ativo: true }}
-      paraForm={(r) => ({ nome: r.nome, categoria: r.categoria, descricao: r.descricao, url: r.url, acesso: r.acesso, responsavel: s(r.responsavel), icone: r.icone === 'users' ? 'users' : 'apps', ativo: !!r.ativo })}
+      valoresNovos={{ nome: '', categoria: '', descricao: '', url: 'https://', acesso: '', responsavel: '', icone: 'apps', logo: '', ativo: true }}
+      paraForm={(r) => ({ nome: r.nome, categoria: r.categoria, descricao: r.descricao, url: r.url, acesso: r.acesso, responsavel: s(r.responsavel), icone: r.icone === 'users' ? 'users' : 'apps', logo: s(r.logo), ativo: !!r.ativo })}
     />
   );
 }

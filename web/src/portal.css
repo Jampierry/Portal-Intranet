@@ -579,3 +579,6 @@ span.canal { color: var(--suave); }
 .rodape-portal { margin-top: -6px; padding: 6px 0 0; font-size: 11px; line-height: 1.3; gap: 6px; }
 .conteudo { padding-bottom: 14px; }
 @media (min-width: 1181px) { .conteudo { padding-bottom: 14px; } }
+
+/* Ícone próprio do aplicativo (imagem dentro do quadrado do ícone) */
+.icone-app-img { width: 100%; height: 100%; object-fit: contain; padding: 18%; box-sizing: border-box; border-radius: inherit; background: #fff; }

@@ -1,4 +1,5 @@
 import { Icone } from '../icones';
+import { IconeApp } from './IconeApp';
 import { Cabecalho, Estado } from '../Cabecalho';
 import { useLista, type Aplicacao } from '../dados';
 import { LinkApp, useLargura } from './LinkApp';
@@ -9,7 +10,7 @@ export function CartaoApp({ app, favorito, alternarFavorito }: { app: Aplicacao;
   return (
     <article className="cartao-app">
       <div className="cartao-app-topo">
-        <span className="icone"><Icone nome={app.icone === 'users' ? 'pessoas' : 'aplicacoes'} tamanho={24} /></span>
+        <span className="icone"><IconeApp app={app} tamanho={24} /></span>
         <button className="icone-btn" aria-pressed={favorito} onClick={() => alternarFavorito(app.slug)} aria-label={favorito ? `Remover ${app.nome} dos favoritos` : `Favoritar ${app.nome}`} title={favorito ? 'Remover dos favoritos' : 'Favoritar'}>
           <Icone nome="estrela" tamanho={16} />
         </button>

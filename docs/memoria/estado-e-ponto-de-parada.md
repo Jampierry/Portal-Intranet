@@ -25,6 +25,11 @@
 - **Publicar** (editor/admin): Comunicados, Documentos, Colaboradores Destaque (antes "Pessoas em destaque", renomeado também no Início e na Ajuda), Contatos, Aplicativos. **Configurações** (só admin; antes "Gestão"): Usuários, Perfis, Auditoria. Menu: Publicar após Documentos; Configurações no fim.
 - Aba **Perfis** é informativa (3 perfis fixos). Falta, se quiser, perfis editáveis.
 
+## Ícone do aplicativo (2026-11-07)
+- Migração `005-logo-aplicacao.sql`: `aplicacoes.logo` (endereço `/api/imagens/<nome>`). Cadastro (Publicar › Aplicativos › Cadastro): ao informar o endereço, o portal busca sozinho o favicon (`POST /api/gestao/aplicacoes/icone`, `modulos/aplicacoes/api/favicon.ts`: lê as tags `link rel=icon`, prefere apple-touch/PNG, ignora SVG, cai em `/favicon.ico`); botões "Buscar do aplicativo", "Escolher imagem…" e "Remover". Sem imagem vale o ícone padrão.
+- Exibição: `web/src/aplicacoes/IconeApp.tsx` (barra da direita, catálogo); se a imagem falhar cai no ícone padrão. `imagens` agora aceita `.ico` e expõe `guardarImagem`.
+- Limite: sistema que exige login ou certificado inválido pode não entregar o favicon (usar envio manual). Só admin chama; busca com limite de 6 s e 512 KB. Testes: 47.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
 2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.
