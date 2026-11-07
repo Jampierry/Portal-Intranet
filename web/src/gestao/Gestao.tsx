@@ -6,7 +6,6 @@ import { Institucional } from './Institucional';
 import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
-import type { PerfilAcesso } from '../sessao';
 import { ListaPerfis } from './Permissoes';
 
 const s = (v: string | null | undefined) => v ?? '';
@@ -197,18 +196,17 @@ function CadastroAplicacoes() {
   );
 }
 
-/** Aba Aplicativos: o catálogo (abrir e favoritar) para quem gere o portal; o administrador também cadastra os aplicativos. */
-function Aplicativos({ perfil, busca, limparBusca, favoritos, alternarFavorito }: { perfil: PerfilAcesso; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void }) {
-  const [parte, setParte] = useState<'catalogo' | 'cadastro'>('catalogo');
+/** Aba Aplicativos: o mesmo conteúdo em dois formatos (catálogo em cartões ou lista em tabela). Criar, editar e excluir seguem as permissões de cada pessoa. */
+function Aplicativos({ busca, limparBusca, favoritos, alternarFavorito }: { busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void }) {
+  const [vista, setVista] = useState<'catalogo' | 'lista'>(() => { try { return localStorage.getItem('portal.apps.vista') === 'lista' ? 'lista' : 'catalogo'; } catch { return 'catalogo'; } });
+  const trocar = (v: 'catalogo' | 'lista') => { setVista(v); try { localStorage.setItem('portal.apps.vista', v); } catch { /* vale só nesta sessão */ } };
   return (
     <>
-      {perfil === 'admin' && (
-        <div className="pilulas filtros" role="group" aria-label="Aplicativos">
-          <button aria-pressed={parte === 'catalogo'} onClick={() => setParte('catalogo')}>Catálogo</button>
-          <button aria-pressed={parte === 'cadastro'} onClick={() => setParte('cadastro')}>Cadastro (administrador)</button>
-        </div>
-      )}
-      {parte === 'catalogo' || perfil !== 'admin'
+      <div className="pilulas filtros" role="group" aria-label="Formato de exibição dos aplicativos">
+        <button aria-pressed={vista === 'catalogo'} onClick={() => trocar('catalogo')}>Catálogo</button>
+        <button aria-pressed={vista === 'lista'} onClick={() => trocar('lista')}>Lista</button>
+      </div>
+      {vista === 'catalogo'
         ? <Aplicacoes semCabecalho busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />
         : <CadastroAplicacoes />}
     </>
@@ -221,8 +219,8 @@ const ABAS_PUBLICAR: [AbaPub, string][] = [
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
-export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
-  perfil: PerfilAcesso; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
+  permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
   const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}.ver`));
@@ -240,7 +238,7 @@ export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, l
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}
-      {aba === 'aplicacoes' && <Aplicativos perfil={perfil} busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+      {aba === 'aplicacoes' && <Aplicativos busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
       </PermissoesCtx.Provider>
     </>
   );
