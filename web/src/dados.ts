@@ -23,3 +23,5 @@ export function dataCurta(iso: string | null): string {
   const [a, m, d] = iso.slice(0, 10).split('-');
   return `${d} ${MESES[Number(m) - 1] ?? ''} ${a}`;
 }
+
+export interface Banner { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null }

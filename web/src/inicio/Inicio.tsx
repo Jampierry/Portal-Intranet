@@ -2,8 +2,9 @@ import { Icone } from '../icones';
 import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
+import { Novidades } from './Novidades';
 import { ListaComunicados } from '../comunicados/Comunicados';
-import { dataCurta, useLista, type Comunicado, type Documento } from '../dados';
+import { dataCurta, useLista, type Banner, type Comunicado, type Documento } from '../dados';
 import type { Tela } from '../Menu';
 
 /** Início: faixa de novidades, pessoas em destaque, comunicados e (à direita) avisos importantes e documentos atualizados. */
@@ -11,11 +12,15 @@ export function Inicio({ irPara, comunicados }: {
   irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null;
 }) {
   const { dados: docs } = useLista<Documento>('/api/documentos');
+  const { dados: banners } = useLista<Banner>('/api/banners');
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
   // Documentos mais recentemente revisados (os sem data de revisão ficam por último).
   const recentes = [...(docs ?? [])].sort((a, b) => (b.revisado_em ?? '').localeCompare(a.revisado_em ?? '')).slice(0, 4);
   return (
     <>
+      {banners === null && <section className="hero novidades" aria-label="Novidades da semana" />}
+      {banners && banners.length > 0 && <Novidades banners={banners} irPara={irPara} />}
+      {banners && banners.length === 0 && (
       <section className="hero" aria-label="Novidades da semana">
         <div className="hero-texto">
           <small className="eyebrow">DI PAULA</small>
@@ -26,6 +31,7 @@ export function Inicio({ irPara, comunicados }: {
         <Capa semente="hero" icone="colecoes" classe="hero-arte"><Lema linhas={['MODA', 'QUE ACOMPANHA', 'A SUA HISTÓRIA']} /></Capa>
         <div className="hero-marca" aria-hidden="true"><Lema linhas={['QUALIDADE', 'EM CADA', 'MOVIMENTO']} /></div>
       </section>
+      )}
 
       <div className="inicio-grade">
         <div className="inicio-principal">

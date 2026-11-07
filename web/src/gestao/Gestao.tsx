@@ -47,6 +47,36 @@ function Comunicados() {
   );
 }
 
+interface Ban { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null; ordem: number; ativo: number; exibir_de: string | null; exibir_ate: string | null }
+const ORDENS: [string, string][] = Array.from({ length: 9 }, (_, i) => [String(i + 1), String(i + 1)]);
+/** Banners do carrossel "Novidades da semana" do Início: imagem, texto, botão e ordem. Sem banner ativo, o Início mostra a faixa padrão. */
+function Banners() {
+  return (
+    <Crud<Ban> base="/api/gestao/banners" rotuloItem="banner" idDe={(r) => r.id}
+      introducao="Os banners ativos giram no topo do Início, na ordem indicada. Sem nenhum banner ativo, aparece a faixa padrão."
+      campos={[
+        { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
+        { chave: 'subtitulo', rotulo: 'Subtítulo', max: 160 },
+        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo, ideal 1600 × 400 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
+        { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
+        { chave: 'link', rotulo: 'Link do botão', max: 300, dica: 'Página do portal (ex.: #comunicados) ou endereço https://…', metade: true },
+        { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
+        { chave: 'ativo', rotulo: 'Ativo (aparece no Início)', tipo: 'check' },
+        { chave: 'exibir_de', rotulo: 'Exibir a partir de (opcional)', tipo: 'data', metade: true },
+        { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
+      ]}
+      colunas={[
+        { titulo: 'Ordem', ver: (r) => r.ordem },
+        { titulo: 'Título', ver: (r) => r.titulo },
+        { titulo: 'Imagem', ver: (r) => (r.imagem ? 'Sim' : 'Cor do tema') },
+        { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
+      ]}
+      valoresNovos={{ titulo: '', subtitulo: '', imagem: '', botao_texto: '', link: '', ordem: '1', ativo: true, exibir_de: '', exibir_ate: '' }}
+      paraForm={(r) => ({ titulo: r.titulo, subtitulo: s(r.subtitulo), imagem: s(r.imagem), botao_texto: s(r.botao_texto), link: s(r.link), ordem: String(r.ordem), ativo: !!r.ativo, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
+    />
+  );
+}
+
 interface Doc { id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; link_oficial: string | null; revisado_em: string | null }
 function Documentos() {
   const { dados } = useLista<Doc>('/api/gestao/documentos');
@@ -177,9 +207,9 @@ function Aplicativos({ perfil, busca, limparBusca, favoritos, alternarFavorito }
   );
 }
 
-type AbaPub = 'comunicados' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
+type AbaPub = 'comunicados' | 'banners' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
 const ABAS_PUBLICAR: [AbaPub, string][] = [
-  ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['destaques', 'Colaboradores Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
+  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['documentos', 'Documentos'], ['destaques', 'Colaboradores Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaboradores destaque, contatos e aplicativos). */
@@ -189,11 +219,12 @@ export function Publicar({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, 
   const aba: AbaPub = ABAS_PUBLICAR.find(([id]) => id === pedida)?.[0] ?? ABAS_PUBLICAR[0][0];
   return (
     <>
-      <Cabecalho titulo="Publicar" sub="Publique comunicados, documentos, colaboradores destaque, contatos e aplicativos." />
+      <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, documentos, colaboradores destaque, contatos e aplicativos." />
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
         {ABAS_PUBLICAR.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'comunicados' && <Comunicados />}
+      {aba === 'banners' && <Banners />}
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}

@@ -110,6 +110,13 @@ try {
     insDepto.run(area);
     insCont.run(nome, canal, area, nome);
   }
+  // Banners do carrossel do Início (só se ainda não houver nenhum).
+  if ((db.prepare('SELECT COUNT(*) n FROM banners').get() as { n: number }).n === 0) {
+    const insBan = db.prepare('INSERT INTO banners (titulo, subtitulo, imagem, botao_texto, link, ordem, ativo, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)');
+    insBan.run('Nova coleção de verão chega à fábrica', 'Linha, prazos e células envolvidas (exemplo).', '/demo/capa-colecao.svg', 'Saiba mais', '#comunicados/demo-nova-colecao', 1, agora, agora);
+    insBan.run('Campanha do agasalho', 'Pontos de coleta em cada portaria até o fim do mês (exemplo).', '/demo/capa-campanha.svg', 'Ver comunicado', '#comunicados/demo-campanha-agasalho', 2, agora, agora);
+    insBan.run('Simulado de evacuação na quinta', 'Atenção ao sinal sonoro às 10h (exemplo).', '/demo/capa-seguranca.svg', 'Ver comunicado', '#comunicados/demo-simulado-evacuacao', 3, agora, agora);
+  }
   db.exec('COMMIT');
 } catch (e) {
   db.exec('ROLLBACK');

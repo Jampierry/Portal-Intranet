@@ -4,6 +4,7 @@ import type { Banco } from './db.ts';
 import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
+import { rotasBanners } from '../../modulos/banners/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
 import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
@@ -13,6 +14,7 @@ import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 export const MODULOS = [
   { nome: 'acessos', rotas: rotasAcessos }, // primeiro: registra a proteção global de /api
   { nome: 'aplicacoes', rotas: rotasAplicacoes },
+  { nome: 'banners', rotas: rotasBanners },
   { nome: 'comunicados', rotas: rotasComunicados },
   { nome: 'documentos', rotas: rotasDocumentos },
   { nome: 'imagens', rotas: rotasImagens },
