@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icone } from '../icones';
 import { LinkApp } from '../aplicacoes/LinkApp';
 import type { Banner } from '../dados';
@@ -77,6 +77,7 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
 
   return (
     <div className={`novidades-grade${laterais.length === 0 ? ' so-principal' : ''}`}
+      style={{ '--cols': 1 + laterais.length } as CSSProperties}
       onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)} onFocus={() => setSobre(true)} onBlur={() => setSobre(false)}>
       {principal.length > 0
         ? <Carrossel lista={principal} tick={tick} irPara={irPara} titulo={titulos[0]} pausa={comPausa(0)} />
