@@ -75,19 +75,19 @@ export function EditorPerfis() {
   );
 }
 
-type Escolha = 'herdar' | 'permitir' | 'negar';
-
-/** Dentro do cadastro do usuário: para cada permissão, seguir o perfil ou definir "permitir"/"negar" só para esta pessoa. */
+/** Dentro do cadastro do usuário: caixas de seleção mostrando o que a pessoa pode. Marcar/desmarcar diferente do perfil vira um ajuste só dela. */
 export function AjustesUsuario({ perfil, ajustes, mudar }: { perfil: string; ajustes: Ajustes; mudar: (a: Ajustes) => void }) {
   const { dados, erro } = useCatalogo();
   if (erro) return <p className="erro" role="alert">{erro}</p>;
   if (!dados) return <p className="suave">Carregando permissões…</p>;
   if (perfil === 'admin') return <p className="suave">O Administrador sempre pode tudo; não há o que ajustar.</p>;
   const doPerfil = new Set(dados.perfis.find((p) => p.codigo === perfil)?.permissoes ?? []);
-  const valor = (c: string): Escolha => (c in ajustes ? (ajustes[c] ? 'permitir' : 'negar') : 'herdar');
-  const definir = (c: string, e: Escolha) => {
+  const vale = (c: string) => (c in ajustes ? ajustes[c] : doPerfil.has(c));
+  const alternar = (c: string) => {
+    const novoValor = !vale(c);
     const novo = { ...ajustes };
-    if (e === 'herdar') delete novo[c]; else novo[c] = e === 'permitir';
+    if (novoValor === doPerfil.has(c)) delete novo[c]; // igual ao perfil: volta a seguir o perfil
+    else novo[c] = novoValor;
     mudar(novo);
   };
   const qtd = Object.keys(ajustes).length;
@@ -95,26 +95,21 @@ export function AjustesUsuario({ perfil, ajustes, mudar }: { perfil: string; aju
     <fieldset className="perm-usuario">
       <legend>Permissões desta pessoa</legend>
       <p className="suave" style={{ margin: '0 0 8px' }}>
-        “Seguir o perfil” usa o que o perfil tem. “Permitir” ou “Negar” vale só para esta pessoa e passa por cima do perfil.
-        {qtd > 0 && <> <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar({})}>Limpar {qtd} ajuste{qtd > 1 ? 's' : ''}</button></>}
+        Vem marcado o que o perfil <b>{dados.perfis.find((p) => p.codigo === perfil)?.nome}</b> permite. Marque ou desmarque para ajustar só esta pessoa: o que você mudar aqui vale por cima do perfil.
+        {qtd > 0 && <> <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar({})}>Voltar ao padrão do perfil ({qtd} ajuste{qtd > 1 ? 's' : ''})</button></>}
       </p>
       {dados.catalogo.map((g) => (
         <div key={g.grupo} className="perm-grupo">
           <b>{g.grupo}</b>
-          {g.itens.map((i) => {
-            const v = valor(i.chave);
-            const vale = v === 'herdar' ? doPerfil.has(i.chave) : v === 'permitir';
-            return (
-              <label key={i.chave} className="perm-linha">
-                <span>{i.rotulo} <small className={vale ? 'perm-sim' : 'perm-nao'}>{vale ? '· pode' : '· não pode'}</small></span>
-                <select value={v} onChange={(e) => definir(i.chave, e.target.value as Escolha)} aria-label={`${i.rotulo}: permissão desta pessoa`}>
-                  <option value="herdar">Seguir o perfil ({doPerfil.has(i.chave) ? 'pode' : 'não pode'})</option>
-                  <option value="permitir">Permitir</option>
-                  <option value="negar">Negar</option>
-                </select>
+          <div className="perm-itens">
+            {g.itens.map((i) => (
+              <label key={i.chave} className="perm-check">
+                <input type="checkbox" checked={vale(i.chave)} onChange={() => alternar(i.chave)} />
+                <span>{i.rotulo}</span>
+                {i.chave in ajustes && <small className="perm-ajuste">{ajustes[i.chave] ? 'liberado só para esta pessoa' : 'bloqueado só para esta pessoa'}</small>}
               </label>
-            );
-          })}
+            ))}
+          </div>
         </div>
       ))}
     </fieldset>
