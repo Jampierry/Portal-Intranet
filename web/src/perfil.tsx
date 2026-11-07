@@ -1,24 +1,22 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
-// Perfil local (ainda não há login): nome e avatar ficam só neste navegador. Avatares vindos do PREMIA.
+// Perfil de exibição: nome vem do usuário logado; o avatar escolhido fica neste navegador (uma escolha por login).
 export interface Perfil { nome: string; avatar: number | null }
-const CHAVE = 'portal.perfil';
-const PADRAO: Perfil = { nome: 'Visitante', avatar: null };
 
-function ler(): Perfil {
-  try {
-    const v = JSON.parse(localStorage.getItem(CHAVE) ?? '{}');
-    return { nome: typeof v.nome === 'string' && v.nome.trim() ? v.nome.slice(0, 40) : PADRAO.nome, avatar: Number.isInteger(v.avatar) && v.avatar >= 0 && v.avatar < AVATARES.length ? v.avatar : null };
-  } catch { return PADRAO; }
-}
-export function usePerfil() {
-  const [perfil, setPerfil] = useState<Perfil>(ler);
-  useEffect(() => { try { localStorage.setItem(CHAVE, JSON.stringify(perfil)); } catch { /* vale só nesta sessão */ } }, [perfil]);
-  return { perfil, mudarPerfil: (p: Partial<Perfil>) => setPerfil((x) => ({ ...x, ...p })) };
+export function usePerfil(login: string | undefined, nome: string | undefined) {
+  const chave = login ? `portal.avatar.${login}` : null;
+  const ler = (): number | null => {
+    try { const v = chave ? JSON.parse(localStorage.getItem(chave) ?? 'null') : null; return Number.isInteger(v) && v >= 0 && v < AVATARES.length ? v : null; } catch { return null; }
+  };
+  const [avatar, setAvatar] = useState<number | null>(ler);
+  useEffect(() => { setAvatar(ler()); }, [chave]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mudarAvatar = (a: number | null) => { setAvatar(a); try { if (chave) localStorage.setItem(chave, JSON.stringify(a)); } catch { /* vale só nesta sessão */ } };
+  const perfil: Perfil = { nome: nome ?? 'Visitante', avatar };
+  return { perfil, mudarAvatar };
 }
 
 export const iniciais = (n: string) => {
-  const p = n.trim().split(/\s+/).filter(Boolean);
+  const p = n.trim().split(/\s+/).filter((w) => /^\p{L}/u.test(w));
   return ((p[0]?.[0] ?? '?') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
 };
 
@@ -74,37 +72,12 @@ function avatarSvg(i: number, uid: string): string {
     + `</g></svg>`;
 }
 
+export const AVATARES_QTD = AVATARES.length;
+
 /** Avatar redondo: personagem escolhido ou as iniciais do nome. */
 export function Avatar({ nome, avatar, tamanho = 36 }: { nome: string; avatar: number | null; tamanho?: number }) {
   const uid = useId().replace(/:/g, '');
   const st = { width: tamanho, height: tamanho, fontSize: tamanho * 0.38 };
   if (avatar !== null) return <span className="av avchar" style={st} aria-hidden="true" dangerouslySetInnerHTML={{ __html: avatarSvg(avatar, uid) }} />;
   return <span className="av" style={st} aria-hidden="true">{iniciais(nome)}</span>;
-}
-
-/** Janela "Meu perfil": nome e galeria de avatares. */
-export function JanelaPerfil({ perfil, mudar, fechar }: { perfil: Perfil; mudar: (p: Partial<Perfil>) => void; fechar: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { ref.current?.showModal(); }, []);
-  return (
-    <dialog className="janela" ref={ref} onClose={fechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label="Meu perfil">
-      <form method="dialog">
-        <header><h2>Meu perfil</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
-        <div className="janela-corpo">
-          <label>Seu nome<input value={perfil.nome} maxLength={40} onChange={(e) => mudar({ nome: e.target.value })} /></label>
-          <p className="suave" style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 13 }}>Avatar</p>
-          <div className="avgal">
-            <button type="button" className={`avopt${perfil.avatar === null ? ' on' : ''}`} aria-label="Usar as iniciais" onClick={() => mudar({ avatar: null })}><Avatar nome={perfil.nome} avatar={null} tamanho={48} /></button>
-            {AVATARES.map((_, i) => (
-              <button type="button" key={i} className={`avopt${perfil.avatar === i ? ' on' : ''}`} aria-label={`Avatar ${i + 1}`} aria-pressed={perfil.avatar === i} onClick={() => mudar({ avatar: i })}>
-                <Avatar nome={perfil.nome} avatar={i} tamanho={48} />
-              </button>
-            ))}
-          </div>
-          <p className="suave" style={{ fontSize: 12 }}>Fica salvo só neste navegador. Quando houver login, vem da sua conta.</p>
-        </div>
-        <footer><button className="btn" type="submit">Fechar</button></footer>
-      </form>
-    </dialog>
-  );
 }

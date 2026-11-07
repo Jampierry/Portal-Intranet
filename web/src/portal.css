@@ -383,6 +383,57 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 .menu.mini .nitem .lbl, .menu.mini .nitem small, .menu.mini .menu-label, .menu.mini .sbfoot { display: none; }
 .menu.mini .nitem { padding: 0; }
 
+/* ===== Login, gestão, tabelas e formulários ===== */
+.carregando { padding: 40px; text-align: center; color: var(--suave); }
+.entrar { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); background: var(--fundo); }
+.entrar-marca { background: linear-gradient(160deg, color-mix(in srgb, var(--menu) 82%, var(--vinho)), var(--menu)); color: var(--menu-texto); padding: 40px 48px; display: flex; flex-direction: column; justify-content: space-between; }
+.entrar-logo { display: flex; align-items: center; gap: 12px; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+.entrar-marca small { display: block; margin-top: 14px; font-size: 9.5px; letter-spacing: .24em; color: var(--menu-suave); }
+.entrar-marca .lema { font-size: 13px; }
+.entrar-form { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 40px clamp(24px, 8vw, 96px); max-width: 560px; width: 100%; margin: 0 auto; }
+.entrar-form h1 { font-size: clamp(26px, 3vw, 34px); letter-spacing: -.035em; }
+.entrar-form > p { margin: 0 0 12px; }
+.entrar-campos { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.entrar-campos label { margin-bottom: 8px; }
+.entrar-campos input:not([type=checkbox]) { height: 38px; font-size: 14px; }
+.entrar-botao { min-height: 40px; font-size: 14px; margin-top: 4px; }
+.entrar-rodape { margin-top: 24px; }
+.campo-senha { display: flex; gap: 6px; align-items: center; }
+.campo-senha input { flex: 1; min-width: 0; }
+.campo-senha .icone-btn { width: 38px; height: 38px; flex: none; }
+
+textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padding: 8px 10px; font: 500 13px/1.45 var(--fonte); color: var(--texto); background: var(--card); resize: vertical; }
+.janela-form { display: flex; flex-direction: column; max-height: calc((100vh / var(--zoom, 1)) - 48px); }
+.janela-larga { width: min(680px, calc((100vw / var(--zoom, 1)) - 24px)); }
+.grade2 .cheia { grid-column: 1 / -1; }
+.grade2 .meia, .grade2 > div:not(.cheia) { min-width: 0; }
+.divisor { border: 0; border-top: 1px solid var(--linha); margin: 14px 0; }
+.conta-dados { display: flex; align-items: center; gap: 12px; }
+
+.abas-gestao { flex-wrap: wrap; }
+.crud { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.crud .barra { margin-bottom: 0; }
+.crud .rolagem { background: var(--card); box-shadow: var(--sombra); max-height: none; overflow: auto; }
+.dados .vazio { padding: 22px; }
+.dados .col-acoes { display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.dados td { vertical-align: middle; }
+.nowrap { white-space: nowrap; }
+.trunca { display: inline-block; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.selo-st { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.st-ok { background: var(--ok-fundo); color: var(--ok); }
+.st-aviso { background: color-mix(in srgb, var(--laranja) 16%, var(--card)); color: var(--laranja); }
+.st-erro { background: var(--erro-fundo); color: var(--erro); }
+.st-neutro { background: var(--afundado); color: var(--suave); }
+.abrir-doc { align-self: flex-start; margin-top: 6px; text-decoration: none; }
+
+@media (max-width: 860px) {
+  .entrar { grid-template-columns: minmax(0, 1fr); }
+  .entrar-marca { padding: 28px 24px; gap: 28px; }
+  .entrar-form { padding: 28px 24px 40px; }
+  .crud .rolagem { max-height: none; }
+  .dados .col-acoes { justify-content: flex-start; }
+}
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 

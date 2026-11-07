@@ -1,0 +1,133 @@
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { api } from '../api';
+import { Icone } from '../icones';
+import { useLista } from '../dados';
+
+export interface Campo {
+  chave: string;
+  rotulo: string;
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check';
+  opcoes?: [string, string][];
+  obrigatorio?: boolean;
+  dica?: string;
+  max?: number;
+  sugestoes?: string[];
+  metade?: boolean;
+}
+export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode }
+type Valores = Record<string, string | boolean>;
+
+/** Janela (dialog nativo) com formulário. Fecha com Esc ou clicando fora; erros aparecem dentro dela. */
+export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', children }: {
+  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  const enviar = async (e: FormEvent) => {
+    e.preventDefault(); setErro(''); setEnviando(true);
+    try { await aoEnviar(); } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
+  };
+  return (
+    <dialog className="janela janela-larga" ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
+      <form className="janela-form" onSubmit={enviar}>
+        <header><h2>{titulo}</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
+        <div className="janela-corpo">{children}{erro && <p className="erro" role="alert">{erro}</p>}</div>
+        <footer><button type="button" className="btn btn-sec" onClick={() => ref.current?.close()}>Cancelar</button><button className="btn" disabled={enviando}>{enviando ? 'Salvando…' : rotuloEnviar}</button></footer>
+      </form>
+    </dialog>
+  );
+}
+
+function CampoForm({ c, valor, mudar }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void }) {
+  const id = `f-${c.chave}`;
+  if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
+  const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
+  return (
+    <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
+      {c.tipo === 'area' ? <textarea rows={5} {...comum} onChange={(e) => mudar(e.target.value)} />
+        : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
+        : <input type={c.tipo === 'data' ? 'date' : 'text'} list={c.sugestoes ? `${id}-lista` : undefined} {...comum} onChange={(e) => mudar(e.target.value)} />}
+      {c.sugestoes && <datalist id={`${id}-lista`}>{c.sugestoes.map((s) => <option key={s} value={s} />)}</datalist>}
+      {c.dica && <small className="suave">{c.dica}</small>}
+    </label>
+  );
+}
+
+/** Tela de cadastro genérica (lista + novo/editar/apagar) usada em comunicados, documentos, destaques e aplicações. */
+export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao }: {
+  base: string; rotuloItem: string; idDe: (r: T) => string | number; campos: Campo[]; colunas: Coluna<T>[];
+  valoresNovos: Valores; paraForm: (r: T) => Valores; podeApagar?: (r: T) => boolean;
+  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string;
+}) {
+  const { dados, erro, recarregar } = useLista<T>(base);
+  const [edit, setEdit] = useState<{ id: string | number | null; v: Valores } | null>(null);
+  const [aviso, setAviso] = useState('');
+  const [falha, setFalha] = useState('');
+
+  const salvar = async (id: string | number | null, v: Valores) => {
+    const corpo: Record<string, unknown> = {};
+    for (const c of campos) corpo[c.chave] = v[c.chave];
+    if (id === null) await api(base, corpo); else await api(`${base}/${encodeURIComponent(String(id))}`, corpo, 'PUT');
+    recarregar();
+  };
+  const apagar = async (r: T, nome: string) => {
+    if (!window.confirm(`Apagar ${rotuloItem} "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    setFalha('');
+    try { await api(`${base}/${encodeURIComponent(String(idDe(r)))}`, undefined, 'DELETE'); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} apagado.`); recarregar(); }
+    catch (x) { setFalha((x as Error).message); }
+  };
+
+  return (
+    <section className="crud">
+      <div className="barra">
+        <p className="suave" style={{ margin: 0 }}>{introducao}</p>
+        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>
+      </div>
+      {aviso && <p className="ok" role="status">{aviso}</p>}
+      {(erro || falha) && <p className="erro" role="alert">{erro || falha}</p>}
+      {dados === null && !erro && <p className="vazio">Carregando…</p>}
+      {dados && (
+        <div className="rolagem">
+          <table className="dados">
+            <thead><tr>{colunas.map((c) => <th key={c.titulo}>{c.titulo}</th>)}<th className="col-acoes">Ações</th></tr></thead>
+            <tbody>
+              {dados.length === 0 && <tr><td colSpan={colunas.length + 1} className="vazio">Nada cadastrado ainda.</td></tr>}
+              {dados.map((r) => {
+                const nome = String(colunas[0].ver(r));
+                return (
+                  <tr key={idDe(r)}>
+                    {colunas.map((c) => <td key={c.titulo}>{c.ver(r)}</td>)}
+                    <td className="col-acoes">
+                      {acoesExtra?.(r, (v) => salvar(idDe(r), v).then(() => setAviso('Alteração salva.')))}
+                      <button className="btn btn-sec btn-pequeno" onClick={() => setEdit({ id: idDe(r), v: paraForm(r) })} aria-label={`Editar ${nome}`}><Icone nome="editar" tamanho={13} /> Editar</button>
+                      {(podeApagar?.(r) ?? true) && <button className="btn btn-vermelho btn-pequeno" onClick={() => void apagar(r, nome)} aria-label={`Apagar ${nome}`}><Icone nome="lixo" tamanho={13} /></button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {edit && (
+        <JanelaForm titulo={edit.id === null ? `Novo ${rotuloItem}` : `Editar ${rotuloItem}`} aoFechar={() => setEdit(null)}
+          aoEnviar={async () => { await salvar(edit.id, edit.v); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} salvo.`); setEdit(null); }}>
+          <div className="grade2">
+            {campos.map((c) => (
+              <div key={c.chave} className={c.metade ? undefined : 'cheia'}>
+                <CampoForm c={c} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit({ ...edit, v: { ...edit.v, [c.chave]: valor } })} />
+              </div>
+            ))}
+          </div>
+        </JanelaForm>
+      )}
+    </section>
+  );
+}
+
+/** Etiqueta de situação (rascunho, publicado…). */
+export function Selo({ texto, tom }: { texto: string; tom: 'ok' | 'aviso' | 'neutro' | 'erro' }) {
+  return <span className={`selo-st st-${tom}`}>{texto}</span>;
+}

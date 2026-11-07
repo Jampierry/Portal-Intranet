@@ -29,6 +29,14 @@ try {
       'admin', 'Administrador (exemplo)', hashSenha('admin123'), 'admin', agora,
     );
     console.log('Criado usuário de exemplo: admin / admin123  (só para desenvolvimento)');
+    console.log('Também: editor / editor123 (editor) e leitor / leitor123 (consulta).');
+  }
+
+  // Usuários de EXEMPLO por perfil (só desenvolvimento; senhas fracas de propósito).
+  for (const [login, nome, perfil, senha] of [['editor', 'Editor (exemplo)', 'editor', 'editor123'], ['leitor', 'Leitor (exemplo)', 'consulta', 'leitor123']] as const) {
+    if (!db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) {
+      db.prepare('INSERT INTO usuarios (login, nome, senha_hash, perfil, criado_em) VALUES (?, ?, ?, ?, ?)').run(login, nome, hashSenha(senha), perfil, agora);
+    }
   }
 
   const insApp = db.prepare('INSERT OR IGNORE INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone) VALUES (?, ?, ?, ?, ?, ?, ?)');

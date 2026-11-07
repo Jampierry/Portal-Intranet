@@ -10,3 +10,6 @@
 | 2026-11-06 | Front migrado de Next.js (export estático) para React + Vite, com temas claro/escuro × 5 estilos do PREMIA; API na 3100, site na 5174 | Pedido do usuário: mesma stack, temas, linguagem e estrutura do PREMIA. Substitui as decisões anteriores de Next.js e exportação estática |
 | 2026-11-06 | Modo automático: executar e enviar ao GitHub sem pedir aprovação | Pedido do usuário |
 | 2026-11-06 | Push ao GitHub com o gatilho "enviar" (ou quando o usuário mandar enviar tudo) | Ação externa autorizada pelo usuário |
+| 2026-11-06 | Login local criado pelo administrador master; perfis `admin`, `editor`, `consulta`; portal fechado (tudo exige login) | Decisão do usuário. SSO corporativo continua possível no futuro (a camada de sessão é isolada em `modulos/acessos`) |
+| 2026-11-06 | Conteúdo gerido dentro do portal (comunicados, documentos, destaques, aplicações); documento guarda o **link oficial**, não o arquivo | Evita guardar documentos sensíveis no portal; "fonte confiável" = responsável, versão e data |
+| 2026-11-06 | Destaque de pessoa só é aprovado com referência de consentimento (LGPD); favoritos por usuário no servidor | Reconhecimento sem ranking; favoritos seguem o usuário em qualquer dispositivo |

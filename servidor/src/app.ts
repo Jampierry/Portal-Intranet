@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import type { Banco } from './db.ts';
+import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
@@ -8,6 +9,7 @@ import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
 export const MODULOS = [
+  { nome: 'acessos', rotas: rotasAcessos }, // primeiro: registra a proteção global de /api
   { nome: 'aplicacoes', rotas: rotasAplicacoes },
   { nome: 'comunicados', rotas: rotasComunicados },
   { nome: 'documentos', rotas: rotasDocumentos },

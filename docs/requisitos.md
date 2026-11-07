@@ -16,7 +16,7 @@ Produção/confecção · lideranças · RH/Pessoas · design/produto/qualidade 
 ## 4. Requisitos funcionais
 | ID | Requisito | Módulo | Status |
 |---|---|---|---|
-| RF-01 | Identidade e perfil (SSO corporativo; papéis). No protótipo, só demonstração | (futuro: auth) | ⬜ |
+| RF-01 | Identidade e perfil: login local criado pelo admin master (perfis admin, editor, consulta); SSO corporativo fica para depois | acessos | ✅ (local) |
 | RF-02 | Início: comunicados em destaque/recentes, apps favoritos, busca, pessoas em destaque; colunas no desktop e fluxo vertical no celular | inicio | ✅ (página recriada — conferir) |
 | RF-03 | Comunicados: título, resumo, corpo, categoria, público, prioridade, autor, vigência, imagem; rascunho/publicação/arquivamento | comunicados | 🟡 lista, busca e filtro ✅; detalhe e gestão ⬜ |
 | RF-04 | Catálogo de apps: nome, descrição, categoria, URL, público, responsável, visibilidade, ícone, condição de acesso; destacar link externo | aplicacoes | ✅ (só Meu RH) |

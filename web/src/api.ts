@@ -1,10 +1,26 @@
+/** Erro da API com o status HTTP e o código opcional (ex.: "trocar_senha"). */
+export class ErroApi extends Error {
+  status: number;
+  codigo?: string;
+  constructor(mensagem: string, status: number, codigo?: string) {
+    super(mensagem);
+    this.status = status;
+    this.codigo = codigo;
+  }
+}
+
 export async function api<T>(url: string, corpo?: unknown, metodo?: 'POST' | 'PUT' | 'DELETE'): Promise<T> {
   const r = await fetch(url, {
     method: metodo ?? (corpo === undefined ? 'GET' : 'POST'),
     headers: corpo === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: corpo === undefined ? undefined : JSON.stringify(corpo),
+    credentials: 'same-origin',
   });
   const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error((json as { erro?: string }).erro ?? `Erro ${r.status}`);
+  if (r.status === 401 && url !== '/api/login' && url !== '/api/eu') window.dispatchEvent(new Event('sessao-expirada'));
+  if (!r.ok) {
+    const j = json as { erro?: string; codigo?: string };
+    throw new ErroApi(j.erro ?? `Erro ${r.status}`, r.status, j.codigo);
+  }
   return json as T;
 }

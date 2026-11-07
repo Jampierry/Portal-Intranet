@@ -27,11 +27,19 @@
 - Testes novos da API em `modulos/comunicados/tests/api.test.ts` (banco em memória); `npm test` agora roda também `modulos/*/tests`.
 - Seed: roda de novo sem duplicar; preenche `corpo` e metadados só onde são nulos.
 
+## Login e gestão (2026-11-06)
+- **Login local**: admin master cria os usuários (Gestão › Usuários). Perfis `admin` / `editor` / `consulta`. Portal fechado: toda `/api` exige sessão (cookie httpOnly 12 h), exceto `/api/saude` e `/api/login`. Detalhes em `modulos/acessos/README.md`.
+- Senha provisória + troca obrigatória no primeiro acesso; bloqueio após 5 falhas em 15 min; auditoria só de inclusão (Gestão › Auditoria); defesa de origem (`ORIGENS_PERMITIDAS`).
+- **Gestão** (`web/src/gestao/`): comunicados (rascunho/publicado/arquivado, janela de exibição), documentos (link oficial, versão, responsável, classificação restrita), pessoas em destaque (exige consentimento), aplicações (admin), usuários e auditoria (admin). Abas por endereço: `#gestao/usuarios` etc.
+- Favoritos agora ficam no servidor, por usuário. Avatar escolhido fica no navegador, por login. Migração `003-acessos.sql`.
+- Dev: `npm run banco:seed` cria admin/admin123, editor/editor123, leitor/leitor123. Produção: `npm run admin:criar -- <login> "<Nome>"`.
+- Testes: 38 (API com banco em memória + contraste + links). `npm run typecheck` agora checa web e servidor.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev`.
 2. Conferir as telas e os estilos no navegador.
 
 ## Próximos passos
-- Módulo acessos: login, perfis e permissões (igual ao PREMIA); o nome do topo ("Bem-vindo(a)") passa a vir do usuário logado.
+- Pessoas e Ajuda (itens "em breve" do menu); SSO se a TI oferecer; recuperação de senha por e-mail.
 - Comunicados: gestão (rascunho/publicado/arquivado) depois do login. Documentos: anexos/download.
 - Ver `docs/roteiro-modulos.md`.

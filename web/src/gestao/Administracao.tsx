@@ -1,0 +1,150 @@
+import { useState } from 'react';
+import { api } from '../api';
+import { Icone } from '../icones';
+import { dataCurta, useLista } from '../dados';
+import { JanelaForm, Selo } from './Crud';
+import { ROTULO_PERFIL, type PerfilAcesso } from '../sessao';
+
+interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; ativo: number; trocar_senha: number; ultimo_acesso: string | null }
+
+/** Senha provisória legível (sem caracteres que se confundem). */
+function gerarSenha(): string {
+  const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const b = crypto.getRandomValues(new Uint32Array(12));
+  return [...b].map((n) => letras[n % letras.length]).join('');
+}
+
+function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => void }) {
+  return (
+    <label>Senha provisória *
+      <span className="campo-senha">
+        <input value={valor} onChange={(e) => mudar(e.target.value)} minLength={8} maxLength={128} required autoComplete="off" spellCheck={false} />
+        <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar(gerarSenha())}>Gerar</button>
+      </span>
+      <small className="suave">Passe esta senha à pessoa. No primeiro acesso o sistema pede para ela criar a própria senha.</small>
+    </label>
+  );
+}
+
+function Usuarios() {
+  const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
+  const [aviso, setAviso] = useState('');
+  const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string } | null>(null);
+  const [edit, setEdit] = useState<Usr | null>(null);
+  const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
+
+  return (
+    <section className="crud">
+      <div className="barra">
+        <p className="suave" style={{ margin: 0 }}>
+          <b>Administrador</b> gerencia tudo · <b>Editor</b> publica comunicados, documentos e destaques · <b>Consulta</b> só lê o portal.
+        </p>
+        <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha() })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+      </div>
+      {aviso && <p className="ok" role="status">{aviso}</p>}
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {dados && (
+        <div className="rolagem">
+          <table className="dados">
+            <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Situação</th><th>Último acesso</th><th className="col-acoes">Ações</th></tr></thead>
+            <tbody>
+              {dados.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.nome}</td><td>{u.login}</td><td>{ROTULO_PERFIL[u.perfil]}</td>
+                  <td>{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
+                  <td>{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
+                  <td className="col-acoes">
+                    <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>
+                    <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {novo && (
+        <JanelaForm titulo="Novo usuário" rotuloEnviar="Criar usuário" aoFechar={() => setNovo(null)}
+          aoEnviar={async () => { await api('/api/usuarios', novo); setAviso(`Usuário "${novo.login}" criado. Senha provisória: ${novo.senha}`); setNovo(null); recarregar(); }}>
+          <label>Nome completo *<input value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} maxLength={80} required /></label>
+          <label>Login *<input value={novo.login} onChange={(e) => setNovo({ ...novo, login: e.target.value.toLowerCase() })} maxLength={32} minLength={3} required autoCapitalize="none" spellCheck={false} />
+            <small className="suave">Só letras minúsculas, números, ponto, hífen e sublinhado. Ex.: maria.silva</small></label>
+          <label>Perfil *
+            <select value={novo.perfil} onChange={(e) => setNovo({ ...novo, perfil: e.target.value as PerfilAcesso })}>
+              {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+            </select></label>
+          <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
+        </JanelaForm>
+      )}
+
+      {edit && (
+        <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, perfil: edit.perfil, ativo: !!edit.ativo }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
+          <label>Perfil *
+            <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
+              {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+            </select></label>
+          <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
+        </JanelaForm>
+      )}
+
+      {reset && (
+        <JanelaForm titulo={`Redefinir senha de ${reset.u.login}`} rotuloEnviar="Redefinir" aoFechar={() => setReset(null)}
+          aoEnviar={async () => { await api(`/api/usuarios/${reset.u.id}/senha`, { senha: reset.senha }); setAviso(`Senha de "${reset.u.login}" redefinida. Nova senha provisória: ${reset.senha}`); setReset(null); recarregar(); }}>
+          <p className="suave" style={{ marginTop: 0 }}>A pessoa será desconectada e precisará criar uma senha nova no próximo acesso.</p>
+          <CampoSenha valor={reset.senha} mudar={(senha) => setReset({ ...reset, senha })} />
+        </JanelaForm>
+      )}
+    </section>
+  );
+}
+
+const ACAO: Record<string, string> = {
+  login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
+  senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado',
+  comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',
+  documento_criado: 'Documento criado', documento_alterado: 'Documento alterado', documento_apagado: 'Documento apagado',
+  destaque_criado: 'Destaque criado', destaque_alterado: 'Destaque alterado', destaque_apagado: 'Destaque apagado',
+  aplicacao_criada: 'Aplicação criada', aplicacao_alterada: 'Aplicação alterada', aplicacao_apagada: 'Aplicação apagada',
+  admin_criado_cli: 'Administrador criado (terminal)', admin_redefinido_cli: 'Administrador redefinido (terminal)',
+};
+
+function resumo(detalhe: string | null): string {
+  if (!detalhe) return '';
+  try {
+    const o = JSON.parse(detalhe) as Record<string, unknown>;
+    return Object.entries(o).filter(([k]) => k !== 'id').map(([k, v]) => `${k}: ${String(v)}`).join(' · ');
+  } catch { return ''; }
+}
+
+function Auditoria() {
+  const { dados, erro } = useLista<{ id: number; quando: string; usuario: string | null; acao: string; detalhe: string | null }>('/api/auditoria');
+  return (
+    <section className="crud">
+      <p className="suave" style={{ margin: 0 }}>Últimos 200 registros. A auditoria só aceita inclusão: ninguém consegue alterar ou apagar o histórico. Senhas nunca são gravadas.</p>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {dados && (
+        <div className="rolagem">
+          <table className="dados">
+            <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhe</th></tr></thead>
+            <tbody>
+              {dados.length === 0 && <tr><td colSpan={4} className="vazio">Sem registros.</td></tr>}
+              {dados.map((l) => (
+                <tr key={l.id}>
+                  <td className="nowrap">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                  <td>{l.usuario ?? '—'}</td><td>{ACAO[l.acao] ?? l.acao}</td><td className="suave">{resumo(l.detalhe)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function Administracao({ parte }: { parte: 'usuarios' | 'auditoria' }) {
+  return parte === 'usuarios' ? <Usuarios /> : <Auditoria />;
+}

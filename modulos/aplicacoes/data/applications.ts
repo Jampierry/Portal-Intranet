@@ -1,4 +1,5 @@
-import type { IconName } from "@/compartilhado/icons";
+// Ícones aceitos no catálogo (resto do sistema usa o nome como texto).
+export type IconName = string;
 
 export type Application = {
   id: string;

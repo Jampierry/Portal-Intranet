@@ -7,7 +7,8 @@
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
     "migrar": "node src/cli/migrar.ts",
-    "seed": "node src/cli/seed.ts"
+    "seed": "node src/cli/seed.ts",
+    "admin": "node src/cli/admin.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

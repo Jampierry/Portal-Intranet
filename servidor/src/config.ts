@@ -11,4 +11,8 @@ export const config = {
   caminhoBanco: process.env.BANCO ?? resolve(raiz, 'dados-privados', 'portal.db'),
   pastaMigracoes: resolve(raiz, 'infra', 'migracoes'),
   producao: process.env.NODE_ENV === 'production',
+  // Origens que podem enviar requisições que alteram dados (defesa contra CSRF). Em produção, informe o endereço
+  // público do portal em ORIGENS_PERMITIDAS (separado por vírgula). Em desenvolvimento vale o site do Vite.
+  origensPermitidas: (process.env.ORIGENS_PERMITIDAS ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5174,http://127.0.0.1:5174'))
+    .split(',').map((o) => o.trim()).filter(Boolean),
 };

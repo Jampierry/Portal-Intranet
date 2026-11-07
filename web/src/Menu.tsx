@@ -3,7 +3,7 @@ import { Icone, IconeSistema } from './icones';
 import { LinkApp } from './aplicacoes/LinkApp';
 import type { Aplicacao } from './dados';
 
-export type Tela = 'inicio' | 'comunicados' | 'aplicacoes' | 'documentos';
+export type Tela = 'inicio' | 'comunicados' | 'aplicacoes' | 'documentos' | 'gestao';
 
 // Item: [id, nome, ativo]. Só os "ativos" têm tela; os demais aparecem apagados ("em breve").
 type Item = [string, string, boolean];
@@ -14,7 +14,7 @@ const ITENS: Item[] = [
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
-  apps: Aplicacao[];
+  apps: Aplicacao[]; mostrarGestao: boolean;
 }
 
 /** Submenu flutuante do menu recolhido (vem do PREMIA): abre ao passar o mouse, fecha com Esc, clique fora ou uma pequena espera. */
@@ -66,7 +66,7 @@ export function Menu(p: Props) {
 
       <nav aria-label="Seções do portal">
         {!mini && <span className="menu-label">ESPAÇO DE TRABALHO</span>}
-        {ITENS.map(([id, nome, ativo]) => (
+        {[...ITENS.slice(0, 4), ...(p.mostrarGestao ? ([['gestao', 'Gestão', true]] as Item[]) : []), ...ITENS.slice(4)].map(([id, nome, ativo]) => (
           <button key={id} className={`nitem${ativo ? '' : ' breve'}`} title={ativo ? nome : `${nome} — em breve`}
             aria-label={mini ? nome : undefined} aria-current={ativo && p.tela === id ? 'page' : undefined} aria-disabled={ativo ? undefined : true}
             onClick={() => { if (ativo) { p.fecharGaveta(); p.irPara(id as Tela); } }}>
