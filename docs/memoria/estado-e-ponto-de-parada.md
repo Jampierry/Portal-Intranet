@@ -31,7 +31,7 @@
 - **Login local**: admin master cria os usuários (Gestão › Usuários). Perfis `admin` / `editor` / `consulta`. Portal fechado: toda `/api` exige sessão (cookie httpOnly 12 h), exceto `/api/saude` e `/api/login`. Detalhes em `modulos/acessos/README.md`.
 - Senha provisória + troca obrigatória no primeiro acesso; bloqueio após 5 falhas em 15 min; auditoria só de inclusão (Gestão › Auditoria); defesa de origem (`ORIGENS_PERMITIDAS`).
 - **Gestão** (`web/src/gestao/`): comunicados (rascunho/publicado/arquivado, janela de exibição), documentos (link oficial, versão, responsável, classificação restrita), pessoas em destaque (exige consentimento), aplicações (admin), usuários e auditoria (admin). Abas por endereço: `#gestao/usuarios` etc.
-- Início: a coluna da direita agora tem **Avisos importantes** (comunicados urgentes; some se não houver) e **Documentos atualizados** (4 mais recentes por data de revisão). A seção "Aplicações favoritas" saiu (menu e barra de aplicativos já cobrem).
+- Início: a coluna da direita agora tem **Avisos importantes** (comunicados urgentes; some se não houver) e **Documentos recentes** (4 mais recentes por data de revisão). A coluna da direita acompanha a altura da esquerda (último cartão cresce até o mesmo limite). A seção "Aplicações favoritas" saiu (menu e barra de aplicativos já cobrem).
 - Favoritos agora ficam no servidor, por usuário. Avatar escolhido fica no navegador, por login. Migração `003-acessos.sql`.
 - Dev: `npm run banco:seed` cria admin/admin123, editor/editor123, leitor/leitor123. Produção: `npm run admin:criar -- <login> "<Nome>"`.
 - Testes: 38 (API com banco em memória + contraste + links). `npm run typecheck` agora checa web e servidor.

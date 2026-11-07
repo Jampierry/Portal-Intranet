@@ -446,8 +446,11 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
 .mini-ico.urgente { background: var(--erro-fundo); color: var(--erro); }
 .cartao-aviso { border-color: color-mix(in srgb, var(--erro) 35%, var(--linha-suave)); }
 
+/* A coluna da direita acompanha a altura da coluna da esquerda: o último cartão cresce até o mesmo limite inferior. */
+.inicio-grade { align-items: stretch; }
+.inicio-lateral > .cartao-sec:last-child { flex: 1; }
 .inicio-lateral .sec-topo { flex-wrap: nowrap; }
-.inicio-lateral .sec-topo h2 { font-size: 16px; }
+.inicio-lateral .sec-topo h2 { font-size: 15.5px; white-space: nowrap; }
 .inicio-lateral .link-ver { white-space: nowrap; }
 
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */

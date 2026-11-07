@@ -58,7 +58,7 @@ export function Inicio({ irPara, comunicados }: {
 
           <section className="cartao-sec" aria-labelledby="doc-rec">
             <div className="sec-topo">
-              <h2 id="doc-rec"><Icone nome="documentos" tamanho={22} /> Documentos atualizados</h2>
+              <h2 id="doc-rec"><Icone nome="documentos" tamanho={22} /> Documentos recentes</h2>
               <button className="link-ver" onClick={() => irPara('documentos')}>Ver todos <Icone nome="seta" tamanho={15} /></button>
             </div>
             {docs === null && <p className="vazio">Carregando…</p>}
