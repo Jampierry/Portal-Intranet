@@ -86,11 +86,17 @@ try {
 
   const insPer = db.prepare("INSERT OR IGNORE INTO periodos_destaque (tipo, rotulo, status) VALUES (?, ?, 'publicado')");
   const insDes = db.prepare(
-    "INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, foto_aprovada, consentimento_ref, status) SELECT p.id, ?, ?, ?, ?, ?, 'exemplo-ficticio', 'aprovado' FROM periodos_destaque p WHERE p.tipo = ? AND p.rotulo = ? AND NOT EXISTS (SELECT 1 FROM destaques d WHERE d.periodo_id = p.id AND d.nome = ?)",
+    "INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, foto_aprovada, consentimento_ref, status) SELECT p.id, ?, ?, ?, ?, ?, 'exemplo-ficticio', 'aprovado' FROM periodos_destaque p WHERE p.tipo = ? AND p.rotulo = ? AND NOT EXISTS (SELECT 1 FROM destaques d WHERE d.nome = ?)",
   );
-  DESTAQUES.forEach(([tipo, rotulo, nome, area, ap], i) => {
-    insPer.run(tipo, rotulo);
-    insDes.run(nome, area, nome.slice(-2), ap, `/demo/avatar-${String(i + 3).padStart(2, '0')}.svg`, tipo, rotulo, nome);
+  // Mês e ano vigentes: o destaque "do mês" é de agora; os "do ano" são de meses anteriores deste ano (ou do mês atual, em janeiro).
+  const hoje = new Date(), anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth() + 1;
+  const NOMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  DESTAQUES.forEach(([tipo, , nome, area, ap], i) => {
+    const mes = tipo === 'mes' ? mesAtual : Math.max(1, mesAtual - 1 - (i % 3));
+    const rotulo = `${NOMES[mes - 1]}/${anoAtual}`;
+    insPer.run('mes', rotulo);
+    insDes.run(nome, area, nome.slice(-2), ap, `/demo/avatar-${String(i + 3).padStart(2, '0')}.svg`, 'mes', rotulo, nome);
+    db.prepare('UPDATE destaques SET mes = ?, ano = ? WHERE nome = ?').run(mes, anoAtual, nome);
   });
   // Avatares nos destaques do seed original (só onde ainda não há foto).
   const semFoto = db.prepare('SELECT id FROM destaques WHERE foto_aprovada IS NULL ORDER BY id').all() as { id: number }[];

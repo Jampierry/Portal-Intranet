@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { criarAppTeste, entrar } from '../../acessos/tests/ajuda.ts';
 
-const novo = (p: object = {}) => ({ tipo: 'mes', rotulo: 'Novembro/2026', nome: 'Pessoa Exemplo', area: 'Produção', apresentacao: 'Texto de exemplo', ...p });
+const novo = (p: object = {}) => ({ mes: 11, ano: 2026, nome: 'Pessoa Exemplo', area: 'Produção', apresentacao: 'Texto de exemplo', ...p });
 
 test('aprovar destaque exige a referência do consentimento (LGPD)', async () => {
   const { app } = await criarAppTeste();
@@ -43,4 +43,29 @@ test('iniciais ignoram palavras que não começam com letra (ex.: "(exemplo)")',
   await app.inject({ method: 'POST', url: '/api/gestao/destaques', headers: ed, payload: novo({ nome: 'Maria Souza (exemplo)', status: 'aprovado', consentimento_ref: 'termo' }) });
   const vis = (await app.inject({ url: '/api/destaques', headers: ed })).json<{ iniciais: string }[]>();
   assert.equal(vis[0].iniciais, 'MS');
+});
+
+test('destaque tem mês e ano (validados); a lista pública traz mes e ano, do mais recente ao mais antigo', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita');
+  const post = (p: object) => app.inject({ method: 'POST', url: '/api/gestao/destaques', headers: ed, payload: novo(p) });
+  assert.equal((await post({ mes: 13 })).statusCode, 400);
+  assert.equal((await post({ mes: 0 })).statusCode, 400);
+  assert.equal((await post({ ano: 1999 })).statusCode, 400);
+  assert.equal((await post({ mes: undefined })).statusCode, 400);
+  const ok = (p: object) => post({ status: 'aprovado', consentimento_ref: 'termo', ...p });
+  await ok({ nome: 'Antiga Lima', mes: 3, ano: 2026 });
+  await ok({ nome: 'Recente Souza', mes: '11', ano: '2026' }); // vindo do formulário (texto)
+  const vis = (await app.inject({ url: '/api/destaques', headers: await entrar(app, 'le') })).json<{ nome: string; mes: number; ano: number }[]>();
+  assert.deepEqual(vis.map((d) => [d.nome, d.mes, d.ano]), [['Recente Souza', 11, 2026], ['Antiga Lima', 3, 2026]]);
+});
+
+test('destaque aceita foto guardada pelo portal e recusa endereço externo', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita');
+  const post = (p: object) => app.inject({ method: 'POST', url: '/api/gestao/destaques', headers: ed, payload: novo(p) });
+  assert.equal((await post({ foto: 'https://externo/x.png' })).statusCode, 400);
+  const r = await post({ foto: '/api/imagens/aaaaaaaaaaaaaaaaaaaaaaaa.jpg' });
+  assert.equal(r.statusCode, 201);
+  assert.equal(r.json<{ foto: string }>().foto, '/api/imagens/aaaaaaaaaaaaaaaaaaaaaaaa.jpg');
 });

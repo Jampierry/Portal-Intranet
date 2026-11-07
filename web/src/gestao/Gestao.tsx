@@ -5,7 +5,7 @@ import { Administracao } from './Administracao';
 import { Institucional } from './Institucional';
 import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
-import { dataCurta, useLista } from '../dados';
+import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import type { PerfilAcesso } from '../sessao';
 import { EditorPerfis } from './Permissoes';
 
@@ -115,7 +115,8 @@ function Documentos() {
   );
 }
 
-interface Dest { id: number; tipo: string; rotulo: string; nome: string; area: string; apresentacao: string; consentimento_ref: string | null; status: string; foto: string | null }
+interface Dest { id: number; mes: number | null; ano: number | null; nome: string; area: string; apresentacao: string; consentimento_ref: string | null; status: string; foto: string | null }
+const ANOS_DESTAQUE: [string, string][] = Array.from({ length: 6 }, (_, i) => { const a = new Date().getFullYear() + 1 - i; return [String(a), String(a)] as [string, string]; });
 const SIT_DEST: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { aprovado: ['ok', 'Aprovado'], rascunho: ['aviso', 'Rascunho'], retirado: ['neutro', 'Retirado'] };
 function Destaques() {
   return (
@@ -125,8 +126,8 @@ function Destaques() {
         { chave: 'foto', rotulo: 'Foto da pessoa (opcional)', tipo: 'imagem', dica: 'Foto quadrada (rosto centralizado) fica melhor. PNG, JPG, WebP ou GIF, até 5 MB. Use só com o consentimento da pessoa; sem foto, aparecem as iniciais.' },
         { chave: 'nome', rotulo: 'Nome da pessoa', obrigatorio: true, max: 80, metade: true },
         { chave: 'area', rotulo: 'Área', obrigatorio: true, max: 60, metade: true },
-        { chave: 'tipo', rotulo: 'Destaque do', tipo: 'select', opcoes: [['mes', 'Mês'], ['ano', 'Ano']], metade: true },
-        { chave: 'rotulo', rotulo: 'Período', obrigatorio: true, max: 40, dica: 'Ex.: Novembro/2026 ou 2026', metade: true },
+        { chave: 'mes', rotulo: 'Mês do destaque', tipo: 'select', opcoes: MESES_LONGOS.map((m, i) => [String(i + 1), m] as [string, string]), metade: true },
+        { chave: 'ano', rotulo: 'Ano do destaque', tipo: 'select', opcoes: ANOS_DESTAQUE, metade: true, dica: 'No Início, a aba Mês mostra o mês atual e a aba Ano mostra todos os destaques do ano atual.' },
         { chave: 'apresentacao', rotulo: 'Texto de reconhecimento', tipo: 'area', obrigatorio: true, max: 300 },
         { chave: 'consentimento_ref', rotulo: 'Referência do consentimento', max: 200, dica: 'Ex.: termo assinado em 02/10/2026 (obrigatório para aprovar)' },
         { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['aprovado', 'Aprovado'], ['retirado', 'Retirado']], metade: true },
@@ -134,11 +135,11 @@ function Destaques() {
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
         { titulo: 'Área', ver: (r) => r.area },
-        { titulo: 'Período', ver: (r) => `${r.tipo === 'mes' ? 'Mês' : 'Ano'} · ${r.rotulo}` },
+        { titulo: 'Mês/Ano', ver: (r) => (r.ano ? periodoDe({ mes: r.mes, ano: r.ano }) : '— (definir)') },
         { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_DEST[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
       ]}
-      valoresNovos={{ foto: '', nome: '', area: '', tipo: 'mes', rotulo: '', apresentacao: '', consentimento_ref: '', status: 'rascunho' }}
-      paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, tipo: r.tipo, rotulo: r.rotulo, apresentacao: r.apresentacao, consentimento_ref: s(r.consentimento_ref), status: r.status })}
+      valoresNovos={{ foto: '', nome: '', area: '', mes: String(new Date().getMonth() + 1), ano: String(new Date().getFullYear()), apresentacao: '', consentimento_ref: '', status: 'rascunho' }}
+      paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, mes: String(r.mes ?? new Date().getMonth() + 1), ano: String(r.ano ?? new Date().getFullYear()), apresentacao: r.apresentacao, consentimento_ref: s(r.consentimento_ref), status: r.status })}
     />
   );
 }

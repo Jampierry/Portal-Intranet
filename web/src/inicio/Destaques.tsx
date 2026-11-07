@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icone } from '../icones';
-import { useLista, type Destaque } from '../dados';
+import { periodoDe, useLista, type Destaque } from '../dados';
 import { Capa } from '../Capa';
 
 const ROTULOS = { mes: 'Destaque do mês', ano: 'Destaque do ano' } as const;
@@ -15,7 +15,9 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
   const [i, setI] = useState(0);
   const [auto, setAuto] = useState(true);
   const [reduzido, setReduzido] = useState(false);
-  const itens = (dados ?? []).filter((d) => d.tipo === tipo);
+  // Aba Mês: quem foi destaque no mês vigente. Aba Ano: todos os destaques do ano atual (de qualquer mês).
+  const hoje = new Date(), mesAtual = hoje.getMonth() + 1, anoAtual = hoje.getFullYear();
+  const itens = (dados ?? []).filter((d) => d.ano === anoAtual && (tipo === 'ano' || d.mes === mesAtual));
   const paginas = Math.max(1, Math.ceil(itens.length / porVez));
   const pag = i % paginas;
   const girando = auto && !reduzido;
@@ -49,7 +51,7 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
           <span className="icone-btn"><Icone nome={girando ? 'pausa' : 'tocar'} tamanho={14} /></span>{!compacto && (reduzido ? 'Movimento reduzido' : girando ? 'Pausar animação' : 'Retomar animação')}
         </button>
       </div>
-      {itens.length === 0 ? <p className="vazio">Sem destaques publicados.</p> : (
+      {itens.length === 0 ? <p className="vazio">{tipo === 'mes' ? 'Sem destaque publicado neste mês.' : 'Sem destaques publicados neste ano.'}</p> : (
         <>
           <div className="carrossel" aria-live={girando ? 'off' : 'polite'}>
             <button className="seta-car" onClick={() => mover(-1)} aria-label="Colaborador anterior"><Icone nome="esq" /></button>
@@ -58,8 +60,8 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
                 {grupos.map((g, p) => (
                   <div className="pessoas" key={p} aria-hidden={p !== pag}>
                     {g.map((d) => (
-                      <article className="pessoa" key={`${d.nome}|${d.rotulo}`}>
-                        <span className="pessoa-periodo" title={`Destaque ${tipo === 'mes' ? 'do mês' : 'do ano'}: ${d.rotulo}`}>{d.rotulo}</span>
+                      <article className="pessoa" key={`${d.nome}|${d.ano}|${d.mes}`}>
+                        {tipo === 'ano' && <span className="pessoa-periodo" title={`Colaborador destaque de ${periodoDe(d)}`}>{periodoDe(d)}</span>}
                         <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
                         <div><h3 title={d.nome}>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
                       </article>

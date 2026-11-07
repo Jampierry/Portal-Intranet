@@ -3,9 +3,9 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
-const TIPOS = ['mes', 'ano'] as const;
 const STATUS = ['rascunho', 'aprovado', 'retirado'] as const;
-const CAMPOS = `d.id, p.tipo, p.rotulo, d.nome, d.area, d.apresentacao, d.consentimento_ref, d.status, d.foto_aprovada AS foto`;
+const CAMPOS = `d.id, p.tipo, p.rotulo, d.nome, d.area, d.apresentacao, d.consentimento_ref, d.status, d.foto_aprovada AS foto, d.mes, d.ano`;
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 /** Foto: guardada pelo portal (ou imagem de demonstração em /demo). Só vai ao ar se o destaque estiver Aprovado (com consentimento). */
 const FOTO_OK = /^\/(api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif)|demo\/[a-z0-9._-]+)$/i;
 
@@ -19,7 +19,7 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
   app.get('/api/destaques', async () =>
     db
       .prepare(
-        "SELECT p.tipo, p.rotulo, d.nome, d.area, d.iniciais, d.apresentacao, d.foto_aprovada AS foto FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id WHERE d.status = 'aprovado' AND p.status = 'publicado' ORDER BY p.tipo, d.id",
+        "SELECT d.mes, d.ano, d.nome, d.area, d.iniciais, d.apresentacao, d.foto_aprovada AS foto FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id WHERE d.status = 'aprovado' AND p.status = 'publicado' AND d.ano IS NOT NULL ORDER BY d.ano DESC, d.mes DESC, d.id",
       )
       .all(),
   );
@@ -34,17 +34,20 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
     const nome = String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
     const foto = texto(c, 'foto', 'Foto', { max: 120, opcional: true });
     if (foto && !FOTO_OK.test(foto)) throw new ErroValidacao('Foto: use "Escolher imagem" para enviar o arquivo.');
+    const mes = Number(c.mes), ano = Number(c.ano);
+    if (!Number.isInteger(mes) || mes < 1 || mes > 12) throw new ErroValidacao('Mês: escolha o mês do destaque.');
+    if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) throw new ErroValidacao('Ano: informe o ano do destaque (ex.: 2026).');
     return {
-      foto,
-      tipo: escolha(c, 'tipo', 'Tipo', TIPOS),
-      rotulo: String(texto(c, 'rotulo', 'Período', { max: 40 })),
+      mes, ano, foto,
       nome, iniciais: iniciais(nome),
       area: String(texto(c, 'area', 'Área', { max: 60 })),
       apresentacao: String(texto(c, 'apresentacao', 'Apresentação', { max: 300 })),
       consentimento_ref, status,
     };
   }
-  const periodoId = (tipo: string, rotulo: string): number => {
+  // Mantém a tabela de períodos (chave estrangeira) com um período por mês/ano.
+  const periodoId = (mes: number, ano: number): number => {
+    const tipo = 'mes', rotulo = `${MESES[mes - 1]}/${ano}`;
     const p = db.prepare('SELECT id FROM periodos_destaque WHERE tipo = ? AND rotulo = ?').get(tipo, rotulo) as { id: number } | undefined;
     if (p) return p.id;
     return Number(db.prepare("INSERT INTO periodos_destaque (tipo, rotulo, status) VALUES (?, ?, 'publicado')").run(tipo, rotulo).lastInsertRowid);
@@ -57,8 +60,8 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
 
   app.post('/api/gestao/destaques', gestao, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
-    const r = db.prepare('INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status, foto_aprovada) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto);
+    const r = db.prepare('INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status, foto_aprovada, mes, ano) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(periodoId(d.mes, d.ano), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto, d.mes, d.ano);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'destaque_criado', { id, nome: d.nome, status: d.status });
     return resp.code(201).send(buscar(id));
@@ -68,8 +71,8 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
     const id = inteiro(req.params.id, 'Destaque');
     if (!db.prepare('SELECT 1 FROM destaques WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Destaque não encontrado.' });
     const d = ler(corpoObjeto(req.body));
-    db.prepare('UPDATE destaques SET periodo_id = ?, nome = ?, area = ?, iniciais = ?, apresentacao = ?, consentimento_ref = ?, status = ?, foto_aprovada = ? WHERE id = ?')
-      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto, id);
+    db.prepare('UPDATE destaques SET periodo_id = ?, nome = ?, area = ?, iniciais = ?, apresentacao = ?, consentimento_ref = ?, status = ?, foto_aprovada = ?, mes = ?, ano = ? WHERE id = ?')
+      .run(periodoId(d.mes, d.ano), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto, d.mes, d.ano, id);
     auditar(db, req.usuario!.id, 'destaque_alterado', { id, nome: d.nome, status: d.status });
     return buscar(id);
   });

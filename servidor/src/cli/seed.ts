@@ -90,6 +90,9 @@ try {
       insDes.run(e.name, e.role, e.initials, e.note, tipo, e.period, e.name);
     }
   }
+  // Destaques de exemplo ficam no mês e ano vigentes.
+  const agoraD = new Date();
+  db.prepare('UPDATE destaques SET mes = ?, ano = ? WHERE ano IS NULL').run(agoraD.getMonth() + 1, agoraD.getFullYear());
   db.exec('COMMIT');
 } catch (e) {
   db.exec('ROLLBACK');

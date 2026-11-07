@@ -105,3 +105,8 @@
 - Tela: Configurações › Perfis (matriz com caixas de seleção) e Usuários › Editar › "Permissões desta pessoa" (Seguir o perfil / Permitir / Negar). Menu, telas, abas de Publicar e blocos do Início respeitam as permissões.
 - Colaborador Destaque: campo "Foto da pessoa" em Publicar (usa `foto_aprovada`) e selo do período (mês/ano) sobre a foto no Início.
 - Testes: `modulos/acessos/tests/permissoes.test.ts`.
+
+## Colaborador Destaque por mês e ano
+- Migração 010: `destaques.mes` e `destaques.ano` (aproveita o rótulo antigo). Publicar › Colaborador Destaque agora pede **Mês** e **Ano** (não há mais "Mês/Ano" como tipo).
+- Início: aba **Mês** = destaques do mês vigente (sem selo de período); aba **Ano** = todos os do ano atual, com selo "Mês/Ano" sobre a foto. Data vigente = a do navegador.
+- Campo "Foto da pessoa" no cadastro (`foto_aprovada`). Testes em `modulos/inicio/tests/api.test.ts`.
