@@ -668,3 +668,22 @@ span.canal { color: var(--suave); }
 .destaques.compacto .pessoa .area { font-size: 11px; margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .destaques.compacto .pessoa p { display: none; }
 @media (max-width: 1180px) { .linha-mvv { grid-template-columns: minmax(0, 1fr); } }
+
+/* Missão, visão e valores: nada é cortado; se o texto for grande, a área rola por dentro (barra fina) */
+@media (min-width: 1181px) {
+  .mvv { contain: size; }
+  .mvv-rolagem { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--texto) 28%, transparent) transparent; }
+  .mvv-rolagem::-webkit-scrollbar { width: 6px; }
+  .mvv-rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--texto) 28%, transparent); border-radius: 6px; }
+  .mvv-bloco p { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 13px; }
+  .mvv-valores { margin-top: 14px; padding-top: 0; }
+  .mvv-valores h3 { display: block; }
+  .mvv-valores ul { flex-wrap: wrap; overflow: visible; }
+  .mvv-valores li { white-space: normal; padding: 5px 12px; }
+}
+
+.mvv.em-abas .mvv-corpo { grid-template-columns: minmax(0, 1fr); }
+.mvv.em-abas .mvv-valores { margin-top: 0; }
+.mvv.em-abas .sec-topo { gap: 8px; }
+.mvv.em-abas .sec-topo h2 { font-size: 16px; white-space: nowrap; }
+.mvv.em-abas .mvv-bloco h3, .mvv.em-abas .mvv-valores h3 { display: none; }
