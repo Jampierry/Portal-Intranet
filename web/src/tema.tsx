@@ -14,7 +14,7 @@ export const ESCALA_MAX = 150;
 
 
 const CHAVE = 'portal.tema';
-const PADRAO: Config = { modo: 'auto', estilo: 'bordo', menuRecolhido: false, escala: 100 };
+const PADRAO: Config = { modo: 'auto', estilo: 'dipaula', menuRecolhido: false, escala: 100 };
 
 function ler(): Config {
   try {

@@ -10,7 +10,7 @@ export function Capa({ semente, icone, foto, classe = '', children }: { semente:
   const h = hash(semente);
   const forte = TONS[h % TONS.length];
   return (
-    <div className={`capa ${classe}`} style={{ ['--capa-forte' as string]: `${forte + 22}%`, ['--capa-giro' as string]: `${(h % 7) * 24}deg` }} aria-hidden="true">
+    <div className={`capa ${classe}`} style={{ ['--capa-forte' as string]: `${forte + 8}%`, ['--capa-giro' as string]: `${(h % 7) * 24}deg` }} aria-hidden="true">
       {foto ? <img src={foto} alt="" /> : <><i className="capa-forma" /><i className="capa-forma f2" /><span className="capa-icone"><Icone nome={icone} tamanho={34} /></span></>}
       {children}
     </div>

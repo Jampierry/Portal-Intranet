@@ -11,7 +11,7 @@
         var r = document.documentElement;
         var escuro = c.modo === 'escuro' || ((c.modo || 'auto') === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
         r.dataset.tema = escuro ? 'escuro' : 'claro';
-        r.dataset.estilo = ['bordo', 'meianoite', 'ardosia', 'grafite', 'oceano'].indexOf(c.estilo) >= 0 ? c.estilo : 'bordo';
+        r.dataset.estilo = ['dipaula', 'bordo', 'meianoite', 'ardosia', 'grafite', 'oceano'].indexOf(c.estilo) >= 0 ? c.estilo : 'dipaula';
         var z = (c.escala >= 80 && c.escala <= 150) ? Math.round(c.escala) / 100 : 1;
         r.style.zoom = z;
         r.style.setProperty('--zoom', z);

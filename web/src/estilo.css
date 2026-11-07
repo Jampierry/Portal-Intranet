@@ -44,6 +44,9 @@
 }
 
 /* ===== Estilos: cada um define fundo, cartão, texto, menu, cor de destaque e texto sobre ela (a cor de destaque é do estilo) ===== */
+/* Di Paula — cores das telas de referência (docs/origem-manus/design): menu carvão, fundo creme, ameixa como destaque, coral nos botões de chamada */
+:root[data-tema=claro][data-estilo=dipaula] { --fundo: #f7f3f1; --card: #fffdfc; --texto: #1d1a24; --menu: #2b2a2d; --menu-texto: #f6f1f3; --menu-suave: #c2b9be; --acento-padrao: #6e3a58; --sobre-acento: #ffffff; --coral: #cf4a39; --sobre-coral: #ffffff; }
+:root[data-tema=escuro][data-estilo=dipaula] { --fundo: #1f1b1f; --card: #2a252b; --texto: #f0eaed; --menu: #171417; --menu-texto: #f3edf0; --menu-suave: #bfb3ba; --acento-padrao: #8d4f70; --sobre-acento: #ffffff; --coral: #e8665a; --sobre-coral: #1a1215; }
 /* Bordô */
 :root[data-tema=claro][data-estilo=bordo] { --fundo: #ece5e8; --card: #f6f1f3; --texto: #231a20; --menu: #2e1a28; --menu-texto: #f4ecf0; --menu-suave: #cdb9c4; --acento-padrao: #d9aec6; --sobre-acento: #3a1a30; --coral: #d64a33; }
 :root[data-tema=escuro][data-estilo=bordo] { --fundo: #1d181c; --card: #28212a; --texto: #efe8ec; --menu: #170f16; --menu-texto: #f1e8ee; --menu-suave: #c4b0bd; --acento-padrao: #7d5469; --sobre-acento: #ffffff; --coral: #e8654f; }
