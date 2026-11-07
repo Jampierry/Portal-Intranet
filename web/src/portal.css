@@ -574,3 +574,8 @@ span.canal { color: var(--suave); }
   .pessoas .pessoa:nth-child(3) { display: none; }
   .pessoa .area { margin: 0; }
 }
+
+/* Rodapé mais estreito e colado ao conteúdo (mesmo respiro do topo) */
+.rodape-portal { margin-top: -6px; padding: 6px 0 0; font-size: 11px; line-height: 1.3; gap: 6px; }
+.conteudo { padding-bottom: 14px; }
+@media (min-width: 1181px) { .conteudo { padding-bottom: 14px; } }
