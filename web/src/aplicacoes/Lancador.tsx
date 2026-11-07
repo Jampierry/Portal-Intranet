@@ -61,7 +61,6 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
                 );
               })}
             </ul>
-            <small className="suave">No computador, abrem em nova aba. Favoritos ficam salvos só neste navegador.</small>
           </div>
         )}
       </aside>

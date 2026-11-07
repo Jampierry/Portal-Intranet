@@ -16,6 +16,13 @@ interface Saude { ok: boolean; versao: string; modulos: string[] }
 const CHAVE_FAV = 'portal.favoritos';
 const ABAS: [Tela | 'menu', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['aplicacoes', 'Aplicações', 'aplicacoes'], ['menu', 'Menu', 'menu']];
 
+// Avisos de cada tela, mostrados na barra superior (barra universal) em vez de dentro da página.
+const AVISOS: Record<Tela, string> = {
+  inicio: 'Conteúdo de demonstração: nomes e histórias fictícios. No computador, as aplicações web abrem em nova aba.',
+  comunicados: 'Conteúdo de demonstração: não representa comunicados oficiais.',
+  aplicacoes: 'No computador, as aplicações abrem em nova aba; no celular, use Voltar do navegador. Favoritos ficam salvos só neste navegador.',
+  documentos: 'Catálogo demonstrativo: nenhum arquivo está anexado e não há download nesta versão.',
+};
 const TELAS: Tela[] = ['inicio', 'comunicados', 'aplicacoes', 'documentos'];
 const telaDoEndereco = (): Tela => { const h = location.hash.slice(1) as Tela; return TELAS.includes(h) ? h : 'inicio'; };
 
@@ -95,26 +102,27 @@ export function App() {
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        perfil={perfil} abrirPerfil={() => { setGaveta(false); setPerfilAberto(true); }} apps={favs} />
+        apps={favs} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
         <header className="topo">
+          <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
+          <p className="aviso-universal" role="status"><Icone nome="info" tamanho={14} /><span>{AVISOS[tela]}</span></p>
+          <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <div className="busca-topo">
-            <Icone nome="busca" tamanho={18} />
+            <Icone nome="busca" tamanho={14} />
             <input type="search" placeholder="Buscar no portal" aria-label="Buscar no portal" value={busca} onChange={(e) => buscar(e.target.value)} />
-            <kbd className="selo-enter" aria-hidden="true">ENTER</kbd>
           </div>
-          <span className="versao" title="Estado da API"><i aria-hidden="true" />Online · v{saude?.versao ?? '…'}</span>
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} ir={() => irPara('comunicados')} />
-          <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Meu perfil" title={perfil.nome}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={34} /></button>
+          <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Meu perfil" title={`${perfil.nome} — meu perfil`}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={28} /></button>
         </header>
 
         <div className="meio">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
-            {tela === 'inicio' && <Inicio irPara={irPara} perfil={perfil} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
+            {tela === 'inicio' && <Inicio irPara={irPara} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
             {tela === 'comunicados' && <Comunicados busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}

@@ -66,7 +66,6 @@ export function Destaques() {
           </div>
         </>
       )}
-      <small className="suave nota">Reconhecimento demonstrativo — nomes e histórias fictícios.</small>
     </section>
   );
 }

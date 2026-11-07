@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icone, IconeSistema } from './icones';
-import { Avatar, type Perfil } from './perfil';
 import { LinkApp } from './aplicacoes/LinkApp';
 import type { Aplicacao } from './dados';
 
@@ -15,7 +14,7 @@ const ITENS: Item[] = [
 
 interface Props {
   tela: Tela; irPara: (t: Tela) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
-  perfil: Perfil; abrirPerfil: () => void; apps: Aplicacao[];
+  apps: Aplicacao[];
 }
 
 /** Submenu flutuante do menu recolhido (vem do PREMIA): abre ao passar o mouse, fecha com Esc, clique fora ou uma pequena espera. */
@@ -42,13 +41,13 @@ function Flutuante({ anc, titulo, classe = '', aoEntrar, aoSair, fechar, childre
 /** Menu lateral esquerdo: marca, navegação, aplicações web favoritas e cartão do usuário. */
 export function Menu(p: Props) {
   const mini = p.recolhido;
-  const [aberto, setAberto] = useState<{ tipo: 'conta' | 'apps'; el: HTMLElement } | null>(null);
+  const [aberto, setAberto] = useState<{ tipo: 'apps'; el: HTMLElement } | null>(null);
   const espera = useRef<number>(0);
   const comMouse = () => matchMedia('(hover:hover) and (pointer:fine)').matches;
   const cancela = () => clearTimeout(espera.current);
   const agenda = () => { cancela(); espera.current = window.setTimeout(() => setAberto(null), 300); };
   useEffect(() => { setAberto(null); }, [p.tela, mini]);
-  const abrir = (tipo: 'conta' | 'apps') => (e: React.MouseEvent<HTMLElement>) => { if (comMouse()) { cancela(); setAberto({ tipo, el: e.currentTarget }); } };
+  const abrir = (tipo: 'apps') => (e: React.MouseEvent<HTMLElement>) => { if (comMouse()) { cancela(); setAberto({ tipo, el: e.currentTarget }); } };
 
   const listaApps = (
     p.apps.length === 0
@@ -90,31 +89,10 @@ export function Menu(p: Props) {
         )}
       </nav>
 
-      <div className="sbfoot">
-        {mini ? (
-          <button className="nitem nsec" title={p.perfil.nome} aria-label={`Conta: ${p.perfil.nome}`} aria-haspopup="menu" aria-expanded={aberto?.tipo === 'conta'}
-            onMouseEnter={abrir('conta')} onMouseLeave={agenda} onClick={(e) => { const el = e.currentTarget; setAberto(aberto?.tipo === 'conta' ? null : { tipo: 'conta', el }); }}>
-            <Avatar nome={p.perfil.nome} avatar={p.perfil.avatar} tamanho={28} />
-          </button>
-        ) : (
-          <>
-            <span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span>
-            <button className="ucard" onClick={p.abrirPerfil} title="Meu perfil">
-              <Avatar nome={p.perfil.nome} avatar={p.perfil.avatar} tamanho={34} />
-              <span className="lbl"><b>{p.perfil.nome}</b><span className="chip-perfil">Demonstração</span></span>
-            </button>
-          </>
-        )}
-      </div>
+      {!mini && <div className="sbfoot"><span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span></div>}
 
       {aberto?.tipo === 'apps' && mini && (
         <Flutuante anc={aberto.el} titulo="Aplicações web" aoEntrar={cancela} aoSair={agenda} fechar={() => setAberto(null)}>{listaApps}</Flutuante>
-      )}
-      {aberto?.tipo === 'conta' && mini && (
-        <Flutuante anc={aberto.el} classe="nconta" aoEntrar={cancela} aoSair={agenda} fechar={() => setAberto(null)}>
-          <div className="ucard"><Avatar nome={p.perfil.nome} avatar={p.perfil.avatar} tamanho={36} /><span className="lbl"><b>{p.perfil.nome}</b><span className="chip-perfil">Demonstração</span></span></div>
-          <button className="nitem" role="menuitem" onClick={() => { setAberto(null); p.abrirPerfil(); }}><Icone nome="perfil" /><span className="lbl">Meu perfil</span></button>
-        </Flutuante>
       )}
     </aside>
   );

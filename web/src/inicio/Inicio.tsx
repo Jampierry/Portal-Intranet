@@ -3,21 +3,17 @@ import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
 import { ListaComunicados } from '../comunicados/Comunicados';
 import { LinkApp } from '../aplicacoes/LinkApp';
-import { saudacao, type Perfil } from '../perfil';
 import type { Aplicacao, Comunicado } from '../dados';
 import type { Tela } from '../Menu';
 
 /** Início: saudação, faixa de novidades, pessoas em destaque, comunicados e (à direita) aplicações favoritas. */
-export function Inicio({ irPara, perfil, apps, favoritos, comunicados }: {
-  irPara: (t: Tela) => void; perfil: Perfil; apps: Aplicacao[] | null; favoritos: string[]; comunicados: Comunicado[] | null;
+export function Inicio({ irPara, apps, favoritos, comunicados }: {
+  irPara: (t: Tela) => void; apps: Aplicacao[] | null; favoritos: string[]; comunicados: Comunicado[] | null;
 }) {
   const favs = (apps ?? []).filter((a) => favoritos.includes(a.slug));
   const lista = favs.length ? favs : (apps ?? []).slice(0, 3);
-  const primeiro = perfil.nome.split(' ')[0];
   return (
     <>
-      <div className="saudacao"><h1>{saudacao()}, {primeiro}</h1><p>Juntos, movemos o que inspira.</p></div>
-
       <section className="hero" aria-label="Novidades da semana">
         <div className="hero-texto">
           <small className="eyebrow">DI PAULA</small>

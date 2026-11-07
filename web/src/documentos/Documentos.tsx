@@ -13,7 +13,7 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
   const limpar = () => { limparBusca(); setCategoria('Todas'); };
   return (
     <>
-      <Cabecalho titulo="Documentos" sub="Catálogo demonstrativo: títulos e dados fictícios. Nenhum arquivo está anexado e não há download nesta versão." />
+      <Cabecalho titulo="Documentos" sub="Procedimentos, políticas e materiais da equipe." />
       <div className="barra">
         <div className="pilulas filtros" role="group" aria-label="Filtrar por categoria">
           {categorias.map((c) => <button key={c} aria-pressed={categoria === c} onClick={() => setCategoria(c)}>{c}</button>)}
