@@ -1,4 +1,5 @@
 import { Icone } from '../icones';
+import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
 import { ListaComunicados } from '../comunicados/Comunicados';
@@ -67,7 +68,7 @@ export function Inicio({ irPara, comunicados }: {
               {recentes.map((d) => (
                 <li key={d.slug}>
                   <a className="mini-item" href="#documentos">
-                    <span className="mini-ico"><Icone nome="documentos" tamanho={18} /></span>
+                    <span className="mini-ico"><Icone nome={iconePorTexto(`${d.categoria} ${d.titulo}`, 'documentos')} tamanho={18} /></span>
                     <span className="texto">
                       <b>{d.titulo}</b>
                       <small>{[d.versao && `Versão ${d.versao}`, d.responsavel, d.revisado_em && `revisado em ${dataCurta(d.revisado_em)}`].filter(Boolean).join(' · ') || d.categoria}</small>

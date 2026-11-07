@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
+import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Cabecalho, Estado } from '../Cabecalho';
 import { dataCurta, useLista, type Comunicado } from '../dados';
 
-const ICONE_CAT: Record<string, string> = { Pessoas: 'pessoas', Produção: 'fabrica', Qualidade: 'qualidade', Coleções: 'colecoes' };
-const iconeDe = (c: string) => ICONE_CAT[c] ?? 'comunicados';
+const iconeDe = (c: { categoria: string; titulo: string }) => iconePorTexto(`${c.categoria} ${c.titulo}`, 'comunicados');
 
 /** Cartão de comunicado: capa, categoria, título, resumo, data e seta. */
 export function CartaoComunicado({ c }: { c: Comunicado }) {
   return (
     <article className="cartao-com">
-      <Capa semente={c.slug} icone={iconeDe(c.categoria)} foto={c.imagem} classe="capa-card">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
+      <Capa semente={c.slug} icone={iconeDe(c)} foto={c.imagem} classe="capa-card">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
       <div className="cartao-com-corpo">
         <small className="cat">{c.categoria}</small>
         <h3><a className="cobre-cartao" href={`#comunicados/${encodeURIComponent(c.slug)}`}>{c.titulo}</a></h3>
@@ -43,7 +43,7 @@ function ComunicadoDetalhe({ slug }: { slug: string }) {
     <>
       {voltar}
       <article className="detalhe-com">
-        <Capa semente={c.slug} icone={iconeDe(c.categoria)} foto={c.imagem} classe="capa-detalhe">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
+        <Capa semente={c.slug} icone={iconeDe(c)} foto={c.imagem} classe="capa-detalhe">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
         <div className="detalhe-corpo">
           <small className="cat">{c.categoria}</small>
           <h1>{c.titulo}</h1>
@@ -96,7 +96,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
                 <p>{destaque.resumo}</p>
                 <a className="btn btn-pri" href={`#comunicados/${encodeURIComponent(destaque.slug)}`}>Saiba mais <Icone nome="seta" tamanho={16} /></a>
               </div>
-              <Capa semente={destaque.slug} icone={iconeDe(destaque.categoria)} foto={destaque.imagem} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
+              <Capa semente={destaque.slug} icone={iconeDe(destaque)} foto={destaque.imagem} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
             </section>
           )}
           {resto.length > 0 && (
@@ -111,7 +111,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
             <h2>Temas</h2>
             <ul className="temas">
               {categorias.map((c) => (
-                <li key={c}><button aria-pressed={categoria === c} onClick={() => setCategoria(c)}><Icone nome={c === 'Todas' ? 'comunicados' : iconeDe(c)} tamanho={22} /><span>{c}</span><Icone nome="dir" tamanho={16} /></button></li>
+                <li key={c}><button aria-pressed={categoria === c} onClick={() => setCategoria(c)}><Icone nome={c === 'Todas' ? 'comunicados' : iconePorTexto(c, 'comunicados')} tamanho={22} /><span>{c}</span><Icone nome="dir" tamanho={16} /></button></li>
               ))}
             </ul>
           </section>

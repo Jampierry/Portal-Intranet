@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
+import { iconePorTexto } from '../iconesAuto';
 import { Cabecalho, Estado } from '../Cabecalho';
 import { LinkApp } from '../aplicacoes/LinkApp';
 import { dataCurta, useLista, type Documento } from '../dados';
@@ -25,7 +26,7 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
       <div className="grade-docs">
         {lista.map((d) => (
           <article className="cartao-doc" key={d.slug}>
-            <span className="icone"><Icone nome="documentos" tamanho={22} /></span>
+            <span className="icone"><Icone nome={iconePorTexto(`${d.categoria} ${d.titulo}`, 'documentos')} tamanho={22} /></span>
             <div className="texto"><h3>{d.titulo}</h3><p>{d.resumo}</p><small>{d.categoria} · {d.formato}{d.link_oficial ? '' : ' · sem link oficial'}</small>
               {(d.versao || d.responsavel) && <dl className="meta-doc">{d.versao && <div><dt>Versão</dt><dd>{d.versao}</dd></div>}{d.responsavel && <div><dt>Responsável</dt><dd>{d.responsavel}</dd></div>}{d.revisado_em && <div><dt>Revisado em</dt><dd>{dataCurta(d.revisado_em)}</dd></div>}</dl>}
               {d.link_oficial && <LinkApp url={d.link_oficial} className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></LinkApp>}</div>
