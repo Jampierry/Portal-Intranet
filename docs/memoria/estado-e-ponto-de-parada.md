@@ -1,14 +1,34 @@
 # Estado e ponto de parada
 
-**Atualizado em:** 2026-11-06 (redesign visual)
+**Atualizado em:** 2026-11-07 (tudo enviado ao GitHub; `main` = `357ac4b`)
 
-- Projeto na stack do PREMIA: `web/` (Vite + React + temas), `servidor/` (Fastify + SQLite), `infra/migracoes` (001 base, 002 portal), seed fictício. Tudo enviado ao GitHub (`main`, commit `aa0f845` + este).
-- Telas (http://localhost:5174, API em 3100): Início (comunicados recentes + carrossel), Comunicados, Aplicações, Documentos, lançador de apps à direita, painel de tema/estilo/escala.
-- `npm run typecheck`, `npm run build` e `npm test` passam (contraste dos temas + regra de links).
-- **Não verificado visualmente**: as telas nos 5 estilos × claro/escuro e na largura de celular.
-- Pasta original `Plano de implantação/` fica só no disco (fora do Git).
-- Usuário pediu modo automático (sem aprovações) e envio ao GitHub ao terminar.
+## Onde estamos
+- Portal Intranet Di Paula na stack do PREMIA: `web/` (Vite + React), `servidor/` (Fastify + SQLite), `infra/migracoes` (001 base, 002 portal, 003 acessos), `modulos/<nome>/{api,tests,data}`.
+- **Login local** criado pelo admin master (perfis `admin`, `editor`, `consulta`), portal fechado, auditoria, bloqueio por tentativas, troca obrigatória da senha provisória.
+- **Telas:** Início, Comunicados (lista + detalhe), Documentos, Pessoas (contatos por área), Ajuda (FAQ) e **Gestão** (abas: Comunicados, Documentos, Pessoas em destaque, Contatos, Aplicativos, Usuários, Auditoria). Aplicativos ficam na barra da direita e em Gestão › Aplicativos (sem item no menu esquerdo).
+- **Visual:** estilo de tema **Di Paula** (padrão) + 5 estilos antigos, claro/escuro, modo compacto, barra superior universal com aviso da tela, Capa em cor no lugar de fotos.
+- **Verificação:** `npm run typecheck` (web + servidor), `npm run build` e `npm test` (41 testes: API com banco em memória, contraste dos temas, regra de links) passam.
 
+## Como retomar
+1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
+2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.
+3. Produção: `npm run admin:criar -- <login> "<Nome>"`, `NODE_ENV=production` e `ORIGENS_PERMITIDAS=<endereço público>`. Nunca usar as senhas de exemplo.
+
+## Atenção
+- Dados 100% fictícios (seed); canais de contato usam domínio `.invalid`. Trocar pelos reais pela Gestão antes de usar.
+- Falta conferir no celular: Gestão (tabelas largas), Pessoas e Ajuda; e abrir por screenshot os formulários de cada aba da Gestão (o fluxo está coberto pelos testes de API, não por teste de interface).
+- Sem fotos reais: `Capa.tsx` aceita `foto` quando houver imagens aprovadas.
+- Detalhe do Windows: usar a ferramenta de escrita (ou script Python em arquivo) para editar arquivos grandes; heredocs com aspas quebram no shell.
+
+## Próximos passos (ideias, em ordem sugerida)
+1. Conferir a Gestão no celular e ajustar tabelas (rolagem horizontal/cartões).
+2. Recuperação de senha por e-mail (exige guardar e-mail) ou SSO, se a TI oferecer.
+3. Notificações de novos comunicados e confirmação de leitura de comunicados obrigatórios.
+4. Anexos de documentos (com limite de tamanho e antivírus) ou manter só link oficial.
+5. Teste de interface automático (Playwright) nas telas principais e nos 6 estilos.
+6. Ver também `docs/melhorias-futuras.md` e `docs/roteiro-modulos.md`.
+
+# Histórico (do mais antigo ao mais novo)
 ## Redesign visual (2026-11-06)
 - Layout das imagens de `docs/origem-manus/design/` aplicado sobre os temas existentes (nenhuma cor nova): menu escuro com marca e "Aplicações web", topo claro com busca/tema/sino/avatar, Início (saudação, faixa "Novidades da semana", pessoas em destaque, comunicados, aplicações favoritas), Comunicados (destaque + grade + painel "Temas"), Aplicações e Documentos em cartões, abas fixas no celular.
 - Trazido do PREMIA: avatares (galeria de 16 + iniciais) e janela "Meu perfil", cartão de usuário no menu, submenus flutuantes com hover no menu recolhido, sino com avisos (comunicados urgentes), pular para o conteúdo.
@@ -44,11 +64,3 @@
 ## Aplicativos (2026-11-07)
 - Saíram do menu esquerdo: a seção "Aplicações web" e o item "Aplicações". Os aplicativos agora ficam na **barra da direita** (favoritos e todos) e em **Gestão › Aplicativos** (catálogo para editor/admin; cadastro só admin). No celular, a aba "Aplicativos" do rodapé abre a barra. Endereço antigo `#aplicacoes` volta ao Início.
 
-## Como retomar
-1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev`.
-2. Conferir as telas e os estilos no navegador.
-
-## Próximos passos
-- SSO se a TI oferecer; recuperação de senha por e-mail; notificações/confirmação de leitura.
-- Comunicados: gestão (rascunho/publicado/arquivado) depois do login. Documentos: anexos/download.
-- Ver `docs/roteiro-modulos.md`.
