@@ -32,6 +32,7 @@ test('leitor não gerencia; validações de link, imagem e datas', async () => {
   assert.equal((await post({ imagem: '/api/imagens/aaaaaaaaaaaaaaaaaaaaaaaa.png' })).statusCode, 201);
   assert.equal((await post({ exibir_de: dia(3), exibir_ate: dia(1) })).statusCode, 400);
   assert.equal((await post({ ordem: 0 })).statusCode, 400);
+  assert.equal((await post({ posicao: 'rodape' })).statusCode, 400);
 });
 
 test('editar e apagar', async () => {
@@ -42,4 +43,15 @@ test('editar e apagar', async () => {
   assert.equal(up.json<{ titulo: string }>().titulo, 'Novo título');
   assert.equal((await app.inject({ method: 'DELETE', url: `/api/gestao/banners/${b.id}`, headers: ed })).statusCode, 200);
   assert.equal((await app.inject({ method: 'DELETE', url: `/api/gestao/banners/${b.id}`, headers: ed })).statusCode, 404);
+});
+
+test('cada banner vai para o carrossel escolhido e a lista pública traz a posição', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita');
+  const post = (p: object) => app.inject({ method: 'POST', url: '/api/gestao/banners', headers: ed, payload: novo(p) });
+  await post({ titulo: 'Grande' });
+  await post({ titulo: 'Menor 1', posicao: 'lateral1' });
+  await post({ titulo: 'Menor 2', posicao: 'lateral2' });
+  const lista = (await app.inject({ url: '/api/banners', headers: await entrar(app, 'le') })).json<{ titulo: string; posicao: string }[]>();
+  assert.deepEqual(Object.fromEntries(lista.map((b) => [b.titulo, b.posicao])), { Grande: 'principal', 'Menor 1': 'lateral1', 'Menor 2': 'lateral2' });
 });

@@ -641,17 +641,6 @@ span.canal { color: var(--suave); }
   .inicio-principal > .linha-mvv { flex: 1 1 auto; }
   .linha-mvv > .cartao-sec { flex: none; }
 }
-@media (min-width: 1181px) and (max-height: 820px) {
-  .mvv-bloco p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px; }
-  .mvv-valores { padding-top: 8px; }
-  .mvv-valores ul { flex-wrap: nowrap; overflow: hidden; }
-  .mvv-valores li { white-space: nowrap; padding: 4px 10px; }
-  .destaques.compacto .sec-topo { margin-bottom: 6px; }
-}
-@media (min-width: 1181px) and (max-height: 700px) {
-  .mvv-bloco p { -webkit-line-clamp: 2; }
-  .mvv-valores h3 { display: none; }
-}
 
 /* ===== Colaborador destaque: 3 por vez, páginas deslizando (carrossel animado) ===== */
 .pessoas-janela { overflow: hidden; min-width: 0; }
@@ -669,21 +658,26 @@ span.canal { color: var(--suave); }
 .destaques.compacto .pessoa p { display: none; }
 @media (max-width: 1180px) { .linha-mvv { grid-template-columns: minmax(0, 1fr); } }
 
-/* Missão, visão e valores: nada é cortado; se o texto for grande, a área rola por dentro (barra fina) */
-@media (min-width: 1181px) {
-  .mvv { contain: size; }
-  .mvv-rolagem { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--texto) 28%, transparent) transparent; }
-  .mvv-rolagem::-webkit-scrollbar { width: 6px; }
-  .mvv-rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--texto) 28%, transparent); border-radius: 6px; }
-  .mvv-bloco p { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 13px; }
-  .mvv-valores { margin-top: 14px; padding-top: 0; }
-  .mvv-valores h3 { display: block; }
-  .mvv-valores ul { flex-wrap: wrap; overflow: visible; }
-  .mvv-valores li { white-space: normal; padding: 5px 12px; }
-}
 
-.mvv.em-abas .mvv-corpo { grid-template-columns: minmax(0, 1fr); }
-.mvv.em-abas .mvv-valores { margin-top: 0; }
-.mvv.em-abas .sec-topo { gap: 8px; }
-.mvv.em-abas .sec-topo h2 { font-size: 16px; white-space: nowrap; }
-.mvv.em-abas .mvv-bloco h3, .mvv.em-abas .mvv-valores h3 { display: none; }
+/* Missão, visão e valores: mostra tudo; em janela mais estreita, missão e visão ficam uma abaixo da outra */
+@media (min-width: 1181px) and (max-width: 1500px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+
+/* ===== Topo do Início: carrossel grande (esquerda) + até 2 menores (direita), girando juntos ===== */
+.novidades-grade { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--espaco); height: 210px; }
+.novidades-grade.so-principal { grid-template-columns: minmax(0, 1fr); }
+.novidades-grade > .hero, .nov-laterais > .hero, .nov-slot > .hero { height: 100%; min-height: 0; }
+.nov-slot { min-width: 0; }
+.nov-laterais { display: grid; gap: var(--espaco); min-width: 0; min-height: 0; }
+.hero.novidades.menor .slide-texto { padding: 0 40px; max-width: none; gap: 4px; }
+.hero.novidades.menor .slide-texto h2 { font-size: clamp(14px, 2.4vh, 20px); line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hero.novidades.menor .slide-texto p, .hero.novidades.menor .slide-texto .eyebrow { display: none; }
+.hero.novidades.menor .slide-texto .btn { padding: 4px 10px; font-size: 12px; min-height: 0; }
+.hero.novidades.menor .nov-seta { width: 24px; height: 24px; }
+.hero.novidades.menor .nov-seta.esq { left: 6px; } .hero.novidades.menor .nov-seta.dir { right: 6px; }
+.hero.novidades.menor .nov-pontos { left: 40px; bottom: 6px; gap: 5px; }
+.hero.novidades.menor .nov-pontos button { width: 6px; height: 6px; } .hero.novidades.menor .nov-pontos button[aria-current=true] { width: 14px; }
+@media (min-width: 1181px) { .novidades-grade { height: clamp(150px, 27vh, 253px); } }
+@media (min-width: 1181px) and (max-height: 760px) { .novidades-grade { height: clamp(130px, 23vh, 253px); } }
+@media (min-width: 1181px) and (max-height: 700px) { .hero.novidades.menor .slide-texto .btn { display: none; } }
+@media (max-width: 1180px) { .novidades-grade { height: 210px; } .hero.novidades { height: 100%; } }
+@media (max-width: 700px) { .novidades-grade { grid-template-columns: minmax(0, 1fr); height: 190px; } .nov-laterais { display: none; } }

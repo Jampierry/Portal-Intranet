@@ -24,4 +24,4 @@ export function dataCurta(iso: string | null): string {
   return `${d} ${MESES[Number(m) - 1] ?? ''} ${a}`;
 }
 
-export interface Banner { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null }
+export interface Banner { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null; posicao: 'principal' | 'lateral1' | 'lateral2' }

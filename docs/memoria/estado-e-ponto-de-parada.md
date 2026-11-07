@@ -36,6 +36,11 @@
 - **Colaborador Destaque** (singular: é o título do reconhecimento e o bloco mostra 3 pessoas por vez, em páginas que deslizam com animação, giro automático de 7,2 s, setas, pontos e pausa): bloco compacto alinhado à direita, ao lado de missão/visão/valores. Renomeado no Início, Publicar e Ajuda.
 - Início continua cabendo na altura da janela (testado de 1366×650 a 1920×950). Testes: 52.
 
+## Topo do Início com 3 carrosséis (2026-11-07)
+- Migração 008: `banners.posicao` (`principal` = grande à esquerda; `lateral1` e `lateral2` = os dois menores à direita). Em Publicar › Banners cada banner escolhe o carrossel; a ordem vale dentro dele. Giram juntos (um só relógio de 6,5 s); setas/pontos deslocam só aquele carrossel; um botão de pausa. Carrossel grande vazio = faixa padrão; sem laterais, o grande ocupa tudo; no celular só o grande aparece.
+- Missão, visão e valores voltou a mostrar tudo junto (sem abas nem rolagem interna): se houver muitos valores o bloco cresce e a página rola. Abaixo de 1500 px de largura, missão e visão ficam uma sob a outra.
+- Testes: 53.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev` (site http://localhost:5174, API 3100).
 2. Entrar com `admin / admin123` (editor: `editor / editor123`; consulta: `leitor / leitor123`) — só desenvolvimento, criados pelo seed.

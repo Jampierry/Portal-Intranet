@@ -2,10 +2,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigir } from '../../acessos/api/guard.ts';
-import { corpoObjeto, dataIso, ErroValidacao, inteiro, texto } from '../../../servidor/src/validar.ts';
+import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 const VISIVEL = "ativo = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND (exibir_ate IS NULL OR exibir_ate >= date('now','localtime'))";
-const CAMPOS = 'id, titulo, subtitulo, imagem, botao_texto, link, ordem, ativo, exibir_de, exibir_ate';
+const POSICOES = ['principal', 'lateral1', 'lateral2'] as const;
+const CAMPOS = 'id, titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, ativo, exibir_de, exibir_ate';
 
 /** Imagem: guardada pelo portal (ou imagem de demonstração em /demo). Vazio = fundo em cor do tema. */
 const IMAGEM_OK = /^\/(api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)|demo\/[a-z0-9._-]+)$/i;
@@ -31,6 +32,7 @@ function ler(c: Record<string, unknown>) {
     titulo: String(texto(c, 'titulo', 'Título', { min: 2, max: 80 })),
     subtitulo: texto(c, 'subtitulo', 'Subtítulo', { max: 160, opcional: true }),
     imagem, botao_texto: link ? botao : null, link, ordem,
+    posicao: escolha(c, 'posicao', 'Carrossel', POSICOES, 'principal'),
     ativo: c.ativo === undefined ? 1 : c.ativo ? 1 : 0,
     exibir_de, exibir_ate,
   };
@@ -38,7 +40,7 @@ function ler(c: Record<string, unknown>) {
 
 export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/banners', async () =>
-    db.prepare(`SELECT id, titulo, subtitulo, imagem, botao_texto, link FROM banners WHERE ${VISIVEL} ORDER BY ordem, id`).all(),
+    db.prepare(`SELECT id, titulo, subtitulo, imagem, botao_texto, link, posicao FROM banners WHERE ${VISIVEL} ORDER BY posicao, ordem, id`).all(),
   );
 
   const gestao = { preHandler: exigir('admin', 'editor') };
@@ -48,8 +50,8 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     const d = ler(corpoObjeto(req.body));
     const agora = new Date().toISOString();
     const id = Number(db.prepare(
-      'INSERT INTO banners (titulo, subtitulo, imagem, botao_texto, link, ordem, ativo, exibir_de, exibir_ate, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    ).run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, agora, agora).lastInsertRowid);
+      'INSERT INTO banners (titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, ativo, exibir_de, exibir_ate, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.posicao, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, agora, agora).lastInsertRowid);
     auditar(db, req.usuario!.id, 'banner_criado', { id, titulo: d.titulo });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id));
   });
@@ -58,8 +60,8 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     const id = inteiro(req.params.id, 'Banner');
     if (!db.prepare('SELECT 1 FROM banners WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Banner não encontrado.' });
     const d = ler(corpoObjeto(req.body));
-    db.prepare('UPDATE banners SET titulo = ?, subtitulo = ?, imagem = ?, botao_texto = ?, link = ?, ordem = ?, ativo = ?, exibir_de = ?, exibir_ate = ?, atualizado_em = ? WHERE id = ?')
-      .run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, new Date().toISOString(), id);
+    db.prepare('UPDATE banners SET titulo = ?, subtitulo = ?, imagem = ?, botao_texto = ?, link = ?, posicao = ?, ordem = ?, ativo = ?, exibir_de = ?, exibir_ate = ?, atualizado_em = ? WHERE id = ?')
+      .run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.posicao, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'banner_alterado', { id, ativo: d.ativo });
     return db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id);
   });

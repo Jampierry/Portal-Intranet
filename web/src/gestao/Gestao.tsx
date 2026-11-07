@@ -48,17 +48,20 @@ function Comunicados() {
   );
 }
 
-interface Ban { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null; ordem: number; ativo: number; exibir_de: string | null; exibir_ate: string | null }
+interface Ban { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null; posicao: string; ordem: number; ativo: number; exibir_de: string | null; exibir_ate: string | null }
+const POSICOES_BANNER: [string, string][] = [['principal', 'Carrossel grande (esquerda)'], ['lateral1', 'Carrossel menor 1 (direita, em cima)'], ['lateral2', 'Carrossel menor 2 (direita, embaixo)']];
+const NOME_POSICAO: Record<string, string> = { principal: 'Grande', lateral1: 'Menor 1', lateral2: 'Menor 2' };
 const ORDENS: [string, string][] = Array.from({ length: 9 }, (_, i) => [String(i + 1), String(i + 1)]);
 /** Banners do carrossel "Novidades da semana" do Início: imagem, texto, botão e ordem. Sem banner ativo, o Início mostra a faixa padrão. */
 function Banners() {
   return (
     <Crud<Ban> base="/api/gestao/banners" rotuloItem="banner" idDe={(r) => r.id}
-      introducao="Os banners ativos giram no topo do Início, na ordem indicada. Sem nenhum banner ativo, aparece a faixa padrão."
+      introducao="O topo do Início tem 3 carrosséis que giram juntos: um grande (esquerda) e dois menores (direita). Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel grande sem banner mostra a faixa padrão."
       campos={[
+        { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER },
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
-        { chave: 'subtitulo', rotulo: 'Subtítulo', max: 160 },
-        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo, ideal 1600 × 400 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
+        { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel grande)', max: 160 },
+        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo: grande ≈ 1400 × 400 px; menores ≈ 700 × 200 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
         { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
         { chave: 'link', rotulo: 'Link do botão', max: 300, dica: 'Página do portal (ex.: #comunicados) ou endereço https://…', metade: true },
         { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
@@ -67,13 +70,14 @@ function Banners() {
         { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
       ]}
       colunas={[
+        { titulo: 'Carrossel', ver: (r) => NOME_POSICAO[r.posicao] ?? r.posicao },
         { titulo: 'Ordem', ver: (r) => r.ordem },
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Imagem', ver: (r) => (r.imagem ? 'Sim' : 'Cor do tema') },
         { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
       ]}
-      valoresNovos={{ titulo: '', subtitulo: '', imagem: '', botao_texto: '', link: '', ordem: '1', ativo: true, exibir_de: '', exibir_ate: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, subtitulo: s(r.subtitulo), imagem: s(r.imagem), botao_texto: s(r.botao_texto), link: s(r.link), ordem: String(r.ordem), ativo: !!r.ativo, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
+      valoresNovos={{ posicao: 'principal', titulo: '', subtitulo: '', imagem: '', botao_texto: '', link: '', ordem: '1', ativo: true, exibir_de: '', exibir_ate: '' }}
+      paraForm={(r) => ({ posicao: r.posicao, titulo: r.titulo, subtitulo: s(r.subtitulo), imagem: s(r.imagem), botao_texto: s(r.botao_texto), link: s(r.link), ordem: String(r.ordem), ativo: !!r.ativo, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
     />
   );
 }

@@ -17,11 +17,7 @@ export function Inicio({ irPara, comunicados }: {
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
   // Documentos mais recentemente revisados (os sem data de revisão ficam por último).
   const recentes = [...(docs ?? [])].sort((a, b) => (b.revisado_em ?? '').localeCompare(a.revisado_em ?? '')).slice(0, 4);
-  return (
-    <>
-      {banners === null && <section className="hero novidades" aria-label="Novidades da semana" />}
-      {banners && banners.length > 0 && <Novidades banners={banners} irPara={irPara} />}
-      {banners && banners.length === 0 && (
+  const heroPadrao = (
       <section className="hero" aria-label="Novidades da semana">
         <div className="hero-texto">
           <small className="eyebrow">DI PAULA</small>
@@ -32,7 +28,12 @@ export function Inicio({ irPara, comunicados }: {
         <Capa semente="hero" icone="colecoes" classe="hero-arte"><Lema linhas={['MODA', 'QUE ACOMPANHA', 'A SUA HISTÓRIA']} /></Capa>
         <div className="hero-marca" aria-hidden="true"><Lema linhas={['QUALIDADE', 'EM CADA', 'MOVIMENTO']} /></div>
       </section>
-      )}
+  );
+  return (
+    <>
+      {banners === null && <section className="hero novidades" aria-label="Novidades da semana" />}
+      {banners && banners.length > 0 && <Novidades banners={banners} irPara={irPara} padrao={heroPadrao} />}
+      {banners && banners.length === 0 && heroPadrao}
 
       <div className="inicio-grade">
         <div className="inicio-principal">

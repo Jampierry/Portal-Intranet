@@ -122,6 +122,14 @@ try {
   insInst.run('missao', 'Vestir o movimento: criar roupas esportivas de qualidade, com pessoas que cuidam de cada detalhe (texto de exemplo).', agora);
   insInst.run('visao', 'Ser referência em moda esportiva, reconhecida pela qualidade e pelo cuidado com as pessoas (texto de exemplo).', agora);
   insInst.run('valores', 'Respeito às pessoas\nQualidade em cada detalhe\nSegurança em primeiro lugar\nTrabalho em equipe\nMelhoria contínua', agora);
+  // Banners dos dois carrosséis menores (só se ainda não houver nenhum).
+  if ((db.prepare("SELECT COUNT(*) n FROM banners WHERE posicao <> 'principal'").get() as { n: number }).n === 0) {
+    const insLat = db.prepare('INSERT INTO banners (titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, ativo, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)');
+    insLat.run('Treinamento de qualidade', null, '/demo/capa-treinamento.svg', 'Inscreva-se', '#comunicados/demo-treinamento-qualidade', 'lateral1', 1, agora, agora);
+    insLat.run('Confraternização de fim de ano', null, '/demo/capa-eventos.svg', 'Saiba mais', '#comunicados/demo-confraternizacao', 'lateral1', 2, agora, agora);
+    insLat.run('Meta do mês: balanço parcial', null, '/demo/capa-resultados.svg', 'Ver balanço', '#comunicados/demo-resultado-meta', 'lateral2', 1, agora, agora);
+    insLat.run('Janela de manutenção do sistema', null, '/demo/capa-ti.svg', 'Ver aviso', '#comunicados/demo-manutencao-sistema', 'lateral2', 2, agora, agora);
+  }
   db.exec('COMMIT');
 } catch (e) {
   db.exec('ROLLBACK');
