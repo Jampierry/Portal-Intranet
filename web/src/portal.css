@@ -225,6 +225,20 @@ button.ucard:hover { background: var(--menu-hover); }
   .lancador { position: sticky; top: 0; align-self: flex-start; height: 100cqh; }
 }
 
+/* ===== Barras de rolagem finas e discretas (todo o sistema) ===== */
+:root { --rolagem: color-mix(in srgb, var(--texto) 22%, transparent); --rolagem-hover: color-mix(in srgb, var(--texto) 42%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--rolagem) transparent; }
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto; scrollbar-color: auto; }
+  .menu nav, .menu nav:hover { scrollbar-width: auto; scrollbar-color: auto; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--rolagem); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--rolagem-hover); }
+  .menu nav::-webkit-scrollbar-thumb { background: transparent; }
+  .menu nav:hover::-webkit-scrollbar-thumb { background: var(--menu-linha); }
+}
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 
