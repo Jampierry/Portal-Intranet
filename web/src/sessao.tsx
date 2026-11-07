@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ErroApi } from './api';
 
 export type PerfilAcesso = 'admin' | 'editor' | 'consulta';
-export interface Usuario { id: number; login: string; nome: string; perfil: PerfilAcesso; trocar_senha: number }
+export interface Usuario { id: number; login: string; nome: string; perfil: PerfilAcesso; trocar_senha: number; permissoes: string[] }
 
 export const ROTULO_PERFIL: Record<PerfilAcesso, string> = { admin: 'Administrador', editor: 'Editor', consulta: 'Consulta' };
-export const podeGerir = (u: Usuario | null) => u?.perfil === 'admin' || u?.perfil === 'editor';
+/** Permissão efetiva do usuário (perfil + ajustes feitos pelo administrador). O servidor confere de novo em cada chamada. */
+export const pode = (u: Usuario | null | undefined, chave: string) => !!u && (u.perfil === 'admin' || (u.permissoes ?? []).includes(chave));
+/** Vê a área Publicar se pode publicar alguma coisa. */
+export const podeGerir = (u: Usuario | null) => !!u && (u.permissoes ?? []).some((p) => p.startsWith('pub.'));
 
 /** Sessão do usuário (cookie httpOnly no servidor). `usuario` é undefined enquanto carrega e null sem login. */
 export function useSessao() {

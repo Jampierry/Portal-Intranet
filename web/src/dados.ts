@@ -7,11 +7,12 @@ export interface Documento { slug: string; titulo: string; categoria: string; re
 export interface Destaque { tipo: 'mes' | 'ano'; rotulo: string; nome: string; area: string; iniciais: string; apresentacao: string; foto?: string | null }
 
 /** Busca uma lista na API; `dados` é null enquanto carrega e `erro` traz a mensagem se falhar. */
-export function useLista<T>(url: string) {
+export function useLista<T>(url: string | null) {
   const [dados, setDados] = useState<T[] | null>(null);
   const [erro, setErro] = useState('');
   const [versao, setVersao] = useState(0);
   useEffect(() => {
+    if (!url) { setDados([]); return; } // sem permissão para esta lista: nem chama o servidor
     api<T[]>(url).then((d) => { setDados(d); setErro(''); }).catch((e: Error) => setErro(e.message));
   }, [url, versao]);
   return { dados, erro, recarregar: () => setVersao((v) => v + 1) };

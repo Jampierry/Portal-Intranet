@@ -1,7 +1,7 @@
 // Banners do carrossel "Novidades da semana" do Início: leitura para todos os logados; gestão por editor e admin.
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 const VISIVEL = "ativo = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND (exibir_ate IS NULL OR exibir_ate >= date('now','localtime'))";
@@ -43,7 +43,7 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     db.prepare(`SELECT id, titulo, subtitulo, imagem, botao_texto, link, posicao FROM banners WHERE ${VISIVEL} ORDER BY posicao, ordem, id`).all(),
   );
 
-  const gestao = { preHandler: exigir('admin', 'editor') };
+  const gestao = { preHandler: exigirPerm('pub.banners') };
   app.get('/api/gestao/banners', gestao, async () => db.prepare(`SELECT ${CAMPOS} FROM banners ORDER BY ordem, id`).all());
 
   app.post('/api/gestao/banners', gestao, async (req, resp) => {

@@ -9,10 +9,10 @@ import { dataCurta, useLista, type Banner, type Comunicado, type Documento } fro
 import type { Tela } from '../Menu';
 
 /** Início: faixa de novidades, missão/visão/valores, colaborador destaque, comunicados e (à direita) avisos importantes e documentos atualizados. */
-export function Inicio({ irPara, comunicados }: {
-  irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null;
+export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos = true }: {
+  irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null; veComunicados?: boolean; veDocumentos?: boolean;
 }) {
-  const { dados: docs } = useLista<Documento>('/api/documentos');
+  const { dados: docs } = useLista<Documento>(veDocumentos ? '/api/documentos' : null);
   const { dados: banners } = useLista<Banner>('/api/banners');
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
   // Documentos mais recentemente revisados (os sem data de revisão ficam por último).
@@ -41,13 +41,13 @@ export function Inicio({ irPara, comunicados }: {
             <MissaoVisaoValores />
             <Destaques compacto />
           </div>
-          <section className="cartao-sec" aria-labelledby="com-rec">
+          {veComunicados && <section className="cartao-sec" aria-labelledby="com-rec">
             <div className="sec-topo">
               <h2 id="com-rec"><Icone nome="comunicados" tamanho={24} /> Comunicados</h2>
               <button className="link-ver" onClick={() => irPara('comunicados')}>Ver todos os comunicados <Icone nome="seta" tamanho={16} /></button>
             </div>
             {comunicados === null ? <p className="vazio">Carregando…</p> : <ListaComunicados itens={comunicados.slice(0, 3)} linha />}
-          </section>
+          </section>}
         </div>
 
         <aside className="inicio-lateral" aria-label="Avisos e documentos">
@@ -68,7 +68,7 @@ export function Inicio({ irPara, comunicados }: {
             </section>
           )}
 
-          <section className="cartao-sec" aria-labelledby="doc-rec">
+          {veDocumentos && <section className="cartao-sec" aria-labelledby="doc-rec">
             <div className="sec-topo">
               <h2 id="doc-rec"><Icone nome="documentos" tamanho={22} /> Documentos recentes</h2>
               <button className="link-ver" onClick={() => irPara('documentos')}>Ver todos <Icone nome="seta" tamanho={15} /></button>
@@ -89,7 +89,7 @@ export function Inicio({ irPara, comunicados }: {
                 </li>
               ))}
             </ul>
-          </section>
+          </section>}
 
         </aside>
       </div>

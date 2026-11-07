@@ -4,6 +4,7 @@ import { config } from '../../../servidor/src/config.ts';
 import { corpoObjeto, escolha, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { confereSenha, hashSenha } from './senha.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigir, HORAS_SESSAO, PERFIS, usuarioDaSessao } from './guard.ts';
+import { CATALOGO, lerAjustes, NOME_PERFIL, permissoesDoPerfil, permissoesEfetivas, PERFIS_EDITAVEIS, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 
 const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
@@ -13,7 +14,16 @@ const SENHA_MIN = 8;
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
-const DTO = 'id, login, nome, perfil, ativo, trocar_senha, criado_em, ultimo_acesso';
+const DTO = 'id, login, nome, perfil, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
+
+/** Usuário para a tela de administração: ajustes viram objeto e vêm também as permissões que valem de fato. */
+function paraTela(db: Banco, u: Record<string, unknown>) {
+  const ajustes = lerAjustes(u.permissoes as string | null);
+  return { ...u, permissoes: ajustes, efetivas: permissoesEfetivas(db, String(u.perfil), u.permissoes as string | null) };
+}
+function ajustesDoCorpo(c: Record<string, unknown>) {
+  try { return validarAjustes(c.permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
+}
 
 function validarSenhaNova(s: string, login?: string) {
   if (s.length < SENHA_MIN) throw new ErroValidacao(`Senha: mínimo de ${SENHA_MIN} caracteres.`);
@@ -62,8 +72,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       auditar(db, null, 'login_bloqueado', { login });
       return resp.code(429).send({ erro: `Muitas tentativas. Aguarde ${JANELA_MIN} minutos e tente de novo.` });
     }
-    const u = db.prepare('SELECT id, login, nome, perfil, senha_hash, trocar_senha, ativo FROM usuarios WHERE login = ?').get(login) as
-      | { id: number; login: string; nome: string; perfil: string; senha_hash: string; trocar_senha: number; ativo: number } | undefined;
+    const u = db.prepare('SELECT id, login, nome, perfil, senha_hash, trocar_senha, ativo, permissoes FROM usuarios WHERE login = ?').get(login) as
+      | { id: number; login: string; nome: string; perfil: string; senha_hash: string; trocar_senha: number; ativo: number; permissoes: string | null } | undefined;
     const ok = confereSenha(senha, u?.senha_hash ?? HASH_FALSO) && !!u && u.ativo === 1;
     if (!ok || !u) {
       db.prepare('INSERT INTO tentativas_login (chave, quando) VALUES (?, ?)').run(login, new Date().toISOString());
@@ -75,7 +85,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const token = criarSessao(db, u.id);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: HORAS_SESSAO * 3600 });
     auditar(db, u.id, 'login');
-    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, trocar_senha: u.trocar_senha };
+    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, trocar_senha: u.trocar_senha, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
   });
 
   app.post('/api/sair', async (req, resp) => {
@@ -106,7 +116,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
   // ----- Administração de usuários (somente admin master) -----
   const admin = { preHandler: exigir('admin') };
 
-  app.get('/api/usuarios', admin, async () => db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all());
+  app.get('/api/usuarios', admin, async () => (db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all() as Record<string, unknown>[]).map((u) => paraTela(db, u)));
 
   app.post('/api/usuarios', admin, async (req, resp) => {
     const c = corpoObjeto(req.body);
@@ -117,15 +127,16 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const senha = String(texto(c, 'senha', 'Senha provisória', { max: 128 }));
     validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
-    const r = db.prepare('INSERT INTO usuarios (login, nome, senha_hash, perfil, trocar_senha, criado_em) VALUES (?, ?, ?, ?, 1, ?)')
-      .run(login, nome, hashSenha(senha), perfil, new Date().toISOString());
-    auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil });
-    return resp.code(201).send(db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)));
+    const ajustes = ajustesDoCorpo(c);
+    const r = db.prepare('INSERT INTO usuarios (login, nome, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, 1, ?, ?)')
+      .run(login, nome, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
+    auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
+    return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
 
   app.put<{ Params: { id: string } }>('/api/usuarios/:id', admin, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
-    const atual = db.prepare('SELECT id, nome, perfil, ativo FROM usuarios WHERE id = ?').get(id) as { id: number; nome: string; perfil: string; ativo: number } | undefined;
+    const atual = db.prepare('SELECT id, nome, perfil, ativo, permissoes FROM usuarios WHERE id = ?').get(id) as { id: number; nome: string; perfil: string; ativo: number; permissoes: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
     const c = corpoObjeto(req.body);
     const nome = c.nome === undefined ? atual.nome : String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
@@ -137,10 +148,12 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       const { n } = db.prepare("SELECT COUNT(*) n FROM usuarios WHERE perfil = 'admin' AND ativo = 1").get() as { n: number };
       if (n <= 1) return resp.code(400).send({ erro: 'É preciso manter pelo menos um administrador ativo.' });
     }
-    db.prepare('UPDATE usuarios SET nome = ?, perfil = ?, ativo = ? WHERE id = ?').run(nome, perfil, ativo, id);
+    const ajustes = c.permissoes === undefined ? lerAjustes(atual.permissoes) : ajustesDoCorpo(c);
+    const ajustesJson = Object.keys(ajustes).length ? JSON.stringify(ajustes) : null;
+    db.prepare('UPDATE usuarios SET nome = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, perfil, ativo, ajustesJson, id);
     if (ativo === 0 || perfil !== atual.perfil) db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
-    auditar(db, req.usuario!.id, 'usuario_alterado', { id, perfil, ativo });
-    return db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id);
+    auditar(db, req.usuario!.id, 'usuario_alterado', { id, perfil, ativo, ajustes });
+    return paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id) as Record<string, unknown>);
   });
 
   app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', admin, async (req, resp) => {
@@ -154,6 +167,24 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     db.prepare('DELETE FROM tentativas_login WHERE chave = ?').run(u.login);
     auditar(db, req.usuario!.id, 'senha_redefinida', { id });
     return { ok: true };
+  });
+
+  // ----- Perfis: o administrador escolhe o que cada perfil pode fazer e quais telas acessa -----
+  app.get('/api/perfis', admin, async () => ({
+    catalogo: CATALOGO,
+    perfis: ['admin', ...PERFIS_EDITAVEIS].map((codigo) => ({ codigo, nome: NOME_PERFIL[codigo], fixo: codigo === 'admin', permissoes: permissoesDoPerfil(db, codigo) })),
+  }));
+
+  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo', admin, async (req, resp) => {
+    const codigo = req.params.codigo;
+    if (codigo === 'admin') return resp.code(400).send({ erro: 'O administrador sempre tem todas as permissões.' });
+    if (!(PERFIS_EDITAVEIS as readonly string[]).includes(codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
+    let lista: string[];
+    try { lista = validarLista(corpoObjeto(req.body).permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
+    db.prepare('INSERT INTO perfis_permissoes (perfil, permissoes, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(perfil) DO UPDATE SET permissoes = excluded.permissoes, atualizado_em = excluded.atualizado_em')
+      .run(codigo, JSON.stringify(lista), new Date().toISOString());
+    auditar(db, req.usuario!.id, 'perfil_alterado', { perfil: codigo, permissoes: lista.length, de: TODAS.length });
+    return { codigo, permissoes: lista };
   });
 
   app.get('/api/auditoria', admin, async () =>

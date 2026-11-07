@@ -6,7 +6,7 @@ import { Icone } from './icones';
 import { Avatar, usePerfil } from './perfil';
 import { JanelaConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
-import { podeGerir, useSessao, type Usuario } from './sessao';
+import { pode, podeGerir, useSessao, type Usuario } from './sessao';
 import { Publicar, Configuracoes } from './gestao/Gestao';
 import { Pessoas } from './pessoas/Pessoas';
 import { Ajuda } from './ajuda/Ajuda';
@@ -81,7 +81,9 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
   const admin = usuario.perfil === 'admin';
-  const { dados: comunicados } = useLista<Comunicado>('/api/comunicados');
+  const telasLiberadas = (['comunicados', 'documentos', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
+  const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
+  const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente');
 
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
@@ -110,7 +112,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        mostrarPublicar={gere} mostrarConfig={admin} />
+        mostrarPublicar={gere} mostrarConfig={admin} telasLiberadas={telasLiberadas} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
@@ -131,12 +133,13 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         <div className="meio">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
-            {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} />}
-            {tela === 'comunicados' && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
-            {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
-            {tela === 'pessoas' && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
-            {tela === 'ajuda' && <Ajuda irPara={irPara} />}
-            {tela === 'publicar' && gere && <Publicar perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+            {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} veComunicados={libera('comunicados')} veDocumentos={libera('documentos')} />}
+            {['comunicados', 'documentos', 'pessoas', 'ajuda'].includes(tela) && !libera(tela) && <p className="erro">Você não tem acesso a esta tela. Fale com o administrador do portal.</p>}
+            {tela === 'comunicados' && libera(tela) && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'documentos' && libera(tela) && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
+            {tela === 'publicar' && gere && <Publicar perfil={pode(usuario, 'pub.aplicativos') ? 'admin' : usuario.perfil} permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && admin && <Configuracoes aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !admin && <p className="erro">Só o administrador acessa as configurações.</p>}
@@ -147,7 +150,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       </div>
 
       <nav className="abas-mobile" aria-label="Navegação principal">
-        {ABAS.map(([id, nome, ico]) => (
+        {ABAS.filter(([id]) => id === 'menu' || id === 'apps' || libera(id as Tela)).map(([id, nome, ico]) => (
           <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : id === 'apps' ? setLancador(true) : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
         ))}
       </nav>

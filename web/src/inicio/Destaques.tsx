@@ -58,7 +58,8 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
                 {grupos.map((g, p) => (
                   <div className="pessoas" key={p} aria-hidden={p !== pag}>
                     {g.map((d) => (
-                      <article className="pessoa" key={d.nome}>
+                      <article className="pessoa" key={`${d.nome}|${d.rotulo}`}>
+                        <span className="pessoa-periodo" title={`Destaque ${tipo === 'mes' ? 'do mês' : 'do ano'}: ${d.rotulo}`}>{d.rotulo}</span>
                         <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
                         <div><h3 title={d.nome}>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
                       </article>

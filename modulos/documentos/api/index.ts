@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, dataIso, escolha, inteiro, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
 const CLASSIFICACOES = ['publico', 'interno', 'restrito'] as const;
@@ -8,14 +8,14 @@ const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsave
 
 export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   // Documentos "restritos" só aparecem para editor e admin.
-  app.get('/api/documentos', async (req) => {
-    const podeVerRestrito = req.usuario?.perfil === 'admin' || req.usuario?.perfil === 'editor';
+  app.get('/api/documentos', { preHandler: exigirPerm('ver.documentos') }, async (req) => {
+    const podeVerRestrito = req.usuario?.perfil === 'admin' || !!req.usuario?.permissoes.includes('pub.documentos');
     return db
       .prepare(`SELECT slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, link_oficial, revisado_em FROM documentos ${podeVerRestrito ? '' : "WHERE classificacao <> 'restrito'"} ORDER BY titulo`)
       .all();
   });
 
-  const gestao = { preHandler: exigir('admin', 'editor') };
+  const gestao = { preHandler: exigirPerm('pub.documentos') };
 
   function ler(c: Record<string, unknown>) {
     return {

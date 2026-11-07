@@ -1,7 +1,7 @@
 // Missão, visão e valores exibidos no Início: leitura para todos os logados; edição por editor e admin.
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, ErroValidacao, texto } from '../../../servidor/src/validar.ts';
 
 interface Institucional { missao: string; visao: string; valores: string[] }
@@ -16,7 +16,7 @@ function ler(db: Banco): Institucional {
 export async function rotasInstitucional(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/institucional', async () => ler(db));
 
-  app.put('/api/gestao/institucional', { preHandler: exigir('admin', 'editor') }, async (req) => {
+  app.put('/api/gestao/institucional', { preHandler: exigirPerm('pub.institucional') }, async (req) => {
     const c = corpoObjeto(req.body);
     const missao = texto(c, 'missao', 'Missão', { max: 400, opcional: true }) ?? '';
     const visao = texto(c, 'visao', 'Visão', { max: 400, opcional: true }) ?? '';

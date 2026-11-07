@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, slugUnico, texto } from '../../../servidor/src/validar.ts';
 
 const STATUS = ['rascunho', 'publicado', 'arquivado'] as const;
@@ -9,19 +9,19 @@ const PRIORIDADES = ['normal', 'urgente'] as const;
 const VISIVEL = "status = 'publicado' AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND (exibir_ate IS NULL OR exibir_ate >= date('now','localtime'))";
 
 export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
-  app.get('/api/comunicados', async () =>
+  app.get('/api/comunicados', { preHandler: exigirPerm('ver.comunicados') }, async () =>
     db.prepare(`SELECT slug, titulo, resumo, categoria, prioridade, imagem, publicado_em FROM comunicados WHERE ${VISIVEL} ORDER BY publicado_em DESC, id DESC`).all(),
   );
 
   // Detalhe: só comunicados visíveis (rascunho, arquivado e fora da janela não aparecem).
-  app.get<{ Params: { slug: string } }>('/api/comunicados/:slug', async (req, resp) => {
+  app.get<{ Params: { slug: string } }>('/api/comunicados/:slug', { preHandler: exigirPerm('ver.comunicados') }, async (req, resp) => {
     const c = db.prepare(`SELECT slug, titulo, resumo, corpo, categoria, prioridade, imagem, publicado_em FROM comunicados WHERE slug = ? AND ${VISIVEL}`).get(req.params.slug);
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     return c;
   });
 
   // ----- Gestão (editor e admin) -----
-  const gestao = { preHandler: exigir('admin', 'editor') };
+  const gestao = { preHandler: exigirPerm('pub.comunicados') };
   const CAMPOS = 'id, slug, titulo, resumo, corpo, categoria, prioridade, imagem, status, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em';
   const hoje = () => new Date().toISOString().slice(0, 10);
 

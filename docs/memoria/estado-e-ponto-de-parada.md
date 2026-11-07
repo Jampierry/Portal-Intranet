@@ -96,3 +96,12 @@
 ## Aplicativos (2026-11-07)
 - Saíram do menu esquerdo: a seção "Aplicações web" e o item "Aplicações". Os aplicativos agora ficam na **barra da direita** (favoritos e todos) e em **Gestão › Aplicativos** (catálogo para editor/admin; cadastro só admin). No celular, a aba "Aplicativos" do rodapé abre a barra. Endereço antigo `#aplicacoes` volta ao Início.
 
+
+## Permissões por perfil e por usuário (+ foto e período do Colaborador Destaque)
+- Catálogo em `modulos/acessos/api/permissoes.ts`: `ver.*` (comunicados, documentos, pessoas, ajuda) e `pub.*` (comunicados, banners, institucional, documentos, destaques, contatos, aplicativos). Configurações (usuários, perfis, auditoria) continua só do administrador.
+- Migração 009: tabela `perfis_permissoes` (editor/consulta, editável) e `usuarios.permissoes` (JSON `{chave: true|false}`). Admin sempre tem tudo.
+- Regra: ajuste do usuário (permitir/negar) vale por cima do perfil; sem ajuste, vale o perfil. Calculado a cada requisição (`usuarioDaSessao`), então mudanças valem na hora.
+- API: `GET /api/perfis`, `PUT /api/perfis/:codigo`; usuários aceitam `permissoes` (POST/PUT) e devolvem `efetivas`. Rotas usam `exigirPerm('pub.x')`; leituras de comunicados/documentos/contatos exigem `ver.x`; documentos "restritos" aparecem para quem tem `pub.documentos`.
+- Tela: Configurações › Perfis (matriz com caixas de seleção) e Usuários › Editar › "Permissões desta pessoa" (Seguir o perfil / Permitir / Negar). Menu, telas, abas de Publicar e blocos do Início respeitam as permissões.
+- Colaborador Destaque: campo "Foto da pessoa" em Publicar (usa `foto_aprovada`) e selo do período (mês/ano) sobre a foto no Início.
+- Testes: `modulos/acessos/tests/permissoes.test.ts`.

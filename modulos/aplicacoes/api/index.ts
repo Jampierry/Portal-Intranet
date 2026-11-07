@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { buscarIcone } from './favicon.ts';
 import { ErroValidacao, corpoObjeto, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
@@ -24,7 +24,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   });
 
   // ----- Gestão do catálogo (somente admin: cada app é um link para sistema externo) -----
-  const admin = { preHandler: exigir('admin') };
+  const admin = { preHandler: exigirPerm('pub.aplicativos') };
 
   /** Ícone próprio: só imagens guardadas pelo portal (ou vazio = ícone padrão). */
   function logo(c: Record<string, unknown>): string | null {

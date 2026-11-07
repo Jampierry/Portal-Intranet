@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 /** Contatos por ÁREA (canal da área: e-mail, ramal, ferramenta). Não guarda dados pessoais de funcionários. */
 export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
-  app.get('/api/contatos', async () =>
+  app.get('/api/contatos', { preHandler: exigirPerm('ver.pessoas') }, async () =>
     db
       .prepare(
         `SELECT c.id, d.nome AS departamento, c.nome, c.canal FROM contatos c JOIN departamentos d ON d.id = c.departamento_id
@@ -15,7 +15,7 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
   );
 
   // ----- Gestão (editor e admin) -----
-  const gestao = { preHandler: exigir('admin', 'editor') };
+  const gestao = { preHandler: exigirPerm('pub.contatos') };
   const CAMPOS = 'c.id, d.nome AS departamento, c.nome, c.canal, c.publicavel';
   const buscar = (id: number) => db.prepare(`SELECT ${CAMPOS} FROM contatos c JOIN departamentos d ON d.id = c.departamento_id WHERE c.id = ?`).get(id);
 

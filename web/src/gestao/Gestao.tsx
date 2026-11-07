@@ -7,6 +7,7 @@ import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, useLista } from '../dados';
 import type { PerfilAcesso } from '../sessao';
+import { EditorPerfis } from './Permissoes';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -114,13 +115,14 @@ function Documentos() {
   );
 }
 
-interface Dest { id: number; tipo: string; rotulo: string; nome: string; area: string; apresentacao: string; consentimento_ref: string | null; status: string }
+interface Dest { id: number; tipo: string; rotulo: string; nome: string; area: string; apresentacao: string; consentimento_ref: string | null; status: string; foto: string | null }
 const SIT_DEST: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { aprovado: ['ok', 'Aprovado'], rascunho: ['aviso', 'Rascunho'], retirado: ['neutro', 'Retirado'] };
 function Destaques() {
   return (
     <Crud<Dest> base="/api/gestao/destaques" rotuloItem="destaque" idDe={(r) => r.id}
       introducao="Reconhecimento sem ranking. Só aparece no portal o que estiver Aprovado, e para aprovar é preciso registrar o consentimento da pessoa (LGPD)."
       campos={[
+        { chave: 'foto', rotulo: 'Foto da pessoa (opcional)', tipo: 'imagem', dica: 'Foto quadrada (rosto centralizado) fica melhor. PNG, JPG, WebP ou GIF, até 5 MB. Use só com o consentimento da pessoa; sem foto, aparecem as iniciais.' },
         { chave: 'nome', rotulo: 'Nome da pessoa', obrigatorio: true, max: 80, metade: true },
         { chave: 'area', rotulo: 'Área', obrigatorio: true, max: 60, metade: true },
         { chave: 'tipo', rotulo: 'Destaque do', tipo: 'select', opcoes: [['mes', 'Mês'], ['ano', 'Ano']], metade: true },
@@ -135,8 +137,8 @@ function Destaques() {
         { titulo: 'Período', ver: (r) => `${r.tipo === 'mes' ? 'Mês' : 'Ano'} · ${r.rotulo}` },
         { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_DEST[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
       ]}
-      valoresNovos={{ nome: '', area: '', tipo: 'mes', rotulo: '', apresentacao: '', consentimento_ref: '', status: 'rascunho' }}
-      paraForm={(r) => ({ nome: r.nome, area: r.area, tipo: r.tipo, rotulo: r.rotulo, apresentacao: r.apresentacao, consentimento_ref: s(r.consentimento_ref), status: r.status })}
+      valoresNovos={{ foto: '', nome: '', area: '', tipo: 'mes', rotulo: '', apresentacao: '', consentimento_ref: '', status: 'rascunho' }}
+      paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, tipo: r.tipo, rotulo: r.rotulo, apresentacao: r.apresentacao, consentimento_ref: s(r.consentimento_ref), status: r.status })}
     />
   );
 }
@@ -218,15 +220,17 @@ const ABAS_PUBLICAR: [AbaPub, string][] = [
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
-export function Publicar({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
-  perfil: PerfilAcesso; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
+  perfil: PerfilAcesso; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
-  const aba: AbaPub = ABAS_PUBLICAR.find(([id]) => id === pedida)?.[0] ?? ABAS_PUBLICAR[0][0];
+  // Só as abas que a pessoa pode usar. Aplicativos sempre aparece para quem publica (sem 'cadastro' mostra só o catálogo).
+  const abas = ABAS_PUBLICAR.filter(([id]) => id === 'aplicacoes' || permissoes.includes(`pub.${id}`));
+  const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
       <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, contatos e aplicativos." />
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
-        {ABAS_PUBLICAR.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+        {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'comunicados' && <Comunicados />}
       {aba === 'banners' && <Banners />}
@@ -241,24 +245,6 @@ export function Publicar({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, 
 
 type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
 const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
-const PERFIS_INFO: [string, string, string][] = [
-  ['Administrador', 'admin', 'Tudo o que o editor faz, mais usuários, cadastro de aplicativos, apagar itens publicados e auditoria.'],
-  ['Editor', 'editor', 'Publica e edita comunicados, documentos, colaborador destaque e contatos, e vê o catálogo de aplicativos.'],
-  ['Consulta', 'consulta', 'Só lê o portal: comunicados, documentos, aplicativos e contatos.'],
-];
-
-function Perfis() {
-  return (
-    <section className="cartao-sec">
-      <p className="suave">Cada usuário tem um perfil. Para mudar o perfil de alguém, use a aba Usuários.</p>
-      <div className="rolagem"><table className="dados">
-        <thead><tr><th>Perfil</th><th>Código</th><th>O que pode fazer</th></tr></thead>
-        <tbody>{PERFIS_INFO.map(([nome, cod, desc]) => <tr key={cod}><td data-rotulo="Perfil"><b>{nome}</b></td><td data-rotulo="Código">{cod}</td><td data-rotulo="O que pode fazer">{desc}</td></tr>)}</tbody>
-      </table></div>
-    </section>
-  );
-}
-
 /** Configurações (só administrador): usuários, perfis e auditoria. */
 export function Configuracoes({ aba: pedida, aoMudarAba }: { aba?: string; aoMudarAba: (a: string) => void }) {
   const aba: AbaCfg = ABAS_CONFIG.find(([id]) => id === pedida)?.[0] ?? ABAS_CONFIG[0][0];
@@ -268,7 +254,7 @@ export function Configuracoes({ aba: pedida, aoMudarAba }: { aba?: string; aoMud
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {ABAS_CONFIG.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
-      {aba === 'perfis' ? <Perfis /> : <Administracao parte={aba} />}
+      {aba === 'perfis' ? <EditorPerfis /> : <Administracao parte={aba} />}
     </>
   );
 }

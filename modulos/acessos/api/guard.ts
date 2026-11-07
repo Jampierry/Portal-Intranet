@@ -1,11 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
+import { permissoesEfetivas } from './permissoes.ts';
 
 export type Perfil = 'admin' | 'editor' | 'consulta';
 export const PERFIS: readonly Perfil[] = ['admin', 'editor', 'consulta'];
 
-export interface UsuarioSessao { id: number; login: string; nome: string; perfil: Perfil; trocar_senha: number }
+export interface UsuarioSessao { id: number; login: string; nome: string; perfil: Perfil; trocar_senha: number; permissoes: string[] }
 
 declare module 'fastify' {
   interface FastifyRequest { usuario: UsuarioSessao | null }
@@ -31,11 +32,13 @@ export function usuarioDaSessao(db: Banco, token: string | undefined): UsuarioSe
   if (!token) return null;
   const u = db
     .prepare(
-      `SELECT u.id, u.login, u.nome, u.perfil, u.trocar_senha FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id
+      `SELECT u.id, u.login, u.nome, u.perfil, u.trocar_senha, u.permissoes AS ajustes FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id
        WHERE s.token_hash = ? AND s.expira_em > ? AND u.ativo = 1`,
     )
     .get(hashToken(token), new Date().toISOString());
-  return (u as UsuarioSessao | undefined) ?? null;
+  if (!u) return null;
+  const { ajustes, ...resto } = u as Omit<UsuarioSessao, 'permissoes'> & { ajustes: string | null };
+  return { ...resto, permissoes: permissoesEfetivas(db, resto.perfil, ajustes) };
 }
 
 export function encerrarSessao(db: Banco, token: string | undefined) {
@@ -54,5 +57,14 @@ export function exigir(...perfis: Perfil[]) {
   return async (req: FastifyRequest, resp: FastifyReply) => {
     if (!req.usuario) return resp.code(401).send({ erro: 'Faça login para continuar.' });
     if (!perfis.includes(req.usuario.perfil)) return resp.code(403).send({ erro: 'Seu perfil não tem permissão para esta ação.' });
+  };
+}
+
+/** preHandler: passa quem tem pelo menos uma das permissões informadas (perfil + ajustes do usuário; admin sempre passa). */
+export function exigirPerm(...chaves: string[]) {
+  return async (req: FastifyRequest, resp: FastifyReply) => {
+    if (!req.usuario) return resp.code(401).send({ erro: 'Faça login para continuar.' });
+    if (req.usuario.perfil === 'admin') return;
+    if (!chaves.some((c) => req.usuario!.permissoes.includes(c))) return resp.code(403).send({ erro: 'Você não tem permissão para esta ação.' });
   };
 }

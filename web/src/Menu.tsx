@@ -9,12 +9,14 @@ const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
   mostrarPublicar: boolean; mostrarConfig: boolean;
+  /** Telas liberadas para o usuário (Início é sempre liberado). */
+  telasLiberadas: Tela[];
 }
 
 /** Menu lateral esquerdo: marca e navegação. Os aplicativos ficam na barra da direita; o cadastro deles, em Publicar › Aplicativos. */
 export function Menu(p: Props) {
   const mini = p.recolhido;
-  const itens: Item[] = [...ITENS.slice(0, 3), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(3), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
+  const itens: Item[] = [...ITENS.slice(0, 3).filter(([id]) => id === 'inicio' || p.telasLiberadas.includes(id)), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(3).filter(([id]) => p.telasLiberadas.includes(id)), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
   return (
     <aside className={`menu${mini ? ' mini' : ''}${p.gavetaAberta ? ' aberto' : ''}`} aria-label="Menu">
       <div className="sbtop">

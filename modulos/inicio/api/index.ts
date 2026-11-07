@@ -1,11 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigir } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 const TIPOS = ['mes', 'ano'] as const;
 const STATUS = ['rascunho', 'aprovado', 'retirado'] as const;
-const CAMPOS = `d.id, p.tipo, p.rotulo, d.nome, d.area, d.apresentacao, d.consentimento_ref, d.status`;
+const CAMPOS = `d.id, p.tipo, p.rotulo, d.nome, d.area, d.apresentacao, d.consentimento_ref, d.status, d.foto_aprovada AS foto`;
+/** Foto: guardada pelo portal (ou imagem de demonstração em /demo). Só vai ao ar se o destaque estiver Aprovado (com consentimento). */
+const FOTO_OK = /^\/(api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif)|demo\/[a-z0-9._-]+)$/i;
 
 const iniciais = (nome: string) => {
   const p = nome.trim().split(/\s+/).filter((w) => /^\p{L}/u.test(w));
@@ -23,14 +25,17 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
   );
 
   // ----- Gestão (editor e admin). Aprovar exige referência do consentimento da pessoa (LGPD). -----
-  const gestao = { preHandler: exigir('admin', 'editor') };
+  const gestao = { preHandler: exigirPerm('pub.destaques') };
 
   function ler(c: Record<string, unknown>) {
     const status = escolha(c, 'status', 'Situação', STATUS, 'rascunho');
     const consentimento_ref = texto(c, 'consentimento_ref', 'Referência do consentimento', { max: 200, opcional: true });
     if (status === 'aprovado' && !consentimento_ref) throw new ErroValidacao('Para aprovar, informe a referência do consentimento da pessoa (ex.: termo assinado em 02/10/2026).');
     const nome = String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
+    const foto = texto(c, 'foto', 'Foto', { max: 120, opcional: true });
+    if (foto && !FOTO_OK.test(foto)) throw new ErroValidacao('Foto: use "Escolher imagem" para enviar o arquivo.');
     return {
+      foto,
       tipo: escolha(c, 'tipo', 'Tipo', TIPOS),
       rotulo: String(texto(c, 'rotulo', 'Período', { max: 40 })),
       nome, iniciais: iniciais(nome),
@@ -52,8 +57,8 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
 
   app.post('/api/gestao/destaques', gestao, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
-    const r = db.prepare('INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status);
+    const r = db.prepare('INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status, foto_aprovada) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'destaque_criado', { id, nome: d.nome, status: d.status });
     return resp.code(201).send(buscar(id));
@@ -63,8 +68,8 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
     const id = inteiro(req.params.id, 'Destaque');
     if (!db.prepare('SELECT 1 FROM destaques WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Destaque não encontrado.' });
     const d = ler(corpoObjeto(req.body));
-    db.prepare('UPDATE destaques SET periodo_id = ?, nome = ?, area = ?, iniciais = ?, apresentacao = ?, consentimento_ref = ?, status = ? WHERE id = ?')
-      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, id);
+    db.prepare('UPDATE destaques SET periodo_id = ?, nome = ?, area = ?, iniciais = ?, apresentacao = ?, consentimento_ref = ?, status = ?, foto_aprovada = ? WHERE id = ?')
+      .run(periodoId(d.tipo, d.rotulo), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto, id);
     auditar(db, req.usuario!.id, 'destaque_alterado', { id, nome: d.nome, status: d.status });
     return buscar(id);
   });

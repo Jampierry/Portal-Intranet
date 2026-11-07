@@ -4,8 +4,9 @@ import { Icone } from '../icones';
 import { dataCurta, useLista } from '../dados';
 import { JanelaForm, Selo } from './Crud';
 import { ROTULO_PERFIL, type PerfilAcesso } from '../sessao';
+import { AjustesUsuario, type Ajustes } from './Permissoes';
 
-interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; ativo: number; trocar_senha: number; ultimo_acesso: string | null }
+interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -29,7 +30,7 @@ function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => voi
 function Usuarios() {
   const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
   const [aviso, setAviso] = useState('');
-  const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string } | null>(null);
+  const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
 
@@ -37,9 +38,9 @@ function Usuarios() {
     <section className="crud">
       <div className="barra">
         <p className="suave" style={{ margin: 0 }}>
-          <b>Administrador</b> gerencia tudo · <b>Editor</b> publica comunicados, documentos e destaques · <b>Consulta</b> só lê o portal.
+          O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
         </p>
-        <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha() })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+        <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
       </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -75,18 +76,20 @@ function Usuarios() {
               {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
             </select></label>
           <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
+          <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
         </JanelaForm>
       )}
 
       {edit && (
         <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, perfil: edit.perfil, ativo: !!edit.ativo }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>Perfil *
             <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
               {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
             </select></label>
           <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
+          <AjustesUsuario perfil={edit.perfil} ajustes={edit.permissoes} mudar={(permissoes) => setEdit({ ...edit, permissoes })} />
         </JanelaForm>
       )}
 
@@ -103,7 +106,7 @@ function Usuarios() {
 
 const ACAO: Record<string, string> = {
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
-  senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado',
+  senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', perfil_alterado: 'Permissões do perfil alteradas',
   comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',
   documento_criado: 'Documento criado', documento_alterado: 'Documento alterado', documento_apagado: 'Documento apagado',
   contato_criado: 'Contato criado', contato_alterado: 'Contato alterado', contato_apagado: 'Contato apagado',
