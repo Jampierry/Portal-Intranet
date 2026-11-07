@@ -434,6 +434,22 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
   .dados .col-acoes { justify-content: flex-start; }
 }
 
+/* ===== Início: avisos importantes e documentos atualizados ===== */
+.mini-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mini-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--texto); text-decoration: none; border: 1px solid var(--linha-suave); background: var(--card); }
+.mini-item:hover { background: var(--hover); }
+.mini-item > svg:last-child { color: var(--suave); flex: none; }
+.mini-item .texto { flex: 1; min-width: 0; }
+.mini-item b { display: block; font-size: 13px; line-height: 1.25; }
+.mini-item small { display: block; color: var(--suave); font-size: 11.5px; margin-top: 2px; }
+.mini-ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex: none; background: var(--vinho-claro); color: var(--vinho-texto); }
+.mini-ico.urgente { background: var(--erro-fundo); color: var(--erro); }
+.cartao-aviso { border-color: color-mix(in srgb, var(--erro) 35%, var(--linha-suave)); }
+
+.inicio-lateral .sec-topo { flex-wrap: nowrap; }
+.inicio-lateral .sec-topo h2 { font-size: 16px; }
+.inicio-lateral .link-ver { white-space: nowrap; }
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 

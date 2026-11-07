@@ -127,7 +127,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         <div className="meio">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
-            {tela === 'inicio' && <Inicio irPara={irPara} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
+            {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} />}
             {tela === 'comunicados' && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}

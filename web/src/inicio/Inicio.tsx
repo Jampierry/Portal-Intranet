@@ -2,16 +2,17 @@ import { Icone } from '../icones';
 import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
 import { ListaComunicados } from '../comunicados/Comunicados';
-import { LinkApp } from '../aplicacoes/LinkApp';
-import type { Aplicacao, Comunicado } from '../dados';
+import { dataCurta, useLista, type Comunicado, type Documento } from '../dados';
 import type { Tela } from '../Menu';
 
-/** Início: saudação, faixa de novidades, pessoas em destaque, comunicados e (à direita) aplicações favoritas. */
-export function Inicio({ irPara, apps, favoritos, comunicados }: {
-  irPara: (t: Tela, slug?: string) => void; apps: Aplicacao[] | null; favoritos: string[]; comunicados: Comunicado[] | null;
+/** Início: faixa de novidades, pessoas em destaque, comunicados e (à direita) avisos importantes e documentos atualizados. */
+export function Inicio({ irPara, comunicados }: {
+  irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null;
 }) {
-  const favs = (apps ?? []).filter((a) => favoritos.includes(a.slug));
-  const lista = favs.length ? favs : (apps ?? []).slice(0, 3);
+  const { dados: docs } = useLista<Documento>('/api/documentos');
+  const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
+  // Documentos mais recentemente revisados (os sem data de revisão ficam por último).
+  const recentes = [...(docs ?? [])].sort((a, b) => (b.revisado_em ?? '').localeCompare(a.revisado_em ?? '')).slice(0, 4);
   return (
     <>
       <section className="hero" aria-label="Novidades da semana">
@@ -37,23 +38,47 @@ export function Inicio({ irPara, apps, favoritos, comunicados }: {
           </section>
         </div>
 
-        <aside className="inicio-lateral" aria-label="Aplicações favoritas">
-          <section className="cartao-sec">
-            <div className="sec-topo"><h2><Icone nome="aplicacoes" tamanho={22} /> Aplicações favoritas</h2></div>
-            {lista.length === 0 && <p className="vazio">Nenhum favorito ainda. Abra Aplicações e use “Favoritar”.</p>}
-            <ul className="favs">
-              {lista.map((a) => (
-                <li key={a.slug}>
-                  <LinkApp url={a.url} className="fav">
-                    <span className="icone"><Icone nome={a.icone === 'users' ? 'pessoas' : 'aplicacoes'} tamanho={22} /></span>
-                    <span className="texto"><b>{a.nome}</b><small>{a.descricao}</small></span>
-                    <Icone nome="externo" tamanho={18} />
-                  </LinkApp>
-                  <small className="abre">Abre em nova aba do navegador</small>
+        <aside className="inicio-lateral" aria-label="Avisos e documentos">
+          {urgentes.length > 0 && (
+            <section className="cartao-sec cartao-aviso" aria-labelledby="av-imp">
+              <div className="sec-topo"><h2 id="av-imp"><Icone nome="sino" tamanho={22} /> Avisos importantes</h2></div>
+              <ul className="mini-lista">
+                {urgentes.map((c) => (
+                  <li key={c.slug}>
+                    <a className="mini-item" href={`#comunicados/${encodeURIComponent(c.slug)}`}>
+                      <span className="mini-ico urgente"><Icone nome="comunicados" tamanho={18} /></span>
+                      <span className="texto"><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></span>
+                      <Icone nome="dir" tamanho={15} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="cartao-sec" aria-labelledby="doc-rec">
+            <div className="sec-topo">
+              <h2 id="doc-rec"><Icone nome="documentos" tamanho={22} /> Documentos atualizados</h2>
+              <button className="link-ver" onClick={() => irPara('documentos')}>Ver todos <Icone nome="seta" tamanho={15} /></button>
+            </div>
+            {docs === null && <p className="vazio">Carregando…</p>}
+            {docs && recentes.length === 0 && <p className="vazio">Nenhum documento cadastrado ainda.</p>}
+            <ul className="mini-lista">
+              {recentes.map((d) => (
+                <li key={d.slug}>
+                  <a className="mini-item" href="#documentos">
+                    <span className="mini-ico"><Icone nome="documentos" tamanho={18} /></span>
+                    <span className="texto">
+                      <b>{d.titulo}</b>
+                      <small>{[d.versao && `Versão ${d.versao}`, d.responsavel, d.revisado_em && `revisado em ${dataCurta(d.revisado_em)}`].filter(Boolean).join(' · ') || d.categoria}</small>
+                    </span>
+                    <Icone nome="dir" tamanho={15} />
+                  </a>
                 </li>
               ))}
             </ul>
           </section>
+
           <section className="painel-marca painel-marca-baixo" aria-hidden="true"><Lema linhas={['JUNTOS', 'POR UM FUTURO', 'MAIS ATIVO']} /></section>
         </aside>
       </div>
