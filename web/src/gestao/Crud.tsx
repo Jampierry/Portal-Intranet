@@ -54,7 +54,7 @@ function CampoForm({ c, valor, mudar, todos }: { c: Campo; valor: string | boole
   const id = `f-${c.chave}`;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
-  if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} />;
+  if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} metade={c.metade} />;
   if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} todos={todos} />;
   if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
