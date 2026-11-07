@@ -218,6 +218,13 @@ button.ucard:hover { background: var(--menu-hover); }
 }
 @media (prefers-reduced-motion: reduce) { .lancador { transition: none; } }
 
+/* Desktop: a rolagem é do conjunto (conteúdo + barra de aplicativos), então a barra de rolagem fica na borda direita da janela, depois da barra de aplicativos, que acompanha parada. */
+@media (min-width: 861px) {
+  .meio { overflow-y: auto; overflow-x: hidden; container-type: size; scrollbar-gutter: stable; }
+  .meio .conteudo { overflow: visible; }
+  .lancador { position: sticky; top: 0; align-self: flex-start; height: 100cqh; }
+}
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 
