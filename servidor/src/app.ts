@@ -6,6 +6,7 @@ import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
 import { rotasBanners } from '../../modulos/banners/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
+import { rotasInstitucional } from '../../modulos/institucional/api/index.ts';
 import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
@@ -19,6 +20,7 @@ export const MODULOS = [
   { nome: 'documentos', rotas: rotasDocumentos },
   { nome: 'imagens', rotas: rotasImagens },
   { nome: 'inicio', rotas: rotasInicio },
+  { nome: 'institucional', rotas: rotasInstitucional },
   { nome: 'pessoas', rotas: rotasPessoas },
 ];
 

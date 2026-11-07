@@ -117,6 +117,11 @@ try {
     insBan.run('Campanha do agasalho', 'Pontos de coleta em cada portaria até o fim do mês (exemplo).', '/demo/capa-campanha.svg', 'Ver comunicado', '#comunicados/demo-campanha-agasalho', 2, agora, agora);
     insBan.run('Simulado de evacuação na quinta', 'Atenção ao sinal sonoro às 10h (exemplo).', '/demo/capa-seguranca.svg', 'Ver comunicado', '#comunicados/demo-simulado-evacuacao', 3, agora, agora);
   }
+  // Missão, visão e valores de exemplo (só onde ainda não existem). Trocar pelo texto oficial em Publicar › Missão, Visão e Valores.
+  const insInst = db.prepare('INSERT OR IGNORE INTO institucional (chave, texto, atualizado_em) VALUES (?, ?, ?)');
+  insInst.run('missao', 'Vestir o movimento: criar roupas esportivas de qualidade, com pessoas que cuidam de cada detalhe (texto de exemplo).', agora);
+  insInst.run('visao', 'Ser referência em moda esportiva, reconhecida pela qualidade e pelo cuidado com as pessoas (texto de exemplo).', agora);
+  insInst.run('valores', 'Respeito às pessoas\nQualidade em cada detalhe\nSegurança em primeiro lugar\nTrabalho em equipe\nMelhoria contínua', agora);
   db.exec('COMMIT');
 } catch (e) {
   db.exec('ROLLBACK');

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Crud, Selo } from './Crud';
 import { Aplicacoes } from '../aplicacoes/Aplicacoes';
 import { Administracao } from './Administracao';
+import { Institucional } from './Institucional';
 import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, useLista } from '../dados';
@@ -207,24 +208,25 @@ function Aplicativos({ perfil, busca, limparBusca, favoritos, alternarFavorito }
   );
 }
 
-type AbaPub = 'comunicados' | 'banners' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
+type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
 const ABAS_PUBLICAR: [AbaPub, string][] = [
-  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['documentos', 'Documentos'], ['destaques', 'Colaboradores Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
+  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
-/** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaboradores destaque, contatos e aplicativos). */
+/** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
 export function Publicar({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
   perfil: PerfilAcesso; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   const aba: AbaPub = ABAS_PUBLICAR.find(([id]) => id === pedida)?.[0] ?? ABAS_PUBLICAR[0][0];
   return (
     <>
-      <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, documentos, colaboradores destaque, contatos e aplicativos." />
+      <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, contatos e aplicativos." />
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
         {ABAS_PUBLICAR.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'comunicados' && <Comunicados />}
       {aba === 'banners' && <Banners />}
+      {aba === 'institucional' && <Institucional />}
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}
@@ -237,7 +239,7 @@ type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
 const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
 const PERFIS_INFO: [string, string, string][] = [
   ['Administrador', 'admin', 'Tudo o que o editor faz, mais usuários, cadastro de aplicativos, apagar itens publicados e auditoria.'],
-  ['Editor', 'editor', 'Publica e edita comunicados, documentos, colaboradores destaque e contatos, e vê o catálogo de aplicativos.'],
+  ['Editor', 'editor', 'Publica e edita comunicados, documentos, colaborador destaque e contatos, e vê o catálogo de aplicativos.'],
   ['Consulta', 'consulta', 'Só lê o portal: comunicados, documentos, aplicativos e contatos.'],
 ];
 

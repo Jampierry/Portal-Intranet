@@ -40,12 +40,12 @@ const TOPICOS: { titulo: string; icone: string; corpo: ReactNode }[] = [
     titulo: 'O que cada perfil pode fazer?', icone: 'gestao',
     corpo: <ul>
       <li><b>Consulta:</b> lê comunicados, documentos, aplicações e contatos.</li>
-      <li><b>Editor:</b> também publica comunicados, documentos, contatos e colaboradores destaque pela tela <b>Publicar</b>, onde fica o catálogo de aplicativos.</li>
+      <li><b>Editor:</b> também publica comunicados, documentos, contatos e colaborador destaque pela tela <b>Publicar</b>, onde fica o catálogo de aplicativos.</li>
       <li><b>Administrador:</b> tudo isso, mais usuários, perfis e a auditoria (registro de quem alterou o quê) na tela <b>Configurações</b>, além do cadastro de aplicativos.</li>
     </ul>,
   },
   {
-    titulo: 'Como funciona o reconhecimento “Colaboradores Destaque”?', icone: 'estrela',
+    titulo: 'Como funciona o reconhecimento “Colaborador Destaque”?', icone: 'estrela',
     corpo: <p>É um reconhecimento sem ranking nem pontuação. Uma pessoa só aparece depois de aprovada, com o consentimento dela registrado. Se não quiser aparecer, fale com o editor responsável.</p>,
   },
 ];

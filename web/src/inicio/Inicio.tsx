@@ -3,11 +3,12 @@ import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
 import { Novidades } from './Novidades';
+import { MissaoVisaoValores } from './MissaoVisaoValores';
 import { ListaComunicados } from '../comunicados/Comunicados';
 import { dataCurta, useLista, type Banner, type Comunicado, type Documento } from '../dados';
 import type { Tela } from '../Menu';
 
-/** Início: faixa de novidades, pessoas em destaque, comunicados e (à direita) avisos importantes e documentos atualizados. */
+/** Início: faixa de novidades, missão/visão/valores, colaborador destaque, comunicados e (à direita) avisos importantes e documentos atualizados. */
 export function Inicio({ irPara, comunicados }: {
   irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null;
 }) {
@@ -35,7 +36,10 @@ export function Inicio({ irPara, comunicados }: {
 
       <div className="inicio-grade">
         <div className="inicio-principal">
-          <Destaques />
+          <div className="linha-mvv">
+            <MissaoVisaoValores />
+            <Destaques compacto />
+          </div>
           <section className="cartao-sec" aria-labelledby="com-rec">
             <div className="sec-topo">
               <h2 id="com-rec"><Icone nome="comunicados" tamanho={24} /> Comunicados</h2>
