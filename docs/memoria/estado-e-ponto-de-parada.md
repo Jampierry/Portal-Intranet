@@ -134,3 +134,10 @@
 - Tabelas (Usuários, Perfis, Auditoria e todas as de Publicar): clicar no cabeçalho ordena (A→Z, Z→A, original). Hook `useOrdenacao` em `web/src/gestao/Ordenar.tsx`; `Coluna.ordem` opcional no Crud.
 - Publicar › Aplicativos: botão alterna entre Catálogo (cartões) e Lista (tabela); lembra a escolha neste navegador. Criar/Editar/Excluir continuam travados por pub.aplicativos.criar/editar/excluir.
 - Banners › Link do botão: seleção com pesquisa (comunicados + páginas do portal) ou endereço externo (`CampoLink.tsx`, tipo `link` no Crud). Grava #comunicados/<slug>.
+
+## Ponto de parada (07/11/2026) e próximos passos
+- Estado: tudo commitado e enviado ao GitHub (`main`). 71 testes passam; `npm run build` ok. Dev: `npm run dev` (site 5174, API 3100); logins admin/admin123, editor/editor123, leitor/leitor123.
+- Últimos ajustes: campo "Link do botão" (CampoLink) alinhado aos outros campos e com menu que abre para baixo/para cima conforme o espaço, já considerando o zoom da página (`--zoom`).
+- **Calendário (menu) ainda não testado com o Zimbra real**: definir `ZIMBRA_API_URL` e `ZIMBRA_API_TOKEN` no servidor do portal, ligar o serviço Agenda no zimbra-mcp e liberar o IP em `ZIMBRA_API_IPS`.
+- Dúvidas em aberto com o usuário: deixar opcional ou remover a "Referência do consentimento" (LGPD) do Colaborador Destaque; controlar também as abas Favoritos/Todos e Mês/Ano por permissão; trocar o texto de exemplo de Missão/Visão/Valores pelo oficial; ícone do app "Meu RH" (buscar do app ou subir manualmente).
+- Lembretes: a configuração "reduzir animações" do Windows do usuário está ligada; os carrosséis (topo e Colaborador Destaque) ignoram essa configuração de propósito. Migrações vão até a 012 (rodam sozinhas ao subir o servidor). Pasta `MCP/` fica fora do Git (tem credenciais).
