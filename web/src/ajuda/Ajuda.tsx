@@ -18,10 +18,11 @@ const TOPICOS: { titulo: string; icone: string; corpo: ReactNode }[] = [
     </>,
   },
   {
-    titulo: 'Como abro e favorito aplicações?', icone: 'aplicacoes',
+    titulo: 'Como abro e favorito aplicativos?', icone: 'apps',
     corpo: <>
-      <p>Em <b>Aplicações</b>, clique em <b>Abrir</b>. No computador a aplicação abre em uma nova aba e o portal continua aberto. No celular ela abre na mesma aba: use o botão <b>Voltar</b> do navegador para retornar ao portal.</p>
-      <p>Use a estrela para favoritar. Os favoritos ficam salvos na sua conta e aparecem no menu da esquerda e na barra de aplicativos da direita.</p>
+      <p>Clique no ícone de grade, na barra da direita (no celular, em <b>Aplicativos</b> no rodapé ou no topo). Ela abre a lista dos seus favoritos e de todos os aplicativos; clique em um nome para abrir.</p>
+      <p>No computador o aplicativo abre em uma nova aba e o portal continua aberto. No celular ele abre na mesma aba: use o botão <b>Voltar</b> do navegador para retornar ao portal.</p>
+      <p>Use a estrela para favoritar. Os favoritos ficam salvos na sua conta e aparecem como ícones na barra da direita.</p>
     </>,
   },
   {
@@ -39,8 +40,8 @@ const TOPICOS: { titulo: string; icone: string; corpo: ReactNode }[] = [
     titulo: 'O que cada perfil pode fazer?', icone: 'gestao',
     corpo: <ul>
       <li><b>Consulta:</b> lê comunicados, documentos, aplicações e contatos.</li>
-      <li><b>Editor:</b> também publica comunicados, documentos, contatos e pessoas em destaque pela tela <b>Gestão</b>.</li>
-      <li><b>Administrador:</b> tudo isso, mais usuários, aplicações e a auditoria (registro de quem alterou o quê).</li>
+      <li><b>Editor:</b> também publica comunicados, documentos, contatos e pessoas em destaque pela tela <b>Gestão</b>, onde fica o catálogo de aplicativos.</li>
+      <li><b>Administrador:</b> tudo isso, mais usuários, o cadastro de aplicativos e a auditoria (registro de quem alterou o quê).</li>
     </ul>,
   },
   {

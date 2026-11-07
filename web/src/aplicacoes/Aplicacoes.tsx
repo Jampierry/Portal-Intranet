@@ -27,13 +27,13 @@ export function CartaoApp({ app, favorito, alternarFavorito }: { app: Aplicacao;
   );
 }
 
-export function Aplicacoes({ busca, limparBusca, favoritos, alternarFavorito }: { busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void }) {
+export function Aplicacoes({ busca, limparBusca, favoritos, alternarFavorito, semCabecalho = false }: { busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void; semCabecalho?: boolean }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
   const termo = busca.trim().toLocaleLowerCase('pt-BR');
   const lista = (dados ?? []).filter((a) => !termo || [a.nome, a.descricao, a.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(termo)));
   return (
     <>
-      <Cabecalho titulo="Aplicações" sub="Acesse os sistemas da Di Paula em um só lugar." />
+      {!semCabecalho && <Cabecalho titulo="Aplicações" sub="Acesse os sistemas da Di Paula em um só lugar." />}
       <p className="suave" aria-live="polite">{lista.length} {lista.length === 1 ? 'aplicação' : 'aplicações'}{termo ? ` para “${busca}”` : ''}</p>
       <Estado dados={dados} erro={erro} vazio={!!dados && lista.length === 0} limpar={limparBusca} />
       <div className="grade-apps">{lista.map((a) => <CartaoApp key={a.slug} app={a} favorito={favoritos.includes(a.slug)} alternarFavorito={alternarFavorito} />)}</div>

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Crud, Selo } from './Crud';
+import { Aplicacoes } from '../aplicacoes/Aplicacoes';
 import { Administracao } from './Administracao';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, useLista } from '../dados';
@@ -128,7 +130,7 @@ function Contatos() {
 }
 
 interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; responsavel: string | null; ativo: number }
-function Aplicacoes() {
+function CadastroAplicacoes() {
   return (
     <Crud<App> base="/api/gestao/aplicacoes" rotuloItem="aplicação" idDe={(r) => r.slug}
       introducao="Cada aplicação é um link para um sistema externo. Só cadastre endereços confirmados. Inativa = some do portal, mas fica aqui."
@@ -154,19 +156,39 @@ function Aplicacoes() {
   );
 }
 
+/** Aba Aplicativos: o catálogo (abrir e favoritar) para quem gere o portal; o administrador também cadastra os aplicativos. */
+function Aplicativos({ perfil, busca, limparBusca, favoritos, alternarFavorito }: { perfil: PerfilAcesso; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void }) {
+  const [parte, setParte] = useState<'catalogo' | 'cadastro'>('catalogo');
+  return (
+    <>
+      {perfil === 'admin' && (
+        <div className="pilulas filtros" role="group" aria-label="Aplicativos">
+          <button aria-pressed={parte === 'catalogo'} onClick={() => setParte('catalogo')}>Catálogo</button>
+          <button aria-pressed={parte === 'cadastro'} onClick={() => setParte('cadastro')}>Cadastro (administrador)</button>
+        </div>
+      )}
+      {parte === 'catalogo' || perfil !== 'admin'
+        ? <Aplicacoes semCabecalho busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />
+        : <CadastroAplicacoes />}
+    </>
+  );
+}
+
 type Aba = 'comunicados' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes' | 'usuarios' | 'auditoria';
 const ABAS: [Aba, string, PerfilAcesso[]][] = [
   ['comunicados', 'Comunicados', ['admin', 'editor']], ['documentos', 'Documentos', ['admin', 'editor']], ['destaques', 'Pessoas em destaque', ['admin', 'editor']], ['contatos', 'Contatos', ['admin', 'editor']],
-  ['aplicacoes', 'Aplicações', ['admin']], ['usuarios', 'Usuários', ['admin']], ['auditoria', 'Auditoria', ['admin']],
+  ['aplicacoes', 'Aplicativos', ['admin', 'editor']], ['usuarios', 'Usuários', ['admin']], ['auditoria', 'Auditoria', ['admin']],
 ];
 
 /** Gestão do portal: editor cuida do conteúdo; o admin master também cria usuários, aplicações e vê a auditoria. */
-export function Gestao({ perfil, aba: pedida, aoMudarAba }: { perfil: PerfilAcesso; aba?: string; aoMudarAba: (a: string) => void }) {
+export function Gestao({ perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
+  perfil: PerfilAcesso; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+}) {
   const abas = ABAS.filter(([, , quem]) => quem.includes(perfil));
   const aba: Aba = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Gestão" sub={perfil === 'admin' ? 'Conteúdo, aplicações, usuários e auditoria do portal.' : 'Publique comunicados, documentos e reconhecimentos.'} />
+      <Cabecalho titulo="Gestão" sub={perfil === 'admin' ? 'Conteúdo, aplicativos, usuários e auditoria do portal.' : 'Publique comunicados, documentos e reconhecimentos.'} />
       <div className="abas abas-gestao" role="tablist" aria-label="Áreas da gestão">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
@@ -174,7 +196,7 @@ export function Gestao({ perfil, aba: pedida, aoMudarAba }: { perfil: PerfilAces
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}
-      {aba === 'aplicacoes' && <Aplicacoes />}
+      {aba === 'aplicacoes' && <Aplicativos perfil={perfil} busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
       {(aba === 'usuarios' || aba === 'auditoria') && <Administracao parte={aba} />}
     </>
   );

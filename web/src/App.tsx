@@ -10,28 +10,26 @@ import { podeGerir, useSessao, type Usuario } from './sessao';
 import { Gestao } from './gestao/Gestao';
 import { Pessoas } from './pessoas/Pessoas';
 import { Ajuda } from './ajuda/Ajuda';
-import { dataCurta, useLista, type Aplicacao, type Comunicado } from './dados';
+import { dataCurta, useLista, type Comunicado } from './dados';
 import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
-import { Aplicacoes } from './aplicacoes/Aplicacoes';
 import { Documentos } from './documentos/Documentos';
 import { Lancador } from './aplicacoes/Lancador';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
 
-const ABAS: [Tela | 'menu', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['aplicacoes', 'Aplicações', 'aplicacoes'], ['menu', 'Menu', 'menu']];
+const ABAS: [Tela | 'menu' | 'apps', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['apps', 'Aplicativos', 'apps'], ['menu', 'Menu', 'menu']];
 
 // Avisos de cada tela, mostrados na barra superior (barra universal) em vez de dentro da página.
 const AVISOS: Record<Tela, string> = {
-  inicio: 'No computador, as aplicações web abrem em nova aba; no celular, use Voltar do navegador.',
+  inicio: 'Aplicativos: use a barra da direita. No computador abrem em nova aba; no celular, use Voltar do navegador.',
   comunicados: 'Avisos publicados pelas áreas responsáveis.',
-  aplicacoes: 'No computador, as aplicações abrem em nova aba; no celular, use Voltar. Seus favoritos ficam salvos na sua conta.',
   documentos: 'Os arquivos ficam nos sistemas de origem: abra pelo link oficial de cada documento.',
   gestao: 'Todas as alterações feitas aqui ficam registradas na auditoria.',
   pessoas: 'Contatos por área: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
 };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'aplicacoes', 'documentos', 'gestao', 'pessoas', 'ajuda'];
+const TELAS: Tela[] = ['inicio', 'comunicados', 'documentos', 'gestao', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
@@ -79,10 +77,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { config, mudar } = useTema();
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
-  const { dados: apps } = useLista<Aplicacao>('/api/aplicacoes');
   const { dados: comunicados } = useLista<Comunicado>('/api/comunicados');
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente');
-  const favs = (apps ?? []).filter((a) => favoritos.includes(a.slug));
 
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
   useEffect(() => {
@@ -110,7 +106,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        apps={favs} mostrarGestao={gere} />
+        mostrarGestao={gere} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
@@ -133,11 +129,10 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
             {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} />}
             {tela === 'comunicados' && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
-            {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'pessoas' && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && <Ajuda irPara={irPara} />}
-            {tela === 'gestao' && gere && <Gestao perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('gestao', a)} />}
+            {tela === 'gestao' && gere && <Gestao perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('gestao', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'gestao' && !gere && <p className="erro">Você não tem acesso à gestão do portal.</p>}
             <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Portal Intranet</span></footer>
           </main>
@@ -147,7 +142,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 
       <nav className="abas-mobile" aria-label="Navegação principal">
         {ABAS.map(([id, nome, ico]) => (
-          <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
+          <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : id === 'apps' ? setLancador(true) : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
         ))}
       </nav>
       {perfilAberto && <JanelaConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} fechar={() => setPerfilAberto(false)} />}

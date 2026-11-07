@@ -41,6 +41,9 @@
 - **Ajuda** = perguntas frequentes em `web/src/ajuda/Ajuda.tsx` (texto fixo no código; se virar conteúdo editável, mover para o banco).
 - Menu: Pessoas e Ajuda deixaram de ser "em breve".
 
+## Aplicativos (2026-11-07)
+- Saíram do menu esquerdo: a seção "Aplicações web" e o item "Aplicações". Os aplicativos agora ficam na **barra da direita** (favoritos e todos) e em **Gestão › Aplicativos** (catálogo para editor/admin; cadastro só admin). No celular, a aba "Aplicativos" do rodapé abre a barra. Endereço antigo `#aplicacoes` volta ao Início.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev`.
 2. Conferir as telas e os estilos no navegador.

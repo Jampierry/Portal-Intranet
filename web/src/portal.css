@@ -377,7 +377,8 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 .meta-doc dt { color: var(--suave); }
 .meta-doc dd { margin: 0; font-weight: 600; }
 
-.pilulas.filtros button { white-space: nowrap; }
+.pilulas.filtros { flex-wrap: wrap; }
+.pilulas.filtros button { flex: none; white-space: nowrap; }
 
 /* Menu recolhido: só os ícones (os nomes ficam na dica do mouse) */
 .menu.mini .nitem .lbl, .menu.mini .nitem small, .menu.mini .menu-label, .menu.mini .sbfoot { display: none; }
