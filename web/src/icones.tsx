@@ -45,6 +45,13 @@ const CAMINHOS: Record<string, string> = {
   esq: "M15 18l-6-6 6-6",
   dir: "M9 18l6-6-6-6",
   menu: 'M3 6h18M3 12h18M3 18h18',
+  seta: 'M5 12h14M13 6l6 6-6 6',
+  info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-4M12 8h.01',
+  fabrica: 'M3 21V10l6 4v-4l6 4V5h3v16zM7 17h.01M11 17h.01M15 17h.01',
+  qualidade: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4',
+  colecoes: 'M12 4a2 2 0 1 1 2 2c-1 .4-2 1-2 2v1M3 19l9-8 9 8z',
+  tema: 'M12 3a9 9 0 1 0 0 18zM12 3v18',
+  pasta: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
 };
 
 export function Icone({ nome, tamanho = 18, classe }: { nome: string; tamanho?: number; classe?: string }) {

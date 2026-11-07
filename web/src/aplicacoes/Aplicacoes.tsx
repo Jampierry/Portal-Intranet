@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Icone } from '../icones';
+import { Cabecalho, Estado } from '../Cabecalho';
 import { useLista, type Aplicacao } from '../dados';
 import { LinkApp, useLargura } from './LinkApp';
 import { LARGURA_DESKTOP } from '../links';
@@ -7,40 +7,36 @@ import { LARGURA_DESKTOP } from '../links';
 export function CartaoApp({ app, favorito, alternarFavorito }: { app: Aplicacao; favorito: boolean; alternarFavorito: (slug: string) => void }) {
   const desktop = useLargura() >= LARGURA_DESKTOP;
   return (
-    <article className="modulo cartao-app">
-      <span className="icone"><Icone nome={app.icone === 'users' ? 'pessoas' : 'aplicacoes'} tamanho={22} /></span>
-      <span className="texto">
-        <b>{app.nome}</b>
-        <small>{app.descricao}</small>
-        <small className="acesso">{app.categoria} · {app.acesso}</small>
-        <small className="acesso">{desktop ? 'Abre em nova aba.' : 'Abre nesta aba; use Voltar do navegador para retornar.'}</small>
-      </span>
-      <span className="acoes-app">
-        <button className="btn btn-sec btn-pequeno" aria-pressed={favorito} onClick={() => alternarFavorito(app.slug)} title={favorito ? 'Remover dos favoritos' : 'Favoritar'}>
-          <Icone nome="estrela" tamanho={14} /> {favorito ? 'Favorito' : 'Favoritar'}
+    <article className="cartao-app">
+      <div className="cartao-app-topo">
+        <span className="icone"><Icone nome={app.icone === 'users' ? 'pessoas' : 'aplicacoes'} tamanho={24} /></span>
+        <button className="icone-btn" aria-pressed={favorito} onClick={() => alternarFavorito(app.slug)} aria-label={favorito ? `Remover ${app.nome} dos favoritos` : `Favoritar ${app.nome}`} title={favorito ? 'Remover dos favoritos' : 'Favoritar'}>
+          <Icone nome="estrela" tamanho={16} />
         </button>
-        <LinkApp url={app.url} className="btn btn-acento btn-pequeno">Abrir <Icone nome="externo" tamanho={14} /></LinkApp>
-      </span>
+      </div>
+      <div className="texto">
+        <h3>{app.nome}</h3>
+        <p>{app.descricao}</p>
+        <small>{app.categoria} · {app.acesso}</small>
+      </div>
+      <footer>
+        <small>{desktop ? 'Abre em nova aba.' : 'Abre nesta aba; use Voltar do navegador.'}</small>
+        <LinkApp url={app.url} className="btn btn-pri btn-pequeno">Abrir <Icone nome="externo" tamanho={14} /></LinkApp>
+      </footer>
     </article>
   );
 }
 
-export function Aplicacoes({ favoritos, alternarFavorito }: { favoritos: string[]; alternarFavorito: (slug: string) => void }) {
+export function Aplicacoes({ busca, limparBusca, favoritos, alternarFavorito }: { busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
-  const [busca, setBusca] = useState('');
   const termo = busca.trim().toLocaleLowerCase('pt-BR');
   const lista = (dados ?? []).filter((a) => !termo || [a.nome, a.descricao, a.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(termo)));
   return (
     <>
-      <p className="suave">Sistemas web usados pela equipe. Outras categorias aparecem aqui quando houver destino confirmado.</p>
-      <div className="barra">
-        <input className="busca" type="search" placeholder="Buscar aplicação" aria-label="Buscar aplicação" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        <span className="suave" aria-live="polite">{lista.length} {lista.length === 1 ? 'resultado' : 'resultados'}</span>
-      </div>
-      {erro && <p className="erro" role="alert">{erro}</p>}
-      {dados === null && !erro && <p className="vazio">Carregando…</p>}
-      {dados && lista.length === 0 && <p className="vazio">Nenhuma aplicação encontrada. <button className="btn btn-sec btn-pequeno" onClick={() => setBusca('')}>Limpar busca</button></p>}
-      <div className="modulos">{lista.map((a) => <CartaoApp key={a.slug} app={a} favorito={favoritos.includes(a.slug)} alternarFavorito={alternarFavorito} />)}</div>
+      <Cabecalho titulo="Aplicações" sub="Sistemas web usados pela equipe. Outras categorias aparecem aqui quando houver destino confirmado." />
+      <p className="suave" aria-live="polite">{lista.length} {lista.length === 1 ? 'aplicação' : 'aplicações'}{termo ? ` para “${busca}”` : ''}</p>
+      <Estado dados={dados} erro={erro} vazio={!!dados && lista.length === 0} limpar={limparBusca} />
+      <div className="grade-apps">{lista.map((a) => <CartaoApp key={a.slug} app={a} favorito={favoritos.includes(a.slug)} alternarFavorito={alternarFavorito} />)}</div>
     </>
   );
 }

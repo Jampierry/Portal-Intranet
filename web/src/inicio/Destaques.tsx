@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icone } from '../icones';
 import { useLista, type Destaque } from '../dados';
+import { Capa } from '../Capa';
 
 const ROTULOS = { mes: 'Destaque do mês', ano: 'Destaques do ano' } as const;
+const POR_VEZ = 3;
 
 /** Carrossel de pessoas em destaque (mês/ano). Rotação lenta, pausável e desligada com movimento reduzido. Sem ranking. */
 export function Destaques() {
@@ -12,7 +14,10 @@ export function Destaques() {
   const [auto, setAuto] = useState(true);
   const [reduzido, setReduzido] = useState(false);
   const itens = (dados ?? []).filter((d) => d.tipo === tipo);
+  const paginas = Math.max(1, Math.ceil(itens.length / POR_VEZ));
+  const pag = i % paginas;
   const girando = auto && !reduzido;
+  const abas = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const m = matchMedia('(prefers-reduced-motion: reduce)');
@@ -21,45 +26,47 @@ export function Destaques() {
     return () => m.removeEventListener('change', f);
   }, []);
   useEffect(() => {
-    if (!girando || itens.length < 2) return;
-    const t = setInterval(() => setI((x) => (x + 1) % itens.length), 7200);
+    if (!girando || paginas < 2) return;
+    const t = setInterval(() => setI((x) => (x + 1) % paginas), 7200);
     return () => clearInterval(t);
-  }, [girando, itens.length]);
+  }, [girando, paginas]);
 
-  const mover = (d: -1 | 1) => setI((x) => (x + d + itens.length) % itens.length);
-  const atual = itens[i % Math.max(itens.length, 1)];
+  const mover = (d: -1 | 1) => setI((x) => (x + d + paginas) % paginas);
+  const visiveis = itens.slice(pag * POR_VEZ, pag * POR_VEZ + POR_VEZ);
 
   return (
-    <section className="cartao destaques" aria-labelledby="dest-titulo">
-      <div className="barra">
-        <div><h2 id="dest-titulo">Pessoas em destaque</h2><small className="suave">Reconhecimento demonstrativo — nomes e histórias fictícios.</small></div>
-        <div className="pilulas" role="tablist" aria-label="Período dos destaques">
+    <section className="cartao-sec destaques" aria-labelledby="dest-titulo">
+      <div className="sec-topo">
+        <h2 id="dest-titulo"><Icone nome="pessoas" tamanho={24} /> Pessoas em destaque</h2>
+        <div className="abas" role="tablist" aria-label="Período dos destaques" ref={abas}>
           {(['mes', 'ano'] as const).map((t) => (
-            <button key={t} role="tab" aria-selected={tipo === t} aria-pressed={tipo === t} onClick={() => { setTipo(t); setI(0); }}>{ROTULOS[t]}</button>
+            <button key={t} role="tab" aria-selected={tipo === t} onClick={() => { setTipo(t); setI(0); }}>{ROTULOS[t]}</button>
           ))}
         </div>
+        <button className="btn-pausa" disabled={reduzido} aria-pressed={!girando} onClick={() => setAuto((a) => !a)}>
+          <span className="icone-btn"><Icone nome={girando ? 'pausa' : 'tocar'} tamanho={14} /></span>{reduzido ? 'Movimento reduzido' : girando ? 'Pausar animação' : 'Retomar animação'}
+        </button>
       </div>
-      {!atual ? <p className="vazio">Sem destaques publicados.</p> : (
+      {itens.length === 0 ? <p className="vazio">Sem destaques publicados.</p> : (
         <>
-          <article className="destaque-pessoa" aria-live={girando ? 'off' : 'polite'}>
-            <span className="av">{atual.iniciais}</span>
-            <div><small className="suave">{atual.rotulo}</small><h3>{atual.nome}</h3><p className="suave">{atual.area}</p><p>{atual.apresentacao}</p></div>
-          </article>
-          <div className="barra rodape-carrossel">
-            <div className="linha-botoes">
-              <button className="icone-btn" onClick={() => mover(-1)} aria-label="Pessoa anterior"><Icone nome="esq" /></button>
-              <span className="suave" aria-live="polite">{String(i % itens.length + 1).padStart(2, '0')} / {String(itens.length).padStart(2, '0')}</span>
-              <button className="icone-btn" onClick={() => mover(1)} aria-label="Próxima pessoa"><Icone nome="dir" /></button>
-              <button className="btn btn-sec btn-pequeno" disabled={reduzido} aria-pressed={!girando} onClick={() => setAuto((a) => !a)}>
-                <Icone nome={girando ? 'pausa' : 'tocar'} tamanho={14} />{reduzido ? 'Movimento reduzido' : girando ? 'Pausar' : 'Retomar'}
-              </button>
+          <div className="carrossel" aria-live={girando ? 'off' : 'polite'}>
+            <button className="seta-car" onClick={() => mover(-1)} aria-label="Pessoas anteriores"><Icone nome="esq" /></button>
+            <div className="pessoas">
+              {visiveis.map((d) => (
+                <article className="pessoa" key={d.nome}>
+                  <Capa semente={d.nome} icone="pessoas" classe="capa-pessoa"><span className="iniciais-capa">{d.iniciais}</span></Capa>
+                  <div><h3>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
+                </article>
+              ))}
             </div>
-            <div className="pontos" aria-label={`Pessoa ${i % itens.length + 1} de ${itens.length}`}>
-              {itens.map((d, n) => <button key={d.nome} aria-label={`Mostrar ${d.nome}`} aria-current={n === i % itens.length ? 'true' : undefined} onClick={() => setI(n)} />)}
-            </div>
+            <button className="seta-car" onClick={() => mover(1)} aria-label="Próximas pessoas"><Icone nome="dir" /></button>
+          </div>
+          <div className="pontos" aria-label={`Página ${pag + 1} de ${paginas}`}>
+            {Array.from({ length: paginas }, (_, n) => <button key={n} aria-label={`Ir para a página ${n + 1}`} aria-current={n === pag ? 'true' : undefined} onClick={() => setI(n)} />)}
           </div>
         </>
       )}
+      <small className="suave nota">Reconhecimento demonstrativo — nomes e histórias fictícios.</small>
     </section>
   );
 }
