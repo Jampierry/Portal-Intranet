@@ -646,7 +646,6 @@ span.canal { color: var(--suave); }
 .pessoas-janela { overflow: hidden; min-width: 0; }
 .pessoas-trilho { display: flex; transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
 .pessoas-trilho > .pessoas { flex: 0 0 100%; min-width: 0; }
-@media (prefers-reduced-motion: reduce) { .pessoas-trilho { transition: none; } }
 .linha-mvv { grid-template-columns: minmax(0, 1fr) 400px; }
 .destaques.compacto .carrossel { grid-template-columns: 26px minmax(0, 1fr) 26px; gap: 4px; flex: 1 1 auto; align-items: center; }
 .destaques.compacto .seta-car { width: 26px; height: 26px; }

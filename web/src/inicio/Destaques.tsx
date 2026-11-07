@@ -14,21 +14,14 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
   const [tipo, setTipo] = useState<'mes' | 'ano'>('mes');
   const [i, setI] = useState(0);
   const [auto, setAuto] = useState(true);
-  const [reduzido, setReduzido] = useState(false);
   // Aba Mês: quem foi destaque no mês vigente. Aba Ano: todos os destaques do ano atual (de qualquer mês).
   const hoje = new Date(), mesAtual = hoje.getMonth() + 1, anoAtual = hoje.getFullYear();
   const itens = (dados ?? []).filter((d) => d.ano === anoAtual && (tipo === 'ano' || d.mes === mesAtual));
   const paginas = Math.max(1, Math.ceil(itens.length / porVez));
   const pag = i % paginas;
-  const girando = auto && !reduzido;
+  const girando = auto; // gira sozinho mesmo com "reduzir animações" no Windows (o usuário pode pausar no botão)
   const abas = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const m = matchMedia('(prefers-reduced-motion: reduce)');
-    const f = () => setReduzido(m.matches);
-    f(); m.addEventListener('change', f);
-    return () => m.removeEventListener('change', f);
-  }, []);
   useEffect(() => {
     if (!girando || paginas < 2) return;
     const t = setInterval(() => setI((x) => (x + 1) % paginas), 7200);
@@ -47,8 +40,8 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
             <button key={t} role="tab" aria-selected={tipo === t} onClick={() => { setTipo(t); setI(0); }}>{compacto ? ROTULOS_CURTOS[t] : ROTULOS[t]}</button>
           ))}
         </div>
-        <button className="btn-pausa" disabled={reduzido} aria-pressed={!girando} title={girando ? 'Pausar animação' : 'Retomar animação'} aria-label={girando ? 'Pausar animação' : 'Retomar animação'} onClick={() => setAuto((a) => !a)}>
-          <span className="icone-btn"><Icone nome={girando ? 'pausa' : 'tocar'} tamanho={14} /></span>{!compacto && (reduzido ? 'Movimento reduzido' : girando ? 'Pausar animação' : 'Retomar animação')}
+        <button className="btn-pausa" aria-pressed={!girando} title={girando ? 'Pausar animação' : 'Retomar animação'} aria-label={girando ? 'Pausar animação' : 'Retomar animação'} onClick={() => setAuto((a) => !a)}>
+          <span className="icone-btn"><Icone nome={girando ? 'pausa' : 'tocar'} tamanho={14} /></span>{!compacto && (girando ? 'Pausar animação' : 'Retomar animação')}
         </button>
       </div>
       {itens.length === 0 ? <p className="vazio">{tipo === 'mes' ? 'Sem destaque publicado neste mês.' : 'Sem destaques publicados neste ano.'}</p> : (
