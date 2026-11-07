@@ -582,3 +582,17 @@ span.canal { color: var(--suave); }
 
 /* Ícone próprio do aplicativo (imagem dentro do quadrado do ícone) */
 .icone-app-img { width: 100%; height: 100%; object-fit: contain; padding: 18%; box-sizing: border-box; border-radius: inherit; background: #fff; }
+
+/* Computador: o Início ocupa a altura toda da janela (blocos crescem; o rodapé fica no fim com pouco espaço acima) */
+@media (min-width: 1181px) {
+  .rodape-portal { margin-top: auto; }
+  .inicio-grade { flex: 1 1 auto; }
+  .inicio-principal > .cartao-sec { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .destaques > .carrossel { flex: 1 1 auto; align-items: stretch; min-height: 0; }
+  .destaques .pessoas { align-items: stretch; }
+  .destaques .pessoa .capa-pessoa { flex: 1 1 auto; height: auto; min-height: clamp(44px, 8vh, 92px); }
+  .inicio-principal .grade-com.linha { flex: 1 1 auto; }
+}
+@media (min-width: 1181px) and (min-height: 801px) {
+  .inicio-principal .grade-com.linha { grid-auto-rows: 1fr; }
+}
