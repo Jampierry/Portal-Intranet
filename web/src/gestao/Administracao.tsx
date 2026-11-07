@@ -5,6 +5,7 @@ import { dataCurta, useLista } from '../dados';
 import { JanelaForm, Selo } from './Crud';
 import type { PerfilAcesso } from '../sessao';
 import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
+import { useOrdenacao } from './Ordenar';
 
 interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
@@ -33,6 +34,10 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const { dados: catalogo } = useCatalogo();
   const perfisEscolha = (catalogo?.perfis ?? []).filter((p) => souAdmin || p.codigo !== 'admin');
   const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
+  const ord = useOrdenacao(dados, {
+    nome: (u) => u.nome, login: (u) => u.login, perfil: (u) => u.perfil_nome,
+    situacao: (u) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado'), acesso: (u) => u.ultimo_acesso,
+  });
   const [aviso, setAviso] = useState('');
   const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
@@ -51,9 +56,9 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       {dados && (
         <div className="rolagem">
           <table className="dados">
-            <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Situação</th><th>Último acesso</th><th className="col-acoes">Ações</th></tr></thead>
+            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login')}{ord.cab('perfil', 'Perfil')}{ord.cab('situacao', 'Situação')}{ord.cab('acesso', 'Último acesso')}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
-              {dados.map((u) => (
+              {(ord.linhas ?? []).map((u) => (
                 <tr key={u.id}>
                   <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td>
                   <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
@@ -129,6 +134,7 @@ function resumo(detalhe: string | null): string {
 
 function Auditoria() {
   const { dados, erro } = useLista<{ id: number; quando: string; usuario: string | null; acao: string; detalhe: string | null }>('/api/auditoria');
+  const ord = useOrdenacao(dados, { quando: (l) => l.quando, quem: (l) => l.usuario, acao: (l) => ACAO[l.acao] ?? l.acao, detalhe: (l) => resumo(l.detalhe) });
   return (
     <section className="crud">
       <p className="suave" style={{ margin: 0 }}>Últimos 200 registros. A auditoria só aceita inclusão: ninguém consegue alterar ou apagar o histórico. Senhas nunca são gravadas.</p>
@@ -136,10 +142,10 @@ function Auditoria() {
       {dados && (
         <div className="rolagem">
           <table className="dados">
-            <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhe</th></tr></thead>
+            <thead><tr>{ord.cab('quando', 'Quando')}{ord.cab('quem', 'Quem')}{ord.cab('acao', 'O quê')}{ord.cab('detalhe', 'Detalhe')}</tr></thead>
             <tbody>
               {dados.length === 0 && <tr><td colSpan={4} className="vazio">Sem registros.</td></tr>}
-              {dados.map((l) => (
+              {(ord.linhas ?? []).map((l) => (
                 <tr key={l.id}>
                   <td className="nowrap" data-rotulo="Quando">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
                   <td data-rotulo="Quem">{l.usuario ?? '—'}</td><td data-rotulo="O quê">{ACAO[l.acao] ?? l.acao}</td><td className="suave" data-rotulo="Detalhe">{resumo(l.detalhe)}</td>

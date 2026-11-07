@@ -786,3 +786,11 @@ span.canal { color: var(--suave); }
 .perm-usuario .perm-check.portao span, .perm-usuario-caixa .perm-check.portao span { font-weight: 700; }
 .perm-usuario .perm-check .perm-ajuste, .perm-usuario-caixa .perm-check .perm-ajuste { flex-basis: auto; margin: 0; }
 @media (max-width: 700px) { .perm-area { grid-template-columns: 1fr; } }
+
+/* Cabeçalho de tabela clicável (ordenar) */
+.dados th button.ord { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font: inherit; color: inherit; white-space: nowrap; }
+.dados th button.ord:hover { color: var(--vinho-texto); }
+.dados th button.ord:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; border-radius: 4px; }
+.dados th button.ord::after { content: '↕'; font-size: 11px; opacity: .35; }
+.dados th button.ord.asc::after { content: '▲'; opacity: .9; font-size: 9px; }
+.dados th button.ord.desc::after { content: '▼'; opacity: .9; font-size: 9px; }

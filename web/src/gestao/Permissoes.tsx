@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { JanelaForm, Selo } from './Crud';
+import { useOrdenacao } from './Ordenar';
 
 export interface AcaoPerm { chave: string; rotulo: string }
 export interface AreaPerm { id: string; rotulo: string; acoes: AcaoPerm[] }
@@ -76,6 +77,7 @@ const resumo = (catalogo: GrupoPerm[], p: PerfilPerm) => catalogo.map((g) => {
 /** Aba Perfis: lista de perfis (do sistema e personalizados); criar, escolher o que cada um acessa e faz, e apagar. */
 export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: string[] }) {
   const { dados, erro, recarregar } = useCatalogo();
+  const ord = useOrdenacao(dados?.perfis ?? null, { perfil: (p) => p.nome, codigo: (p) => p.codigo, usuarios: (p) => p.usuarios, tipo: (p) => (p.sistema ? 'Padrão do sistema' : 'Personalizado') });
   const [aviso, setAviso] = useState('');
   const [falha, setFalha] = useState('');
   const [form, setForm] = useState<{ codigo: string | null; nome: string; marcadas: Set<string>; sistema: boolean; fixo: boolean } | null>(null);
@@ -106,9 +108,9 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
       {falha && <p className="erro" role="alert">{falha}</p>}
       <div className="rolagem">
         <table className="dados">
-          <thead><tr><th>Perfil</th><th>Código</th><th>O que pode fazer</th><th>Usuários</th><th className="col-acoes">Ações</th></tr></thead>
+          <thead><tr>{ord.cab('perfil', 'Perfil')}{ord.cab('codigo', 'Código')}<th>O que pode fazer</th>{ord.cab('usuarios', 'Usuários')}<th className="col-acoes">Ações</th></tr></thead>
           <tbody>
-            {dados.perfis.map((p) => (
+            {(ord.linhas ?? []).map((p) => (
               <tr key={p.codigo}>
                 <td data-rotulo="Perfil"><b>{p.nome}</b> {p.sistema ? <Selo texto="Padrão do sistema" tom="neutro" /> : <Selo texto="Personalizado" tom="ok" />}</td>
                 <td data-rotulo="Código">{p.codigo}</td>

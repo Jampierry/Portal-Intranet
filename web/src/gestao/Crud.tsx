@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type FormEvent,
 import { api } from '../api';
 import { Icone } from '../icones';
 import { useLista } from '../dados';
+import { useOrdenacao, valorOrdenavel } from './Ordenar';
 
 /** Permissões do usuário logado dentro de Publicar. Sem provedor (null) = tudo liberado; o servidor confere de qualquer forma. */
 export const PermissoesCtx = createContext<string[] | null>(null);
@@ -22,7 +23,7 @@ export interface Campo {
   auto?: { endpoint: string; origem: string; rotulo: string };
   metade?: boolean;
 }
-export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode }
+export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode; /** Valor para ordenar ao clicar no cabeçalho (padrão: o próprio texto da coluna). */ ordem?: (r: T) => string | number | null }
 type Valores = Record<string, string | boolean>;
 
 /** Janela (dialog nativo) com formulário. Fecha com Esc ou clicando fora; erros aparecem dentro dela. */
@@ -149,6 +150,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
   acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
+  const ord = useOrdenacao(dados, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
   const perms = usePermissoes();
   const area = areaDe(base);
   const libera = (acao: string) => perms === null || perms.includes(`pub.${area}.${acao}`);
@@ -181,10 +183,10 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
       {dados && (
         <div className="rolagem">
           <table className="dados">
-            <thead><tr>{colunas.map((c) => <th key={c.titulo}>{c.titulo}</th>)}<th className="col-acoes">Ações</th></tr></thead>
+            <thead><tr>{colunas.map((c) => ord.cab(c.titulo, c.titulo))}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
               {dados.length === 0 && <tr><td colSpan={colunas.length + 1} className="vazio">Nada cadastrado ainda.</td></tr>}
-              {dados.map((r) => {
+              {(ord.linhas ?? []).map((r) => {
                 const nome = String(colunas[0].ver(r));
                 return (
                   <tr key={idDe(r)}>

@@ -131,3 +131,4 @@
 - Publicar: abas e botões Novo/Editar/Apagar seguem as ações (`PermissoesCtx` em `Crud.tsx`). Documentos sem `documentos.abrir` não recebem o link do servidor.
 - Carrosséis do topo agora se chamam Esquerda (maior), Meio e Direita em Publicar › Banners.
 - Calendário no menu: sempre visível (compacto em janela baixa), acima do lema do rodapé.
+- Tabelas (Usuários, Perfis, Auditoria e todas as de Publicar): clicar no cabeçalho ordena (A→Z, Z→A, original). Hook `useOrdenacao` em `web/src/gestao/Ordenar.tsx`; `Coluna.ordem` opcional no Crud.
