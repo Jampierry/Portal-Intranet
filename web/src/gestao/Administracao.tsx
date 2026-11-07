@@ -106,6 +106,7 @@ const ACAO: Record<string, string> = {
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado',
   comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',
   documento_criado: 'Documento criado', documento_alterado: 'Documento alterado', documento_apagado: 'Documento apagado',
+  contato_criado: 'Contato criado', contato_alterado: 'Contato alterado', contato_apagado: 'Contato apagado',
   destaque_criado: 'Destaque criado', destaque_alterado: 'Destaque alterado', destaque_apagado: 'Destaque apagado',
   aplicacao_criada: 'Aplicação criada', aplicacao_alterada: 'Aplicação alterada', aplicacao_apagada: 'Aplicação apagada',
   admin_criado_cli: 'Administrador criado (terminal)', admin_redefinido_cli: 'Administrador redefinido (terminal)',

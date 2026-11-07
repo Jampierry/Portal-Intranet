@@ -8,6 +8,8 @@ import { JanelaConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
 import { podeGerir, useSessao, type Usuario } from './sessao';
 import { Gestao } from './gestao/Gestao';
+import { Pessoas } from './pessoas/Pessoas';
+import { Ajuda } from './ajuda/Ajuda';
 import { dataCurta, useLista, type Aplicacao, type Comunicado } from './dados';
 import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
@@ -26,8 +28,10 @@ const AVISOS: Record<Tela, string> = {
   aplicacoes: 'No computador, as aplicações abrem em nova aba; no celular, use Voltar. Seus favoritos ficam salvos na sua conta.',
   documentos: 'Os arquivos ficam nos sistemas de origem: abra pelo link oficial de cada documento.',
   gestao: 'Todas as alterações feitas aqui ficam registradas na auditoria.',
+  pessoas: 'Contatos por área: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
+  ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
 };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'aplicacoes', 'documentos', 'gestao'];
+const TELAS: Tela[] = ['inicio', 'comunicados', 'aplicacoes', 'documentos', 'gestao', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
@@ -131,6 +135,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'comunicados' && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'pessoas' && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'ajuda' && <Ajuda irPara={irPara} />}
             {tela === 'gestao' && gere && <Gestao perfil={usuario.perfil} aba={rota.slug} aoMudarAba={(a) => irPara('gestao', a)} />}
             {tela === 'gestao' && !gere && <p className="erro">Você não tem acesso à gestão do portal.</p>}
             <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Portal Intranet</span></footer>

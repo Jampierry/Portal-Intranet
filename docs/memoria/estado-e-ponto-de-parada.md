@@ -36,11 +36,16 @@
 - Dev: `npm run banco:seed` cria admin/admin123, editor/editor123, leitor/leitor123. Produção: `npm run admin:criar -- <login> "<Nome>"`.
 - Testes: 38 (API com banco em memória + contraste + links). `npm run typecheck` agora checa web e servidor.
 
+## Pessoas e Ajuda (2026-11-07)
+- **Pessoas** = contatos por área (`modulos/pessoas`, tabela `contatos`/`departamentos`): canal da área, sem dados pessoais. Gestão em Gestão › Contatos. Seed cria contatos de exemplo (domínio `.invalid`).
+- **Ajuda** = perguntas frequentes em `web/src/ajuda/Ajuda.tsx` (texto fixo no código; se virar conteúdo editável, mover para o banco).
+- Menu: Pessoas e Ajuda deixaram de ser "em breve".
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev`.
 2. Conferir as telas e os estilos no navegador.
 
 ## Próximos passos
-- Pessoas e Ajuda (itens "em breve" do menu); SSO se a TI oferecer; recuperação de senha por e-mail.
+- SSO se a TI oferecer; recuperação de senha por e-mail; notificações/confirmação de leitura.
 - Comunicados: gestão (rascunho/publicado/arquivado) depois do login. Documentos: anexos/download.
 - Ver `docs/roteiro-modulos.md`.

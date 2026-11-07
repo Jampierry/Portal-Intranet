@@ -12,7 +12,7 @@ TypeScript · React 19 + Vite (`web/`) · Fastify + SQLite nativo `node:sqlite` 
 - Primeiro administrador: `npm run admin:criar -- <login> "<Nome>"`. Produção: definir `ORIGENS_PERMITIDAS` (endereço público do portal) e `NODE_ENV=production`.
 
 ## Estrutura (igual ao PREMIA)
-- `web/src/<modulo>/` = telas de cada módulo (`inicio`, `comunicados`, `aplicacoes`, `documentos`, `gestao`); `web/src/` raiz = shell (`App.tsx`, `Menu.tsx`), `tema.tsx`, `temas-dados.ts`, `estilo.css` (tokens dos temas), `portal.css` (layout, modo compacto), `perfil.tsx` (avatar e perfil local), `Capa.tsx`, `Cabecalho.tsx`, `icones.tsx`, `api.ts`, `dados.ts`, `links.ts`. `web/test/` = testes (inclui contraste WCAG dos temas).
+- `web/src/<modulo>/` = telas de cada módulo (`inicio`, `comunicados`, `aplicacoes`, `documentos`, `gestao`, `pessoas`, `ajuda`); `web/src/` raiz = shell (`App.tsx`, `Menu.tsx`), `tema.tsx`, `temas-dados.ts`, `estilo.css` (tokens dos temas), `portal.css` (layout, modo compacto), `perfil.tsx` (avatar e perfil local), `Capa.tsx`, `Cabecalho.tsx`, `icones.tsx`, `api.ts`, `dados.ts`, `links.ts`. `web/test/` = testes (inclui contraste WCAG dos temas).
 - `modulos/<nome>/api/` = rotas da API de cada módulo (registradas em `servidor/src/app.ts`); `modulos/<nome>/data/` = dados fictícios usados pelo seed; `modulos/<nome>/tests/`.
 - `servidor/` = Fastify, `config.ts`, `db.ts`, CLIs `migrar`/`seed`. `infra/migracoes/` = SQL versionado.
 - **Um módulo por vez**: não mexer em outro módulo sem pedir. Ordem/status: `docs/roteiro-modulos.md`.

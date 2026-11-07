@@ -9,6 +9,8 @@
 | 5 | documentos | Versão, responsável, revisão, link oficial e classificação ✅; gestão ✅; anexos/download ⬜ (o arquivo fica no sistema de origem) | 🟡 |
 | 6 | acessos | Login local, perfis admin/editor/consulta, usuários, troca de senha, auditoria ✅ | ✅ |
 | 7 | gestão | Tela única com abas: comunicados, documentos, destaques (com consentimento), aplicações, usuários, auditoria ✅ | ✅ |
-| 8+ | Futuros | pessoas, ajuda, SSO corporativo, notificações | ⬜ |
+| 8 | pessoas | Contatos por área (sem dados pessoais), gestão pela aba Contatos ✅ | ✅ |
+| 9 | ajuda | Perguntas frequentes (login, aplicações, comunicados, documentos, perfis) ✅ | ✅ |
+| 10+ | Futuros | SSO corporativo, notificações, recuperação de senha por e-mail | ⬜ |
 
 Regra: ao iniciar um módulo, ler o `README.md` dele, fazer o trabalho, atualizar o status aqui e em `docs/memoria/`.

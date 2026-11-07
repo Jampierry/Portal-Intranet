@@ -102,6 +102,31 @@ function Destaques() {
   );
 }
 
+interface Cont { id: number; departamento: string; nome: string; canal: string; publicavel: number }
+function Contatos() {
+  const { dados } = useLista<Cont>('/api/gestao/contatos');
+  const areas = [...new Set((dados ?? []).map((c) => c.departamento))];
+  return (
+    <Crud<Cont> base="/api/gestao/contatos" rotuloItem="contato" idDe={(r) => r.id}
+      introducao="Canais das áreas (e-mail, ramal, ferramenta). Não cadastre dados pessoais de funcionários. A área nova é criada ao salvar."
+      campos={[
+        { chave: 'departamento', rotulo: 'Área', obrigatorio: true, max: 60, sugestoes: areas, metade: true },
+        { chave: 'nome', rotulo: 'Assunto / contato', obrigatorio: true, max: 80, dica: 'Ex.: Folha de pagamento', metade: true },
+        { chave: 'canal', rotulo: 'Canal', obrigatorio: true, max: 120, dica: 'E-mail, ramal ou endereço http(s) de chamados' },
+        { chave: 'publicavel', rotulo: 'Aparece no portal', tipo: 'check' },
+      ]}
+      colunas={[
+        { titulo: 'Área', ver: (r) => r.departamento },
+        { titulo: 'Assunto', ver: (r) => r.nome },
+        { titulo: 'Canal', ver: (r) => r.canal },
+        { titulo: 'Situação', ver: (r) => <Selo texto={r.publicavel ? 'Publicado' : 'Oculto'} tom={r.publicavel ? 'ok' : 'neutro'} /> },
+      ]}
+      valoresNovos={{ departamento: '', nome: '', canal: '', publicavel: true }}
+      paraForm={(r) => ({ departamento: r.departamento, nome: r.nome, canal: r.canal, publicavel: !!r.publicavel })}
+    />
+  );
+}
+
 interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; responsavel: string | null; ativo: number }
 function Aplicacoes() {
   return (
@@ -129,9 +154,9 @@ function Aplicacoes() {
   );
 }
 
-type Aba = 'comunicados' | 'documentos' | 'destaques' | 'aplicacoes' | 'usuarios' | 'auditoria';
+type Aba = 'comunicados' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes' | 'usuarios' | 'auditoria';
 const ABAS: [Aba, string, PerfilAcesso[]][] = [
-  ['comunicados', 'Comunicados', ['admin', 'editor']], ['documentos', 'Documentos', ['admin', 'editor']], ['destaques', 'Pessoas em destaque', ['admin', 'editor']],
+  ['comunicados', 'Comunicados', ['admin', 'editor']], ['documentos', 'Documentos', ['admin', 'editor']], ['destaques', 'Pessoas em destaque', ['admin', 'editor']], ['contatos', 'Contatos', ['admin', 'editor']],
   ['aplicacoes', 'Aplicações', ['admin']], ['usuarios', 'Usuários', ['admin']], ['auditoria', 'Auditoria', ['admin']],
 ];
 
@@ -148,6 +173,7 @@ export function Gestao({ perfil, aba: pedida, aoMudarAba }: { perfil: PerfilAces
       {aba === 'comunicados' && <Comunicados />}
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
+      {aba === 'contatos' && <Contatos />}
       {aba === 'aplicacoes' && <Aplicacoes />}
       {(aba === 'usuarios' || aba === 'auditoria') && <Administracao parte={aba} />}
     </>

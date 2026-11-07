@@ -64,6 +64,22 @@ try {
   const setDoc = db.prepare("UPDATE documentos SET versao = ?, responsavel = ?, revisado_em = ? WHERE slug = ? AND versao IS NULL");
   documents.forEach((d, i) => setDoc.run(`1.${i}`, RESP[i % RESP.length], `2026-10-${String(5 + i * 3).padStart(2, '0')}`, d.id));
 
+  // Contatos de EXEMPLO por área (canais fictícios: domínio .invalid não existe de verdade).
+  const insDepto = db.prepare('INSERT OR IGNORE INTO departamentos (nome) VALUES (?)');
+  const insCont = db.prepare('INSERT INTO contatos (departamento_id, nome, canal, publicavel) SELECT d.id, ?, ?, 1 FROM departamentos d WHERE d.nome = ? AND NOT EXISTS (SELECT 1 FROM contatos c WHERE c.departamento_id = d.id AND c.nome = ?)');
+  for (const [area, nome, canal] of [
+    ['Recursos Humanos', 'Atendimento ao colaborador', 'rh@exemplo.invalid'],
+    ['Recursos Humanos', 'Folha de pagamento', 'ramal 2210 (exemplo)'],
+    ['Tecnologia da Informação', 'Suporte e acessos', 'suporte@exemplo.invalid'],
+    ['Tecnologia da Informação', 'Abrir chamado', 'https://chamados.exemplo.invalid'],
+    ['Qualidade', 'Não conformidades e inspeções', 'qualidade@exemplo.invalid'],
+    ['Produção', 'Planejamento e controle (PCP)', 'ramal 2300 (exemplo)'],
+    ['Comercial', 'Atendimento a lojas e clientes', 'comercial@exemplo.invalid'],
+  ] as const) {
+    insDepto.run(area);
+    insCont.run(nome, canal, area, nome);
+  }
+
   const insPer = db.prepare("INSERT OR IGNORE INTO periodos_destaque (tipo, rotulo, status) VALUES (?, ?, 'publicado')");
   const insDes = db.prepare(
     "INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status) SELECT p.id, ?, ?, ?, ?, 'exemplo-ficticio', 'aprovado' FROM periodos_destaque p WHERE p.tipo = ? AND p.rotulo = ? AND NOT EXISTS (SELECT 1 FROM destaques d WHERE d.periodo_id = p.id AND d.nome = ?)",

@@ -5,6 +5,7 @@ import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
+import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
@@ -14,6 +15,7 @@ export const MODULOS = [
   { nome: 'comunicados', rotas: rotasComunicados },
   { nome: 'documentos', rotas: rotasDocumentos },
   { nome: 'inicio', rotas: rotasInicio },
+  { nome: 'pessoas', rotas: rotasPessoas },
 ];
 
 export async function criarApp(db: Banco, producao = false) {

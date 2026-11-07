@@ -3,13 +3,13 @@ import { Icone, IconeSistema } from './icones';
 import { LinkApp } from './aplicacoes/LinkApp';
 import type { Aplicacao } from './dados';
 
-export type Tela = 'inicio' | 'comunicados' | 'aplicacoes' | 'documentos' | 'gestao';
+export type Tela = 'inicio' | 'comunicados' | 'aplicacoes' | 'documentos' | 'gestao' | 'pessoas' | 'ajuda';
 
 // Item: [id, nome, ativo]. Só os "ativos" têm tela; os demais aparecem apagados ("em breve").
 type Item = [string, string, boolean];
 const ITENS: Item[] = [
   ['inicio', 'Início', true], ['comunicados', 'Comunicados', true], ['aplicacoes', 'Aplicações', true], ['documentos', 'Documentos', true],
-  ['pessoas', 'Pessoas', false], ['ajuda', 'Ajuda', false],
+  ['pessoas', 'Pessoas', true], ['ajuda', 'Ajuda', true],
 ];
 
 interface Props {
