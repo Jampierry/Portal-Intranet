@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
 import { Cabecalho, Estado } from '../Cabecalho';
-import { useLista, type Documento } from '../dados';
+import { dataCurta, useLista, type Documento } from '../dados';
 
 export function Documentos({ busca, limparBusca }: { busca: string; limparBusca: () => void }) {
   const { dados, erro } = useLista<Documento>('/api/documentos');
@@ -25,7 +25,8 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
         {lista.map((d) => (
           <article className="cartao-doc" key={d.slug}>
             <span className="icone"><Icone nome="documentos" tamanho={22} /></span>
-            <div className="texto"><h3>{d.titulo}</h3><p>{d.resumo}</p><small>{d.categoria} · {d.formato} · sem arquivo</small></div>
+            <div className="texto"><h3>{d.titulo}</h3><p>{d.resumo}</p><small>{d.categoria} · {d.formato} · sem arquivo</small>
+              {(d.versao || d.responsavel) && <dl className="meta-doc">{d.versao && <div><dt>Versão</dt><dd>{d.versao}</dd></div>}{d.responsavel && <div><dt>Responsável</dt><dd>{d.responsavel}</dd></div>}{d.revisado_em && <div><dt>Revisado em</dt><dd>{dataCurta(d.revisado_em)}</dd></div>}</dl>}</div>
           </article>
         ))}
       </div>

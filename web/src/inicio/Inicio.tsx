@@ -8,7 +8,7 @@ import type { Tela } from '../Menu';
 
 /** Início: saudação, faixa de novidades, pessoas em destaque, comunicados e (à direita) aplicações favoritas. */
 export function Inicio({ irPara, apps, favoritos, comunicados }: {
-  irPara: (t: Tela) => void; apps: Aplicacao[] | null; favoritos: string[]; comunicados: Comunicado[] | null;
+  irPara: (t: Tela, slug?: string) => void; apps: Aplicacao[] | null; favoritos: string[]; comunicados: Comunicado[] | null;
 }) {
   const favs = (apps ?? []).filter((a) => favoritos.includes(a.slug));
   const lista = favs.length ? favs : (apps ?? []).slice(0, 3);
@@ -19,7 +19,7 @@ export function Inicio({ irPara, apps, favoritos, comunicados }: {
           <small className="eyebrow">DI PAULA</small>
           <h2>Novidades<br />da <em>semana</em></h2>
           <p>Coleção Movimento Real já está em produção e chega em breve às nossas lojas.</p>
-          <button className="btn btn-coral" onClick={() => irPara('comunicados')}>Saiba mais <Icone nome="seta" tamanho={16} /></button>
+          <button className="btn btn-coral" onClick={() => irPara('comunicados', comunicados?.[0]?.slug)}>Saiba mais <Icone nome="seta" tamanho={16} /></button>
         </div>
         <Capa semente="hero" icone="colecoes" classe="hero-arte"><Lema linhas={['MODA', 'QUE ACOMPANHA', 'A SUA HISTÓRIA']} /></Capa>
         <div className="hero-marca" aria-hidden="true"><Lema linhas={['QUALIDADE', 'EM CADA', 'MOVIMENTO']} /></div>

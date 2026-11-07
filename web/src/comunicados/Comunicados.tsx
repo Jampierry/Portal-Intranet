@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '../api';
 import { Icone } from '../icones';
 import { Capa, Lema } from '../Capa';
 import { Cabecalho, Estado } from '../Cabecalho';
@@ -14,7 +15,7 @@ export function CartaoComunicado({ c }: { c: Comunicado }) {
       <Capa semente={c.slug} icone={iconeDe(c.categoria)} classe="capa-card">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
       <div className="cartao-com-corpo">
         <small className="cat">{c.categoria}</small>
-        <h3>{c.titulo}</h3>
+        <h3><a className="cobre-cartao" href={`#comunicados/${encodeURIComponent(c.slug)}`}>{c.titulo}</a></h3>
         <p>{c.resumo}</p>
         <footer><span><Icone nome="calendario" tamanho={15} /> {dataCurta(c.publicado_em)}</span><Icone nome="seta" tamanho={16} /></footer>
       </div>
@@ -28,7 +29,39 @@ export function ListaComunicados({ itens, linha = false }: { itens: Comunicado[]
 
 type Ordem = 'recentes' | 'antigos';
 
-export function Comunicados({ busca, limparBusca }: { busca: string; limparBusca: () => void }) {
+/** Detalhe de um comunicado publicado: categoria, data, corpo em parágrafos e outros da mesma categoria. */
+function ComunicadoDetalhe({ slug }: { slug: string }) {
+  const [c, setC] = useState<(Comunicado & { corpo: string | null }) | null | 'erro'>(null);
+  const { dados } = useLista<Comunicado>('/api/comunicados');
+  useEffect(() => { setC(null); api<Comunicado & { corpo: string | null }>(`/api/comunicados/${encodeURIComponent(slug)}`).then(setC).catch(() => setC('erro')); }, [slug]);
+  const voltar = <a className="link-ver voltar" href="#comunicados"><Icone nome="esq" tamanho={15} /> Voltar aos comunicados</a>;
+  if (c === 'erro') return <><Cabecalho titulo="Comunicado não encontrado" sub="Ele pode ter sido arquivado ou o endereço está incorreto." />{voltar}</>;
+  if (c === null) return <p className="vazio">Carregando…</p>;
+  const paragrafos = (c.corpo ?? c.resumo).split(/\n{2,}/).filter(Boolean);
+  const outros = (dados ?? []).filter((x) => x.categoria === c.categoria && x.slug !== c.slug).slice(0, 3);
+  return (
+    <>
+      {voltar}
+      <article className="detalhe-com">
+        <Capa semente={c.slug} icone={iconeDe(c.categoria)} classe="capa-detalhe">{c.prioridade === 'urgente' && <span className="selo">URGENTE</span>}</Capa>
+        <div className="detalhe-corpo">
+          <small className="cat">{c.categoria}</small>
+          <h1>{c.titulo}</h1>
+          <p className="suave detalhe-data"><Icone nome="calendario" tamanho={15} /> Publicado em {dataCurta(c.publicado_em)}</p>
+          {paragrafos.map((p, i) => <p key={i} className={i === 0 ? 'detalhe-lead' : undefined}>{p}</p>)}
+        </div>
+      </article>
+      {outros.length > 0 && <section aria-labelledby="outros-com"><div className="barra"><h2 id="outros-com">Mais em {c.categoria}</h2></div><ListaComunicados itens={outros} /></section>}
+    </>
+  );
+}
+
+export function Comunicados({ slug, busca, limparBusca }: { slug?: string; busca: string; limparBusca: () => void }) {
+  if (slug) return <ComunicadoDetalhe slug={slug} />;
+  return <ListaDeComunicados busca={busca} limparBusca={limparBusca} />;
+}
+
+function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca: () => void }) {
   const { dados, erro } = useLista<Comunicado>('/api/comunicados');
   const [categoria, setCategoria] = useState('Todas');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
@@ -61,7 +94,7 @@ export function Comunicados({ busca, limparBusca }: { busca: string; limparBusca
                 <span className="etiqueta">DESTAQUE</span>
                 <h2>{destaque.titulo}</h2>
                 <p>{destaque.resumo}</p>
-                <button className="btn btn-pri">Saiba mais <Icone nome="seta" tamanho={16} /></button>
+                <a className="btn btn-pri" href={`#comunicados/${encodeURIComponent(destaque.slug)}`}>Saiba mais <Icone nome="seta" tamanho={16} /></a>
               </div>
               <Capa semente={destaque.slug} icone={iconeDe(destaque.categoria)} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
             </section>

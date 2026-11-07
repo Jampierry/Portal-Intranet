@@ -21,11 +21,17 @@
 - **Sem fotos**: capas são blocos de cor do tema (`web/src/Capa.tsx`, aceita `foto` quando houver URL).
 - Verificado por screenshot (escuro): Início, Comunicados, celular. **Falta conferir**: modo claro e os outros 4 estilos, Aplicações/Documentos, menu recolhido.
 
+## Módulos 4 e 5 (2026-11-06)
+- Comunicados: detalhe pronto. API `GET /api/comunicados/:slug` (404 para rascunho/arquivado), tela com corpo em parágrafos e "Mais em <categoria>", endereço `#comunicados/<slug>` (os cartões são links; Voltar do navegador funciona).
+- Documentos: versão, responsável e data de revisão (dados de exemplo no seed, só onde estavam vazios).
+- Testes novos da API em `modulos/comunicados/tests/api.test.ts` (banco em memória); `npm test` agora roda também `modulos/*/tests`.
+- Seed: roda de novo sem duplicar; preenche `corpo` e metadados só onde são nulos.
+
 ## Como retomar
 1. `git pull`, `npm install`, `npm run banco:migrar`, `npm run banco:seed`, `npm run dev`.
 2. Conferir as telas e os estilos no navegador.
 
 ## Próximos passos
-- Módulo acessos: login, perfis e permissões (igual ao PREMIA).
-- Comunicados: detalhe e gestão (rascunho/publicado/arquivado). Documentos: versão e responsável.
+- Módulo acessos: login, perfis e permissões (igual ao PREMIA); o nome do topo ("Bem-vindo(a)") passa a vir do usuário logado.
+- Comunicados: gestão (rascunho/publicado/arquivado) depois do login. Documentos: anexos/download.
 - Ver `docs/roteiro-modulos.md`.

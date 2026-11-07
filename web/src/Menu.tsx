@@ -13,7 +13,7 @@ const ITENS: Item[] = [
 ];
 
 interface Props {
-  tela: Tela; irPara: (t: Tela) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
+  tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
   apps: Aplicacao[];
 }
 

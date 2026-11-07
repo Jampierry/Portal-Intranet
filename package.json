@@ -15,7 +15,7 @@
     "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w servidor\" \"npm run dev -w web\"",
     "banco:migrar": "npm run migrar -w servidor",
     "banco:seed": "npm run seed -w servidor",
-    "test": "node --test web/test/*.test.ts",
+    "test": "node --test web/test/*.test.ts modulos/*/tests/*.test.ts",
     "build": "npm run build -w web",
     "typecheck": "tsc --noEmit -p web"
   },

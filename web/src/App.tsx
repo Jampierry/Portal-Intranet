@@ -24,7 +24,12 @@ const AVISOS: Record<Tela, string> = {
   documentos: 'Catálogo demonstrativo: nenhum arquivo está anexado e não há download nesta versão.',
 };
 const TELAS: Tela[] = ['inicio', 'comunicados', 'aplicacoes', 'documentos'];
-const telaDoEndereco = (): Tela => { const h = location.hash.slice(1) as Tela; return TELAS.includes(h) ? h : 'inicio'; };
+interface Rota { tela: Tela; slug?: string }
+/** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
+const rotaDoEndereco = (): Rota => {
+  const [t, slug] = location.hash.slice(1).split('/');
+  return TELAS.includes(t as Tela) ? { tela: t as Tela, slug: slug ? decodeURIComponent(slug) : undefined } : { tela: 'inicio' };
+};
 
 function lerFavoritos(): string[] {
   try { const v = JSON.parse(localStorage.getItem(CHAVE_FAV) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []; } catch { return []; }
@@ -61,7 +66,8 @@ function Sino({ itens, ir }: { itens: Comunicado[]; ir: () => void }) {
 export function App() {
   const [saude, setSaude] = useState<Saude | null>(null);
   const [offline, setOffline] = useState(false);
-  const [tela, setTela] = useState<Tela>(telaDoEndereco);
+  const [rota, setRota] = useState<Rota>(rotaDoEndereco);
+  const tela = rota.tela;
   const [gaveta, setGaveta] = useState(false);
   const [perfilAberto, setPerfilAberto] = useState(false);
   const [lancador, setLancador] = useState(false);
@@ -81,12 +87,12 @@ export function App() {
     addEventListener('keydown', tecla);
     return () => removeEventListener('keydown', tecla);
   }, [lancador]);
-  useEffect(() => { const f = () => setTela(telaDoEndereco()); addEventListener('popstate', f); return () => removeEventListener('popstate', f); }, []);
+  useEffect(() => { const f = () => setRota(rotaDoEndereco()); addEventListener('popstate', f); return () => removeEventListener('popstate', f); }, []);
   useEffect(() => { try { localStorage.setItem(CHAVE_FAV, JSON.stringify(favoritos)); } catch { /* vale só nesta sessão */ } }, [favoritos]);
 
   const alternarFavorito = (slug: string) => setFavoritos((f) => (f.includes(slug) ? f.filter((x) => x !== slug) : [...f, slug]));
-  const irPara = (t: Tela) => { setTela(t); setGaveta(false); try { history.pushState(null, '', t === 'inicio' ? location.pathname : `#${t}`); } catch { /* sem histórico */ } document.getElementById('conteudo-principal')?.scrollTo?.(0, 0); };
-  const buscar = (v: string) => { setBusca(v); if (v && tela === 'inicio') setTela('comunicados'); };
+  const irPara = (t: Tela, slug?: string) => { setRota({ tela: t, slug }); setGaveta(false); try { history.pushState(null, '', t === 'inicio' ? location.pathname : `#${t}${slug ? `/${encodeURIComponent(slug)}` : ''}`); } catch { /* sem histórico */ } document.getElementById('conteudo-principal')?.scrollTo?.(0, 0); };
+  const buscar = (v: string) => { setBusca(v); if (v && tela === 'inicio') irPara('comunicados'); };
 
   if (offline) {
     return (
@@ -123,7 +129,7 @@ export function App() {
         <div className="meio">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {tela === 'inicio' && <Inicio irPara={irPara} apps={apps} favoritos={favoritos} comunicados={comunicados} />}
-            {tela === 'comunicados' && <Comunicados busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'comunicados' && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'aplicacoes' && <Aplicacoes busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'documentos' && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
             <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Conteúdo de demonstração</span></footer>

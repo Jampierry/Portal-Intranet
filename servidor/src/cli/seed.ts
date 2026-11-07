@@ -37,8 +37,24 @@ try {
   const insCom = db.prepare("INSERT OR IGNORE INTO comunicados (slug, titulo, resumo, categoria, status, publicado_em, criado_em) VALUES (?, ?, ?, ?, 'publicado', ?, ?)");
   for (const c of announcements) insCom.run(c.id, c.title, c.summary, c.category, dataIso(c.dateLabel), agora);
 
+  // Texto completo de EXEMPLO para a tela de detalhe (só onde ainda não há corpo).
+  const setCorpo = db.prepare('UPDATE comunicados SET corpo = ? WHERE slug = ? AND corpo IS NULL');
+  for (const c of announcements) {
+    setCorpo.run(
+      [c.summary,
+       `Este é um texto de demonstração da categoria ${c.category}. Ele mostra como o comunicado completo aparece no portal: título, categoria, data de publicação e o corpo do aviso, em parágrafos curtos.`,
+       'Antes de publicar qualquer comunicado real, o conteúdo, a área responsável e a vigência precisam ser confirmados e aprovados. Nada aqui representa uma orientação oficial da empresa.'].join('\n\n'),
+      c.id,
+    );
+  }
+
   const insDoc = db.prepare('INSERT OR IGNORE INTO documentos (slug, titulo, categoria, resumo, formato) VALUES (?, ?, ?, ?, ?)');
   for (const d of documents) insDoc.run(d.id, d.title, d.category, d.summary, d.format);
+
+  // Metadados de EXEMPLO dos documentos (versão, responsável, revisão), só onde ainda estão vazios.
+  const RESP = ['Comunicação interna (exemplo)', 'RH (exemplo)', 'Operações (exemplo)', 'Qualidade (exemplo)', 'Produto (exemplo)'];
+  const setDoc = db.prepare("UPDATE documentos SET versao = ?, responsavel = ?, revisado_em = ? WHERE slug = ? AND versao IS NULL");
+  documents.forEach((d, i) => setDoc.run(`1.${i}`, RESP[i % RESP.length], `2026-10-${String(5 + i * 3).padStart(2, '0')}`, d.id));
 
   const insPer = db.prepare("INSERT OR IGNORE INTO periodos_destaque (tipo, rotulo, status) VALUES (?, ?, 'publicado')");
   const insDes = db.prepare(
