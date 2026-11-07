@@ -16,12 +16,12 @@
 
 ## Atenção
 - Dados 100% fictícios (seed); canais de contato usam domínio `.invalid`. Trocar pelos reais pela Gestão antes de usar.
-- Falta conferir no celular: Gestão (tabelas largas), Pessoas e Ajuda; e abrir por screenshot os formulários de cada aba da Gestão (o fluxo está coberto pelos testes de API, não por teste de interface).
+- Gestão no celular: as tabelas viram cartões com rótulo (atributo `data-rotulo` + CSS no fim do bloco de 860px de `portal.css`). Falta conferir por screenshot no celular real/emulado, e também Pessoas e Ajuda; e abrir por screenshot os formulários de cada aba da Gestão (o fluxo está coberto pelos testes de API, não por teste de interface).
 - Sem fotos reais: `Capa.tsx` aceita `foto` quando houver imagens aprovadas.
 - Detalhe do Windows: usar a ferramenta de escrita (ou script Python em arquivo) para editar arquivos grandes; heredocs com aspas quebram no shell.
 
 ## Próximos passos (ideias, em ordem sugerida)
-1. Conferir a Gestão no celular e ajustar tabelas (rolagem horizontal/cartões).
+1. ✅ Tabelas da Gestão viram cartões no celular (falta só conferir por screenshot).
 2. Recuperação de senha por e-mail (exige guardar e-mail) ou SSO, se a TI oferecer.
 3. Notificações de novos comunicados e confirmação de leitura de comunicados obrigatórios.
 4. Anexos de documentos (com limite de tamanho e antivírus) ou manter só link oficial.

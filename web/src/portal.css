@@ -433,6 +433,16 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
   .entrar-form { padding: 28px 24px 40px; }
   .crud .rolagem { max-height: none; }
   .dados .col-acoes { justify-content: flex-start; }
+  /* Tabelas da gestão viram cartões no celular */
+  .crud .rolagem { border: 0; background: none; box-shadow: none; overflow: visible; }
+  .crud .dados, .crud .dados tbody { display: block; }
+  .crud .dados thead { display: none; }
+  .crud .dados tr { display: block; background: var(--card); border: 1px solid var(--linha-suave); border-radius: 12px; box-shadow: var(--sombra); padding: 6px 12px; margin-bottom: 10px; }
+  .crud .dados td { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--linha-suave); padding: 7px 0; text-align: right; overflow-wrap: anywhere; }
+  .crud .dados td[data-rotulo]::before { content: attr(data-rotulo); flex: none; color: var(--suave); font-size: 12px; font-weight: 700; text-align: left; }
+  .crud .dados td.vazio { display: block; text-align: center; }
+  .crud .dados td.col-acoes { border-bottom: 0; padding-top: 10px; justify-content: flex-start; }
+  .crud .dados .trunca { max-width: 60vw; }
 }
 
 /* ===== Início: avisos importantes e documentos atualizados ===== */

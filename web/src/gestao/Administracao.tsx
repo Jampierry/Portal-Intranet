@@ -50,9 +50,9 @@ function Usuarios() {
             <tbody>
               {dados.map((u) => (
                 <tr key={u.id}>
-                  <td>{u.nome}</td><td>{u.login}</td><td>{ROTULO_PERFIL[u.perfil]}</td>
-                  <td>{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
-                  <td>{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
+                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{ROTULO_PERFIL[u.perfil]}</td>
+                  <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
+                  <td data-rotulo="Último acesso">{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
                   <td className="col-acoes">
                     <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>
                     <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>
@@ -134,8 +134,8 @@ function Auditoria() {
               {dados.length === 0 && <tr><td colSpan={4} className="vazio">Sem registros.</td></tr>}
               {dados.map((l) => (
                 <tr key={l.id}>
-                  <td className="nowrap">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                  <td>{l.usuario ?? '—'}</td><td>{ACAO[l.acao] ?? l.acao}</td><td className="suave">{resumo(l.detalhe)}</td>
+                  <td className="nowrap" data-rotulo="Quando">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                  <td data-rotulo="Quem">{l.usuario ?? '—'}</td><td data-rotulo="O quê">{ACAO[l.acao] ?? l.acao}</td><td className="suave" data-rotulo="Detalhe">{resumo(l.detalhe)}</td>
                 </tr>
               ))}
             </tbody>

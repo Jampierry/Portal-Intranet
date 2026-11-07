@@ -98,7 +98,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
                 const nome = String(colunas[0].ver(r));
                 return (
                   <tr key={idDe(r)}>
-                    {colunas.map((c) => <td key={c.titulo}>{c.ver(r)}</td>)}
+                    {colunas.map((c) => <td key={c.titulo} data-rotulo={c.titulo}>{c.ver(r)}</td>)}
                     <td className="col-acoes">
                       {acoesExtra?.(r, (v) => salvar(idDe(r), v).then(() => setAviso('Alteração salva.')))}
                       <button className="btn btn-sec btn-pequeno" onClick={() => setEdit({ id: idDe(r), v: paraForm(r) })} aria-label={`Editar ${nome}`}><Icone nome="editar" tamanho={13} /> Editar</button>
