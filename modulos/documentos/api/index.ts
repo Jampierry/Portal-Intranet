@@ -9,13 +9,15 @@ const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsave
 export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   // Documentos "restritos" só aparecem para editor e admin.
   app.get('/api/documentos', { preHandler: exigirPerm('ver.documentos') }, async (req) => {
-    const podeVerRestrito = req.usuario?.perfil === 'admin' || !!req.usuario?.permissoes.includes('pub.documentos');
-    return db
+    const podeVerRestrito = !!req.usuario?.permissoes.includes('documentos.restritos');
+    const podeAbrir = !!req.usuario?.permissoes.includes('documentos.abrir');
+    const lista = db
       .prepare(`SELECT slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, link_oficial, revisado_em FROM documentos ${podeVerRestrito ? '' : "WHERE classificacao <> 'restrito'"} ORDER BY titulo`)
-      .all();
+      .all() as { link_oficial: string | null }[];
+    // Sem a permissão de abrir, o endereço do documento nem sai do servidor.
+    return podeAbrir ? lista : lista.map((d) => ({ ...d, link_oficial: null }));
   });
 
-  const gestao = { preHandler: exigirPerm('pub.documentos') };
 
   function ler(c: Record<string, unknown>) {
     return {
@@ -31,9 +33,9 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     };
   }
 
-  app.get('/api/gestao/documentos', gestao, async () => db.prepare(`SELECT ${CAMPOS} FROM documentos ORDER BY titulo`).all());
+  app.get('/api/gestao/documentos', { preHandler: exigirPerm('pub.documentos.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM documentos ORDER BY titulo`).all());
 
-  app.post('/api/gestao/documentos', gestao, async (req, resp) => {
+  app.post('/api/gestao/documentos', { preHandler: exigirPerm('pub.documentos.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM documentos WHERE slug = ?').get(s), d.titulo);
     const r = db.prepare(
@@ -45,7 +47,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id));
   });
 
-  app.put<{ Params: { id: string } }>('/api/gestao/documentos/:id', gestao, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/gestao/documentos/:id', { preHandler: exigirPerm('pub.documentos.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Documento');
     if (!db.prepare('SELECT 1 FROM documentos WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Documento não encontrado.' });
     const d = ler(corpoObjeto(req.body));
@@ -56,7 +58,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     return db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id);
   });
 
-  app.delete<{ Params: { id: string } }>('/api/gestao/documentos/:id', gestao, async (req, resp) => {
+  app.delete<{ Params: { id: string } }>('/api/gestao/documentos/:id', { preHandler: exigirPerm('pub.documentos.excluir') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Documento');
     const d = db.prepare('SELECT titulo FROM documentos WHERE id = ?').get(id) as { titulo: string } | undefined;
     if (!d) return resp.code(404).send({ erro: 'Documento não encontrado.' });

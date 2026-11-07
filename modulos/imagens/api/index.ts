@@ -8,7 +8,9 @@ import { config } from '../../../servidor/src/config.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
 
-export const LIMITE_BYTES = 5 * 1024 * 1024;
+export /** Quem pode criar ou editar algo que leva imagem (comunicados, banners, documentos, destaques, contatos, aplicativos). */
+const PUB_QUE_ENVIAM_IMAGEM = ['comunicados', 'banners', 'destaques', 'aplicativos', 'documentos', 'contatos'].flatMap((a) => [`pub.${a}.criar`, `pub.${a}.editar`]);
+const LIMITE_BYTES = 5 * 1024 * 1024;
 const TIPOS = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/x-icon': 'ico', 'image/vnd.microsoft.icon': 'ico' } as const;
 const MIME_POR_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };
 
@@ -40,7 +42,7 @@ export async function rotasImagens(app: FastifyInstance, { db }: { db: Banco; pr
   // Corpo binário cru (o navegador manda o arquivo como está, com o tipo da imagem).
   for (const tipo of Object.keys(TIPOS)) app.addContentTypeParser(tipo, { parseAs: 'buffer', bodyLimit: LIMITE_BYTES }, (_req, corpo, feito) => feito(null, corpo));
 
-  app.post('/api/gestao/imagens', { preHandler: exigirPerm('pub.comunicados', 'pub.banners', 'pub.documentos', 'pub.destaques', 'pub.contatos', 'pub.aplicativos'), bodyLimit: LIMITE_BYTES }, async (req, resp) => {
+  app.post('/api/gestao/imagens', { preHandler: exigirPerm(...PUB_QUE_ENVIAM_IMAGEM), bodyLimit: LIMITE_BYTES }, async (req, resp) => {
     const corpo = req.body;
     if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha uma imagem PNG, JPG, WebP ou GIF.' });
     const salvo = guardarImagem(corpo);

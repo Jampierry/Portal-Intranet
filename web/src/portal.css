@@ -761,10 +761,28 @@ span.canal { color: var(--suave); }
 .cal-lista li { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
 .cal-lista li span { font-weight: 700; color: var(--coral, #e8604c); margin-right: 3px; }
 .cal-aviso { margin: 0; opacity: .7; font-size: 11px; }
-@media (max-height: 780px) and (min-width: 861px) { .cal-menu { display: none; } }
+/* Janela baixa: o calendário continua visível, só mais compacto (sem a lista do dia; o lema do rodapé continua) */
+@media (max-height: 800px) and (min-width: 861px) { .cal-dia, .cal-vazio { height: 20px; font-size: 11px; } .cal-menu { padding: 6px 4px 4px; gap: 3px; } .cal-lista { display: none; } }
+@media (max-height: 640px) and (min-width: 861px) { .cal-sem { display: none; } .cal-dia, .cal-vazio { height: 17px; font-size: 10px; } }
 
 /* Permissões do usuário em caixas de seleção */
 .perm-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; }
 .perm-usuario label.perm-check { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 500; padding: 3px 0; text-align: left; border: 0; }
 .perm-check input[type=checkbox] { width: 17px; height: 17px; margin: 0; accent-color: var(--vinho); flex: none; cursor: pointer; }
 .perm-check .perm-ajuste { flex-basis: 100%; margin-left: 23px; color: var(--vinho-texto); font-weight: 600; font-size: 11px; }
+
+/* Menu baixo demais: rola em vez de cortar o calendário ou o lema */
+@media (min-width: 861px) { .menu { overflow-y: auto; } }
+
+/* Permissões por tela/aba: uma linha por área, com as ações ao lado */
+.perm-usuario-caixa { border: 1px solid var(--linha-suave); border-radius: 12px; padding: 10px 12px; margin: 4px 0 0; }
+.perm-usuario-caixa legend { font-weight: 700; padding: 0 6px; }
+.grade-perfil { border: 0 !important; padding: 0 !important; margin: 4px 0 0 !important; }
+.perm-area { display: grid; grid-template-columns: 190px 1fr; align-items: start; gap: 4px 10px; padding: 5px 0; border-bottom: 1px solid var(--linha-suave); }
+.perm-area-nome { font-weight: 600; display: flex; flex-direction: column; gap: 2px; }
+.perm-atalhos { display: inline-flex; gap: 8px; font-weight: 500; }
+.perm-atalhos button { border: 0; background: none; padding: 0; color: var(--vinho-texto); font-size: 11px; text-decoration: underline; cursor: pointer; }
+.perm-acoes { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.perm-usuario .perm-check.portao span, .perm-usuario-caixa .perm-check.portao span { font-weight: 700; }
+.perm-usuario .perm-check .perm-ajuste, .perm-usuario-caixa .perm-check .perm-ajuste { flex-basis: auto; margin: 0; }
+@media (max-width: 700px) { .perm-area { grid-template-columns: 1fr; } }

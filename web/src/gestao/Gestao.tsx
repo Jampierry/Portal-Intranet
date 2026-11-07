@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crud, Selo } from './Crud';
+import { Crud, PermissoesCtx, Selo } from './Crud';
 import { Aplicacoes } from '../aplicacoes/Aplicacoes';
 import { Administracao } from './Administracao';
 import { Institucional } from './Institucional';
@@ -7,7 +7,7 @@ import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import type { PerfilAcesso } from '../sessao';
-import { EditorPerfis } from './Permissoes';
+import { ListaPerfis } from './Permissoes';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -50,19 +50,19 @@ function Comunicados() {
 }
 
 interface Ban { id: number; titulo: string; subtitulo: string | null; imagem: string | null; botao_texto: string | null; link: string | null; posicao: string; ordem: number; ativo: number; exibir_de: string | null; exibir_ate: string | null }
-const POSICOES_BANNER: [string, string][] = [['principal', 'Carrossel grande (esquerda)'], ['lateral1', 'Carrossel menor 1 (direita, em cima)'], ['lateral2', 'Carrossel menor 2 (direita, embaixo)']];
-const NOME_POSICAO: Record<string, string> = { principal: 'Grande', lateral1: 'Menor 1', lateral2: 'Menor 2' };
+const POSICOES_BANNER: [string, string][] = [['principal', 'Carrossel da esquerda (maior)'], ['lateral1', 'Carrossel do meio'], ['lateral2', 'Carrossel da direita']];
+const NOME_POSICAO: Record<string, string> = { principal: 'Esquerda', lateral1: 'Meio', lateral2: 'Direita' };
 const ORDENS: [string, string][] = Array.from({ length: 9 }, (_, i) => [String(i + 1), String(i + 1)]);
 /** Banners do carrossel "Novidades da semana" do Início: imagem, texto, botão e ordem. Sem banner ativo, o Início mostra a faixa padrão. */
 function Banners() {
   return (
     <Crud<Ban> base="/api/gestao/banners" rotuloItem="banner" idDe={(r) => r.id}
-      introducao="O topo do Início tem 3 carrosséis que giram juntos: um grande (esquerda) e dois menores (direita). Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel grande sem banner mostra a faixa padrão."
+      introducao="O topo do Início tem 3 carrosséis lado a lado que giram juntos: esquerda (maior), meio e direita. Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel da esquerda sem banner mostra a faixa padrão."
       campos={[
         { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER },
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
-        { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel grande)', max: 160 },
-        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo: grande ≈ 1400 × 400 px; menores ≈ 700 × 200 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
+        { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel da esquerda)', max: 160 },
+        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo: esquerda ≈ 1000 × 330 px; meio e direita ≈ 700 × 330 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
         { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
         { chave: 'link', rotulo: 'Link do botão', max: 300, dica: 'Página do portal (ex.: #comunicados) ou endereço https://…', metade: true },
         { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
@@ -225,7 +225,7 @@ export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, l
   perfil: PerfilAcesso; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
-  const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}`));
+  const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}.ver`));
   const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
@@ -233,6 +233,7 @@ export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, l
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
+      <PermissoesCtx.Provider value={permissoes}>
       {aba === 'comunicados' && <Comunicados />}
       {aba === 'banners' && <Banners />}
       {aba === 'institucional' && <Institucional />}
@@ -240,6 +241,7 @@ export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, l
       {aba === 'destaques' && <Destaques />}
       {aba === 'contatos' && <Contatos />}
       {aba === 'aplicacoes' && <Aplicativos perfil={perfil} busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+      </PermissoesCtx.Provider>
     </>
   );
 }
@@ -248,7 +250,7 @@ type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
 const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
-  const abas = ABAS_CONFIG.filter(([id]) => permissoes.includes(`cfg.${id}`));
+  const abas = ABAS_CONFIG.filter(([id]) => permissoes.includes(`cfg.${id}.ver`));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
@@ -257,7 +259,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
-      {aba === 'perfis' ? <EditorPerfis /> : <Administracao parte={aba} souAdmin={souAdmin} />}
+      {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} /> : <Administracao parte={aba} souAdmin={souAdmin} permissoes={permissoes} />}
     </>
   );
 }

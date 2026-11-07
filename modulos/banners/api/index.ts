@@ -43,10 +43,9 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     db.prepare(`SELECT id, titulo, subtitulo, imagem, botao_texto, link, posicao FROM banners WHERE ${VISIVEL} ORDER BY posicao, ordem, id`).all(),
   );
 
-  const gestao = { preHandler: exigirPerm('pub.banners') };
-  app.get('/api/gestao/banners', gestao, async () => db.prepare(`SELECT ${CAMPOS} FROM banners ORDER BY ordem, id`).all());
+  app.get('/api/gestao/banners', { preHandler: exigirPerm('pub.banners.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM banners ORDER BY ordem, id`).all());
 
-  app.post('/api/gestao/banners', gestao, async (req, resp) => {
+  app.post('/api/gestao/banners', { preHandler: exigirPerm('pub.banners.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const agora = new Date().toISOString();
     const id = Number(db.prepare(
@@ -56,7 +55,7 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id));
   });
 
-  app.put<{ Params: { id: string } }>('/api/gestao/banners/:id', gestao, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/gestao/banners/:id', { preHandler: exigirPerm('pub.banners.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Banner');
     if (!db.prepare('SELECT 1 FROM banners WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Banner não encontrado.' });
     const d = ler(corpoObjeto(req.body));
@@ -66,7 +65,7 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     return db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id);
   });
 
-  app.delete<{ Params: { id: string } }>('/api/gestao/banners/:id', gestao, async (req, resp) => {
+  app.delete<{ Params: { id: string } }>('/api/gestao/banners/:id', { preHandler: exigirPerm('pub.banners.excluir') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Banner');
     const b = db.prepare('SELECT titulo FROM banners WHERE id = ?').get(id) as { titulo: string } | undefined;
     if (!b) return resp.code(404).send({ erro: 'Banner não encontrado.' });

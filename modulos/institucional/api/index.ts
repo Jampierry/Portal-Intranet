@@ -16,7 +16,7 @@ function ler(db: Banco): Institucional {
 export async function rotasInstitucional(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/institucional', async () => ler(db));
 
-  app.put('/api/gestao/institucional', { preHandler: exigirPerm('pub.institucional') }, async (req) => {
+  app.put('/api/gestao/institucional', { preHandler: exigirPerm('pub.institucional.editar') }, async (req) => {
     const c = corpoObjeto(req.body);
     const missao = texto(c, 'missao', 'Missão', { max: 400, opcional: true }) ?? '';
     const visao = texto(c, 'visao', 'Visão', { max: 400, opcional: true }) ?? '';

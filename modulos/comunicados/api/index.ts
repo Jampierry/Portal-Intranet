@@ -21,7 +21,6 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
   });
 
   // ----- Gestão (editor e admin) -----
-  const gestao = { preHandler: exigirPerm('pub.comunicados') };
   const CAMPOS = 'id, slug, titulo, resumo, corpo, categoria, prioridade, imagem, status, exibir_de, exibir_ate, publicado_em, criado_em, atualizado_em';
   const hoje = () => new Date().toISOString().slice(0, 10);
 
@@ -41,9 +40,9 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     };
   }
 
-  app.get('/api/gestao/comunicados', gestao, async () => db.prepare(`SELECT ${CAMPOS} FROM comunicados ORDER BY id DESC`).all());
+  app.get('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM comunicados ORDER BY id DESC`).all());
 
-  app.post('/api/gestao/comunicados', gestao, async (req, resp) => {
+  app.post('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM comunicados WHERE slug = ?').get(s), d.titulo);
     const agora = new Date().toISOString();
@@ -56,7 +55,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
   });
 
-  app.put<{ Params: { id: string } }>('/api/gestao/comunicados/:id', gestao, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/gestao/comunicados/:id', { preHandler: exigirPerm('pub.comunicados.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Comunicado');
     const atual = db.prepare('SELECT status, publicado_em FROM comunicados WHERE id = ?').get(id) as { status: string; publicado_em: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
@@ -71,7 +70,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
   });
 
   // Editor só apaga rascunho; admin apaga qualquer um (o ideal é arquivar).
-  app.delete<{ Params: { id: string } }>('/api/gestao/comunicados/:id', gestao, async (req, resp) => {
+  app.delete<{ Params: { id: string } }>('/api/gestao/comunicados/:id', { preHandler: exigirPerm('pub.comunicados.excluir') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Comunicado');
     const c = db.prepare('SELECT titulo, status FROM comunicados WHERE id = ?').get(id) as { titulo: string; status: string } | undefined;
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });

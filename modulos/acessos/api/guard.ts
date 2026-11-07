@@ -3,10 +3,10 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { permissoesEfetivas } from './permissoes.ts';
 
-export type Perfil = 'admin' | 'editor' | 'consulta';
-export const PERFIS: readonly Perfil[] = ['admin', 'editor', 'consulta'];
+/** Código do perfil: 'admin', 'editor', 'consulta' (do sistema) ou 'p-nome' (personalizado). */
+export type Perfil = string;
 
-export interface UsuarioSessao { id: number; login: string; nome: string; perfil: Perfil; trocar_senha: number; permissoes: string[] }
+export interface UsuarioSessao { id: number; login: string; nome: string; perfil: Perfil; perfil_nome: string; trocar_senha: number; permissoes: string[] }
 
 declare module 'fastify' {
   interface FastifyRequest { usuario: UsuarioSessao | null }
@@ -32,13 +32,13 @@ export function usuarioDaSessao(db: Banco, token: string | undefined): UsuarioSe
   if (!token) return null;
   const u = db
     .prepare(
-      `SELECT u.id, u.login, u.nome, u.perfil, u.trocar_senha, u.permissoes AS ajustes FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id
+      `SELECT u.id, u.login, u.nome, u.perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = u.perfil) AS perfil_nome, u.trocar_senha, u.permissoes AS ajustes FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id
        WHERE s.token_hash = ? AND s.expira_em > ? AND u.ativo = 1`,
     )
     .get(hashToken(token), new Date().toISOString());
   if (!u) return null;
-  const { ajustes, ...resto } = u as Omit<UsuarioSessao, 'permissoes'> & { ajustes: string | null };
-  return { ...resto, permissoes: permissoesEfetivas(db, resto.perfil, ajustes) };
+  const { ajustes, ...resto } = u as Omit<UsuarioSessao, 'permissoes' | 'perfil_nome'> & { perfil_nome: string | null; ajustes: string | null };
+  return { ...resto, perfil_nome: resto.perfil_nome ?? resto.perfil, permissoes: permissoesEfetivas(db, resto.perfil, ajustes) };
 }
 
 export function encerrarSessao(db: Banco, token: string | undefined) {

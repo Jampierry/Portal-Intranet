@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { useLista } from '../dados';
+
+/** Permissões do usuário logado dentro de Publicar. Sem provedor (null) = tudo liberado; o servidor confere de qualquer forma. */
+export const PermissoesCtx = createContext<string[] | null>(null);
+export const usePermissoes = () => useContext(PermissoesCtx);
+/** Área de permissão a partir do endereço de gestão (/api/gestao/aplicacoes -> aplicativos). */
+const areaDe = (base: string) => { const a = base.split('/').pop() ?? ''; return a === 'aplicacoes' ? 'aplicativos' : a; };
 
 export interface Campo {
   chave: string;
@@ -143,6 +149,9 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
   acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
+  const perms = usePermissoes();
+  const area = areaDe(base);
+  const libera = (acao: string) => perms === null || perms.includes(`pub.${area}.${acao}`);
   const [edit, setEdit] = useState<{ id: string | number | null; v: Valores } | null>(null);
   const [aviso, setAviso] = useState('');
   const [falha, setFalha] = useState('');
@@ -164,7 +173,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
     <section className="crud">
       <div className="barra">
         <p className="suave" style={{ margin: 0 }}>{introducao}</p>
-        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>
+        {libera('criar') && <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>}
       </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {(erro || falha) && <p className="erro" role="alert">{erro || falha}</p>}
@@ -182,8 +191,8 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
                     {colunas.map((c) => <td key={c.titulo} data-rotulo={c.titulo}>{c.ver(r)}</td>)}
                     <td className="col-acoes">
                       {acoesExtra?.(r, (v) => salvar(idDe(r), v).then(() => setAviso('Alteração salva.')))}
-                      <button className="btn btn-sec btn-pequeno" onClick={() => setEdit({ id: idDe(r), v: paraForm(r) })} aria-label={`Editar ${nome}`}><Icone nome="editar" tamanho={13} /> Editar</button>
-                      {(podeApagar?.(r) ?? true) && <button className="btn btn-vermelho btn-pequeno" onClick={() => void apagar(r, nome)} aria-label={`Apagar ${nome}`}><Icone nome="lixo" tamanho={13} /></button>}
+                      {libera('editar') && <button className="btn btn-sec btn-pequeno" onClick={() => setEdit({ id: idDe(r), v: paraForm(r) })} aria-label={`Editar ${nome}`}><Icone nome="editar" tamanho={13} /> Editar</button>}
+                      {libera('excluir') && (podeApagar?.(r) ?? true) && <button className="btn btn-vermelho btn-pequeno" onClick={() => void apagar(r, nome)} aria-label={`Apagar ${nome}`}><Icone nome="lixo" tamanho={13} /></button>}
                     </td>
                   </tr>
                 );

@@ -25,7 +25,6 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
   );
 
   // ----- Gestão (editor e admin). Aprovar exige referência do consentimento da pessoa (LGPD). -----
-  const gestao = { preHandler: exigirPerm('pub.destaques') };
 
   function ler(c: Record<string, unknown>) {
     const status = escolha(c, 'status', 'Situação', STATUS, 'rascunho');
@@ -54,11 +53,11 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
   };
   const buscar = (id: number) => db.prepare(`SELECT ${CAMPOS} FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id WHERE d.id = ?`).get(id);
 
-  app.get('/api/gestao/destaques', gestao, async () =>
+  app.get('/api/gestao/destaques', { preHandler: exigirPerm('pub.destaques.ver') }, async () =>
     db.prepare(`SELECT ${CAMPOS} FROM destaques d JOIN periodos_destaque p ON p.id = d.periodo_id ORDER BY p.tipo, d.id DESC`).all(),
   );
 
-  app.post('/api/gestao/destaques', gestao, async (req, resp) => {
+  app.post('/api/gestao/destaques', { preHandler: exigirPerm('pub.destaques.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const r = db.prepare('INSERT INTO destaques (periodo_id, nome, area, iniciais, apresentacao, consentimento_ref, status, foto_aprovada, mes, ano) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(periodoId(d.mes, d.ano), d.nome, d.area, d.iniciais, d.apresentacao, d.consentimento_ref, d.status, d.foto, d.mes, d.ano);
@@ -67,7 +66,7 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
     return resp.code(201).send(buscar(id));
   });
 
-  app.put<{ Params: { id: string } }>('/api/gestao/destaques/:id', gestao, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/gestao/destaques/:id', { preHandler: exigirPerm('pub.destaques.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Destaque');
     if (!db.prepare('SELECT 1 FROM destaques WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Destaque não encontrado.' });
     const d = ler(corpoObjeto(req.body));
@@ -77,7 +76,7 @@ export async function rotasInicio(app: FastifyInstance, { db }: { db: Banco; pro
     return buscar(id);
   });
 
-  app.delete<{ Params: { id: string } }>('/api/gestao/destaques/:id', gestao, async (req, resp) => {
+  app.delete<{ Params: { id: string } }>('/api/gestao/destaques/:id', { preHandler: exigirPerm('pub.destaques.excluir') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Destaque');
     const d = db.prepare('SELECT nome FROM destaques WHERE id = ?').get(id) as { nome: string } | undefined;
     if (!d) return resp.code(404).send({ erro: 'Destaque não encontrado.' });

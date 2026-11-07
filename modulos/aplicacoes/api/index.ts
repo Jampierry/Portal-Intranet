@@ -24,7 +24,6 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   });
 
   // ----- Gestão do catálogo (somente admin: cada app é um link para sistema externo) -----
-  const admin = { preHandler: exigirPerm('pub.aplicativos') };
 
   /** Ícone próprio: só imagens guardadas pelo portal (ou vazio = ícone padrão). */
   function logo(c: Record<string, unknown>): string | null {
@@ -48,7 +47,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   }
 
   // Traz o ícone do próprio aplicativo (favicon do endereço informado) e guarda no portal.
-  app.post('/api/gestao/aplicacoes/icone', admin, async (req, resp) => {
+  app.post('/api/gestao/aplicacoes/icone', { preHandler: exigirPerm('pub.aplicativos.criar', 'pub.aplicativos.editar') }, async (req, resp) => {
     const url = String(urlHttp(corpoObjeto(req.body), 'url', 'Endereço (URL)', false));
     const logo = await buscarIcone(url);
     if (!logo) return resp.code(404).send({ erro: 'Não encontramos o ícone deste aplicativo. Envie uma imagem pelo botão "Escolher imagem".' });
@@ -56,9 +55,9 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     return { logo };
   });
 
-  app.get('/api/gestao/aplicacoes', admin, async () => db.prepare(`SELECT ${CAMPOS} FROM aplicacoes ORDER BY nome`).all());
+  app.get('/api/gestao/aplicacoes', { preHandler: exigirPerm('pub.aplicativos.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM aplicacoes ORDER BY nome`).all());
 
-  app.post('/api/gestao/aplicacoes', admin, async (req, resp) => {
+  app.post('/api/gestao/aplicacoes', { preHandler: exigirPerm('pub.aplicativos.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(s), d.nome);
     db.prepare('INSERT INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -67,7 +66,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(slug));
   });
 
-  app.put<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', admin, async (req, resp) => {
+  app.put<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', { preHandler: exigirPerm('pub.aplicativos.editar') }, async (req, resp) => {
     if (!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(req.params.slug)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     const d = ler(corpoObjeto(req.body));
     db.prepare('UPDATE aplicacoes SET nome = ?, descricao = ?, categoria = ?, url = ?, acesso = ?, icone = ?, logo = ?, responsavel = ?, ativo = ? WHERE slug = ?')
@@ -76,7 +75,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     return db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(req.params.slug);
   });
 
-  app.delete<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', admin, async (req, resp) => {
+  app.delete<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', { preHandler: exigirPerm('pub.aplicativos.excluir') }, async (req, resp) => {
     const a = db.prepare('SELECT nome FROM aplicacoes WHERE slug = ?').get(req.params.slug) as { nome: string } | undefined;
     if (!a) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     db.prepare('DELETE FROM aplicacoes WHERE slug = ?').run(req.params.slug);

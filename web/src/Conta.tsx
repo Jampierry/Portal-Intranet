@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from './api';
 import { Avatar, AVATARES_QTD } from './perfil';
-import { ROTULO_PERFIL, type Usuario } from './sessao';
+import type { Usuario } from './sessao';
 
 /** Troca de senha (usada na janela "Minha conta" e na tela de primeiro acesso). */
 export function FormTrocarSenha({ aoConcluir }: { aoConcluir: () => void }) {
@@ -45,7 +45,7 @@ export function JanelaConta({ usuario, avatar, mudarAvatar, sair, fechar }: {
         <div className="janela-corpo">
           <div className="conta-dados">
             <Avatar nome={usuario.nome} avatar={avatar} tamanho={48} />
-            <div><b>{usuario.nome}</b><br /><span className="suave">{usuario.login} · {ROTULO_PERFIL[usuario.perfil]}</span></div>
+            <div><b>{usuario.nome}</b><br /><span className="suave">{usuario.login} · {usuario.perfil_nome}</span></div>
           </div>
           <p className="suave" style={{ margin: '12px 0 6px', fontWeight: 700, fontSize: 13 }}>Avatar</p>
           <div className="avgal">

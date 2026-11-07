@@ -1,10 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
+import { usePermissoes } from './Crud';
 
 interface Inst { missao: string; visao: string; valores: string[] }
 
 /** Edição de missão, visão e valores (aparecem no Início). Valores: um por linha, até 8. */
 export function Institucional() {
+  const perms = usePermissoes();
+  const podeEditar = perms === null || perms.includes('pub.institucional.editar');
   const [v, setV] = useState({ missao: '', visao: '', valores: '' });
   const [pronto, setPronto] = useState(false);
   const [aviso, setAviso] = useState('');
@@ -31,7 +34,7 @@ export function Institucional() {
           <label htmlFor="inst-missao">Missão<textarea id="inst-missao" rows={3} maxLength={400} value={v.missao} onChange={(e) => setV({ ...v, missao: e.target.value })} /></label>
           <label htmlFor="inst-visao">Visão<textarea id="inst-visao" rows={3} maxLength={400} value={v.visao} onChange={(e) => setV({ ...v, visao: e.target.value })} /></label>
           <label htmlFor="inst-valores">Valores (um por linha, até 8)<textarea id="inst-valores" rows={6} maxLength={800} value={v.valores} onChange={(e) => setV({ ...v, valores: e.target.value })} /></label>
-          <button className="btn" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
+          {podeEditar ? <button className="btn" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button> : <p className="suave">Você só pode ver este conteúdo.</p>}
         </form>
       )}
     </section>

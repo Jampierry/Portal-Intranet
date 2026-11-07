@@ -3,8 +3,8 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
 import { corpoObjeto, escolha, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { confereSenha, hashSenha } from './senha.ts';
-import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, HORAS_SESSAO, PERFIS, usuarioDaSessao } from './guard.ts';
-import { CATALOGO, lerAjustes, NOME_PERFIL, permissoesDoPerfil, permissoesEfetivas, PERFIS_EDITAVEIS, TODAS, validarAjustes, validarLista } from './permissoes.ts';
+import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, HORAS_SESSAO, usuarioDaSessao } from './guard.ts';
+import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 
 const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
@@ -14,12 +14,18 @@ const SENHA_MIN = 8;
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
-const DTO = 'id, login, nome, perfil, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
+const DTO = 'id, login, nome, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
 
 /** Usuário para a tela de administração: ajustes viram objeto e vêm também as permissões que valem de fato. */
 function paraTela(db: Banco, u: Record<string, unknown>) {
   const ajustes = lerAjustes(u.permissoes as string | null);
   return { ...u, permissoes: ajustes, efetivas: permissoesEfetivas(db, String(u.perfil), u.permissoes as string | null) };
+}
+/** Perfil informado precisa existir (do sistema ou personalizado). */
+function perfilDoCorpo(db: Banco, c: Record<string, unknown>, padrao: string) {
+  const p = c.perfil === undefined ? padrao : String(c.perfil);
+  if (!perfilExiste(db, p)) throw new ErroValidacao('Perfil: escolha um perfil existente.');
+  return p;
 }
 function ajustesDoCorpo(c: Record<string, unknown>) {
   try { return validarAjustes(c.permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
@@ -85,7 +91,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const token = criarSessao(db, u.id);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: HORAS_SESSAO * 3600 });
     auditar(db, u.id, 'login');
-    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, trocar_senha: u.trocar_senha, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
+    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, perfil_nome: nomeDoPerfil(db, u.perfil), trocar_senha: u.trocar_senha, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
   });
 
   app.post('/api/sair', async (req, resp) => {
@@ -114,23 +120,24 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
   });
 
   // ----- Administração de usuários e perfis: abas de Configurações liberadas por permissão (cfg.*) -----
-  const aUsuarios = { preHandler: exigirPerm('cfg.usuarios') };
-  const aPerfis = { preHandler: exigirPerm('cfg.perfis') };
-  const aAmbos = { preHandler: exigirPerm('cfg.usuarios', 'cfg.perfis') };
-  const aAuditoria = { preHandler: exigirPerm('cfg.auditoria') };
+  const cfg = (chave: string) => ({ preHandler: exigirPerm(chave) });
+  const aAuditoria = cfg('cfg.auditoria.ver');
+  const verUsuarios = cfg('cfg.usuarios.ver'), criarUsuario = cfg('cfg.usuarios.criar'), editarUsuario = cfg('cfg.usuarios.editar'), senhaUsuario = cfg('cfg.usuarios.senha');
+  const verPerfis = { preHandler: exigirPerm('cfg.usuarios.ver', 'cfg.usuarios.criar', 'cfg.usuarios.editar', 'cfg.perfis.ver') }; // a lista de perfis também alimenta o cadastro de usuário
+  const criarPerfil = cfg('cfg.perfis.criar'), editarPerfil = cfg('cfg.perfis.editar'), excluirPerfil = cfg('cfg.perfis.excluir');
   // Quem não é administrador nunca mexe em administradores nem concede mais do que ele mesmo tem (sem escalar privilégio).
   const ehAdmin = (req: FastifyRequest) => req.usuario!.perfil === 'admin';
   const excede = (req: FastifyRequest, chaves: string[]) => !ehAdmin(req) && chaves.some((c) => !req.usuario!.permissoes.includes(c));
   const NEGADO = { erro: 'Você não pode conceder mais acesso do que o seu, nem alterar administradores.' };
 
-  app.get('/api/usuarios', aUsuarios, async (req) => (db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all() as Record<string, unknown>[]).filter((u) => ehAdmin(req) || u.perfil !== 'admin').map((u) => paraTela(db, u)));
+  app.get('/api/usuarios', verUsuarios, async (req) => (db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all() as Record<string, unknown>[]).filter((u) => ehAdmin(req) || u.perfil !== 'admin').map((u) => paraTela(db, u)));
 
-  app.post('/api/usuarios', aUsuarios, async (req, resp) => {
+  app.post('/api/usuarios', criarUsuario, async (req, resp) => {
     const c = corpoObjeto(req.body);
     const login = String(texto(c, 'login', 'Login', { min: 3, max: 32 })).toLowerCase();
     if (!/^[a-z0-9._-]+$/.test(login)) throw new ErroValidacao('Login: use só letras minúsculas, números, ponto, hífen e sublinhado.');
     const nome = String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
-    const perfil = escolha(c, 'perfil', 'Perfil', PERFIS, 'consulta');
+    const perfil = perfilDoCorpo(db, c, 'consulta');
     const senha = String(texto(c, 'senha', 'Senha provisória', { max: 128 }));
     validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
@@ -142,13 +149,13 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
 
-  app.put<{ Params: { id: string } }>('/api/usuarios/:id', aUsuarios, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/usuarios/:id', editarUsuario, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
     const atual = db.prepare('SELECT id, nome, perfil, ativo, permissoes FROM usuarios WHERE id = ?').get(id) as { id: number; nome: string; perfil: string; ativo: number; permissoes: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
     const c = corpoObjeto(req.body);
     const nome = c.nome === undefined ? atual.nome : String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
-    const perfil = c.perfil === undefined ? atual.perfil : escolha(c, 'perfil', 'Perfil', PERFIS);
+    const perfil = perfilDoCorpo(db, c, atual.perfil);
     const ativo = c.ativo === undefined ? atual.ativo : c.ativo ? 1 : 0;
     const deixaDeSerAdminAtivo = atual.perfil === 'admin' && atual.ativo === 1 && (perfil !== 'admin' || ativo === 0);
     if (deixaDeSerAdminAtivo) {
@@ -169,7 +176,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id) as Record<string, unknown>);
   });
 
-  app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', aUsuarios, async (req, resp) => {
+  app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', senhaUsuario, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
     const u = db.prepare('SELECT login, perfil FROM usuarios WHERE id = ?').get(id) as { login: string; perfil: string } | undefined;
     if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
@@ -183,24 +190,52 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return { ok: true };
   });
 
-  // ----- Perfis: o administrador escolhe o que cada perfil pode fazer e quais telas acessa -----
-  app.get('/api/perfis', aAmbos, async () => ({
-    catalogo: CATALOGO,
-    perfis: ['admin', ...PERFIS_EDITAVEIS].map((codigo) => ({ codigo, nome: NOME_PERFIL[codigo], fixo: codigo === 'admin', permissoes: permissoesDoPerfil(db, codigo) })),
-  }));
+  // ----- Perfis: lista, criação, edição (nome e permissões) e exclusão de perfis personalizados -----
+  app.get('/api/perfis', verPerfis, async () => ({ catalogo: CATALOGO, perfis: listarPerfis(db) }));
 
-  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo', aPerfis, async (req, resp) => {
+  const nomePerfil = (c: Record<string, unknown>, ignorar?: string) => {
+    const nome = String(texto(c, 'nome', 'Nome do perfil', { min: 2, max: 40 }));
+    const outro = db.prepare('SELECT perfil FROM perfis_permissoes WHERE lower(nome) = lower(?)').get(nome) as { perfil: string } | undefined;
+    if (outro && outro.perfil !== ignorar) throw new ErroValidacao('Já existe um perfil com esse nome.');
+    return nome;
+  };
+  const listaDoCorpo = (c: Record<string, unknown>) => { try { return validarLista(c.permissoes ?? []); } catch (e) { throw new ErroValidacao((e as Error).message); } };
+
+  app.post('/api/perfis', criarPerfil, async (req, resp) => {
+    const c = corpoObjeto(req.body);
+    const nome = nomePerfil(c);
+    const lista = listaDoCorpo(c);
+    if (excede(req, lista)) return resp.code(403).send(NEGADO);
+    const codigo = codigoDoPerfil(db, nome);
+    db.prepare('INSERT INTO perfis_permissoes (perfil, permissoes, nome, sistema, atualizado_em) VALUES (?, ?, ?, 0, ?)').run(codigo, JSON.stringify(lista), nome, new Date().toISOString());
+    auditar(db, req.usuario!.id, 'perfil_criado', { perfil: codigo, nome, permissoes: lista.length });
+    return resp.code(201).send(listarPerfis(db).find((p) => p.codigo === codigo));
+  });
+
+  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo', editarPerfil, async (req, resp) => {
     const codigo = req.params.codigo;
+    if (!perfilExiste(db, codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
     if (codigo === 'admin') return resp.code(400).send({ erro: 'O administrador sempre tem todas as permissões.' });
-    if (!(PERFIS_EDITAVEIS as readonly string[]).includes(codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
-    let lista: string[];
-    try { lista = validarLista(corpoObjeto(req.body).permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
-    const antes = new Set(permissoesDoPerfil(db, codigo));
-    if (excede(req, lista.filter((c) => !antes.has(c)))) return resp.code(403).send(NEGADO);
-    db.prepare('INSERT INTO perfis_permissoes (perfil, permissoes, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(perfil) DO UPDATE SET permissoes = excluded.permissoes, atualizado_em = excluded.atualizado_em')
-      .run(codigo, JSON.stringify(lista), new Date().toISOString());
-    auditar(db, req.usuario!.id, 'perfil_alterado', { perfil: codigo, permissoes: lista.length, de: TODAS.length });
-    return { codigo, permissoes: lista };
+    const c = corpoObjeto(req.body);
+    const atual = listarPerfis(db).find((p) => p.codigo === codigo)!;
+    const nome = atual.sistema || c.nome === undefined ? atual.nome : nomePerfil(c, codigo); // perfis do sistema mantêm o nome
+    const lista = c.permissoes === undefined ? atual.permissoes : listaDoCorpo(c);
+    const antes = new Set(atual.permissoes);
+    if (excede(req, lista.filter((k) => !antes.has(k)))) return resp.code(403).send(NEGADO);
+    db.prepare('UPDATE perfis_permissoes SET nome = ?, permissoes = ?, atualizado_em = ? WHERE perfil = ?').run(nome, JSON.stringify(lista), new Date().toISOString(), codigo);
+    auditar(db, req.usuario!.id, 'perfil_alterado', { perfil: codigo, nome, permissoes: lista.length, de: TODAS.length });
+    return listarPerfis(db).find((p) => p.codigo === codigo);
+  });
+
+  app.delete<{ Params: { codigo: string } }>('/api/perfis/:codigo', excluirPerfil, async (req, resp) => {
+    const codigo = req.params.codigo;
+    const p = listarPerfis(db).find((x) => x.codigo === codigo);
+    if (!p) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
+    if (p.sistema) return resp.code(400).send({ erro: 'Os perfis Administrador, Editor e Consulta não podem ser apagados.' });
+    if (p.usuarios > 0) return resp.code(409).send({ erro: `Há ${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''} com este perfil. Mude o perfil deles antes de apagar.` });
+    db.prepare('DELETE FROM perfis_permissoes WHERE perfil = ?').run(codigo);
+    auditar(db, req.usuario!.id, 'perfil_apagado', { perfil: codigo, nome: p.nome });
+    return { ok: true };
   });
 
   app.get('/api/auditoria', aAuditoria, async () =>

@@ -3,10 +3,10 @@ import { api } from '../api';
 import { Icone } from '../icones';
 import { dataCurta, useLista } from '../dados';
 import { JanelaForm, Selo } from './Crud';
-import { ROTULO_PERFIL, type PerfilAcesso } from '../sessao';
-import { AjustesUsuario, type Ajustes } from './Permissoes';
+import type { PerfilAcesso } from '../sessao';
+import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 
-interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
+interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -27,9 +27,11 @@ function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => voi
   );
 }
 
-function Usuarios({ souAdmin }: { souAdmin: boolean }) {
+function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: string[] }) {
+  const libera = (acao: string) => permissoes.includes(`cfg.usuarios.${acao}`);
   // Quem não é administrador não cria nem promove administradores (o servidor também recusa).
-  const perfisEscolha = (Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).filter((p) => souAdmin || p !== 'admin');
+  const { dados: catalogo } = useCatalogo();
+  const perfisEscolha = (catalogo?.perfis ?? []).filter((p) => souAdmin || p.codigo !== 'admin');
   const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
   const [aviso, setAviso] = useState('');
   const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
@@ -42,7 +44,7 @@ function Usuarios({ souAdmin }: { souAdmin: boolean }) {
         <p className="suave" style={{ margin: 0 }}>
           O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
         </p>
-        <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+        {libera('criar') && <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>}
       </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -53,12 +55,12 @@ function Usuarios({ souAdmin }: { souAdmin: boolean }) {
             <tbody>
               {dados.map((u) => (
                 <tr key={u.id}>
-                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{ROTULO_PERFIL[u.perfil]}</td>
+                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td>
                   <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
                   <td data-rotulo="Último acesso">{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
                   <td className="col-acoes">
-                    <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>
-                    <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>
+                    {libera('editar') && <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>}
+                    {libera('senha') && <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
                   </td>
                 </tr>
               ))}
@@ -75,7 +77,7 @@ function Usuarios({ souAdmin }: { souAdmin: boolean }) {
             <small className="suave">Só letras minúsculas, números, ponto, hífen e sublinhado. Ex.: maria.silva</small></label>
           <label>Perfil *
             <select value={novo.perfil} onChange={(e) => setNovo({ ...novo, perfil: e.target.value as PerfilAcesso })}>
-              {perfisEscolha.map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+              {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
           <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
           <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
@@ -88,7 +90,7 @@ function Usuarios({ souAdmin }: { souAdmin: boolean }) {
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>Perfil *
             <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
-              {perfisEscolha.map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+              {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
           <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
           <AjustesUsuario perfil={edit.perfil} ajustes={edit.permissoes} mudar={(permissoes) => setEdit({ ...edit, permissoes })} />
@@ -151,6 +153,6 @@ function Auditoria() {
   );
 }
 
-export function Administracao({ parte, souAdmin }: { parte: 'usuarios' | 'auditoria'; souAdmin: boolean }) {
-  return parte === 'usuarios' ? <Usuarios souAdmin={souAdmin} /> : <Auditoria />;
+export function Administracao({ parte, souAdmin, permissoes }: { parte: 'usuarios' | 'auditoria'; souAdmin: boolean; permissoes: string[] }) {
+  return parte === 'usuarios' ? <Usuarios souAdmin={souAdmin} permissoes={permissoes} /> : <Auditoria />;
 }

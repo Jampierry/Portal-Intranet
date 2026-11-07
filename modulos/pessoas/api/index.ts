@@ -15,7 +15,6 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
   );
 
   // ----- Gestão (editor e admin) -----
-  const gestao = { preHandler: exigirPerm('pub.contatos') };
   const CAMPOS = 'c.id, d.nome AS departamento, c.nome, c.canal, c.publicavel';
   const buscar = (id: number) => db.prepare(`SELECT ${CAMPOS} FROM contatos c JOIN departamentos d ON d.id = c.departamento_id WHERE c.id = ?`).get(id);
 
@@ -36,11 +35,11 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
     return Number(db.prepare('INSERT INTO departamentos (nome) VALUES (?)').run(nome).lastInsertRowid);
   };
 
-  app.get('/api/gestao/contatos', gestao, async () =>
+  app.get('/api/gestao/contatos', { preHandler: exigirPerm('pub.contatos.ver') }, async () =>
     db.prepare(`SELECT ${CAMPOS} FROM contatos c JOIN departamentos d ON d.id = c.departamento_id ORDER BY d.nome, c.nome`).all(),
   );
 
-  app.post('/api/gestao/contatos', gestao, async (req, resp) => {
+  app.post('/api/gestao/contatos', { preHandler: exigirPerm('pub.contatos.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const r = db.prepare('INSERT INTO contatos (departamento_id, nome, canal, publicavel) VALUES (?, ?, ?, ?)').run(departamentoId(d.departamento), d.nome, d.canal, d.publicavel);
     const id = Number(r.lastInsertRowid);
@@ -48,7 +47,7 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
     return resp.code(201).send(buscar(id));
   });
 
-  app.put<{ Params: { id: string } }>('/api/gestao/contatos/:id', gestao, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/gestao/contatos/:id', { preHandler: exigirPerm('pub.contatos.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Contato');
     if (!db.prepare('SELECT 1 FROM contatos WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Contato não encontrado.' });
     const d = ler(corpoObjeto(req.body));
@@ -57,7 +56,7 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
     return buscar(id);
   });
 
-  app.delete<{ Params: { id: string } }>('/api/gestao/contatos/:id', gestao, async (req, resp) => {
+  app.delete<{ Params: { id: string } }>('/api/gestao/contatos/:id', { preHandler: exigirPerm('pub.contatos.excluir') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Contato');
     const c = db.prepare('SELECT nome FROM contatos WHERE id = ?').get(id) as { nome: string } | undefined;
     if (!c) return resp.code(404).send({ erro: 'Contato não encontrado.' });

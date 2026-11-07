@@ -122,3 +122,12 @@
 - Novas permissões `cfg.usuarios`, `cfg.perfis`, `cfg.auditoria` (abas de Configurações) além de `pub.*` (abas de Publicar; a aba Aplicativos agora também depende de `pub.aplicativos`). Padrão: só o administrador tem `cfg.*`.
 - Quem não é administrador: não vê administradores, não cria/edita/redefine senha de admin, não edita o próprio cadastro e só concede permissões que ele mesmo tem (usuário e perfil) — sem escalar privilégio. Testes em `modulos/acessos/tests/permissoes.test.ts`.
 - Não são abas de tela e ficam fora: Favoritos/Todos (barra de aplicativos) e Mês/Ano (Colaborador Destaque).
+
+## Perfis personalizados e permissões por ação (tela e aba)
+- Migrações 011 (perfis com nome; Administrador/Editor/Consulta = `sistema`) e 012 (chaves novas por ação; reseta os padrões de Editor/Consulta e limpa ajustes antigos de usuário).
+- Chaves: `ver.<tela>` (+ `documentos.abrir`, `documentos.restritos`), `pub.<aba>.{ver,criar,editar,excluir}` (institucional: ver/editar), `cfg.usuarios.{ver,criar,editar,senha}`, `cfg.perfis.{ver,criar,editar,excluir}`, `cfg.auditoria.ver`. A primeira ação da área ("ver") é o portão: sem ela as outras não valem (`normalizar`).
+- API de perfis: `GET/POST /api/perfis`, `PUT/DELETE /api/perfis/:codigo` (perfil do sistema não apaga nem renomeia; em uso não apaga). Não-admin só concede o que tem e nunca mexe em admin.
+- Tela: Configurações › Perfis = lista (nome, código, resumo, nº de usuários) com Novo/Editar/Apagar; cada perfil tem grade por tela/aba com as ações. Usuários › Editar usa a mesma grade (ajustes só do usuário).
+- Publicar: abas e botões Novo/Editar/Apagar seguem as ações (`PermissoesCtx` em `Crud.tsx`). Documentos sem `documentos.abrir` não recebem o link do servidor.
+- Carrosséis do topo agora se chamam Esquerda (maior), Meio e Direita em Publicar › Banners.
+- Calendário no menu: sempre visível (compacto em janela baixa), acima do lema do rodapé.
