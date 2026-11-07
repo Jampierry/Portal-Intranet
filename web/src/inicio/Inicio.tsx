@@ -79,7 +79,6 @@ export function Inicio({ irPara, comunicados }: {
             </ul>
           </section>
 
-          <section className="painel-marca painel-marca-baixo" aria-hidden="true"><Lema linhas={['JUNTOS', 'POR UM FUTURO', 'MAIS ATIVO']} /></section>
         </aside>
       </div>
     </>
