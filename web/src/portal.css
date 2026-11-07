@@ -239,6 +239,108 @@ button.ucard:hover { background: var(--menu-hover); }
   .menu nav:hover::-webkit-scrollbar-thumb { background: var(--menu-linha); }
 }
 
+/* ===== Modo compacto: mesma identidade das telas de referência, com tamanhos, espaços e controles menores ===== */
+:root { --espaco: 16px; --raio: 14px; }
+body { font-size: 13px; }
+.btn { font-size: 12.5px; padding: 0 12px; }
+.btn-pequeno { min-height: 26px; padding: 0 9px; font-size: 12px; }
+.btn-coral { min-height: 34px; padding: 0 14px; font-size: 13px; }
+.abas button { padding: 6px 12px; font-size: 12.5px; }
+.pilulas.filtros button { min-height: 28px; padding: 0 11px; font-size: 12.5px; }
+input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
+/* menu */
+.menu { width: 216px; padding: 12px 10px; }
+.menu.mini { width: 60px; padding-inline: 8px; }
+.sbtop { padding: 2px 6px 12px; gap: 9px; }
+.empnome { font-size: 21px; }
+.brandtxt span:not(.empnome) { font-size: 8.5px; letter-spacing: .22em; margin-top: 3px; }
+.menu-label { font-size: 9.5px; letter-spacing: .16em; font-weight: 700; color: var(--menu-suave); padding: 6px 12px 6px; }
+.nitem { padding: 7px 12px; gap: 10px; font-size: 13px; border-radius: 8px; }
+.nitem[aria-current=page] { box-shadow: inset 2px 0 0 var(--coral); }
+.menu.mini .nitem, .menu.mini .ngrp > .nitem { height: 36px; }
+.menu-apps > b { font-size: 12.5px; padding: 2px 12px 0; }
+.menu-apps > small, .menu-vazio { font-size: 10.5px; padding: 0 12px 4px; }
+.nitem.nitem-app { padding: 5px 12px; font-size: 12.5px; }
+.menu-sep { margin: 8px 6px; }
+.menu-rodape { font-size: 9.5px; padding: 10px 12px 0; line-height: 1.8; }
+.menu-rodape::before { margin-bottom: 8px; }
+.ucard { padding: 6px 8px; }
+.ucard b { font-size: 12.5px; }
+/* topo */
+.topo { padding: 10px 20px; gap: 10px; }
+.busca-topo { height: 36px; max-width: 420px; border-radius: 9px; padding: 0 10px; gap: 8px; }
+.busca-topo input:not([type=checkbox]):not([type=radio]) { font-size: 13px; }
+.selo-enter { font: 600 9px var(--fonte); letter-spacing: .06em; padding: 2px 6px; border: 1px solid var(--linha); border-radius: 5px; color: var(--suave); background: var(--afundado); }
+.versao { font-size: 11.5px; }
+.topo .icone-btn { width: 36px; height: 36px; }
+.ponto-aviso { top: 7px; right: 8px; width: 8px; height: 8px; }
+/* conteúdo */
+.conteudo { padding: 10px 20px 18px; }
+.cabeca h1, .saudacao h1 { font-size: clamp(24px, 2.6vw, 32px); }
+.cabeca p, .saudacao p { font-size: 14px; margin-top: 4px; }
+.rodape-portal { font-size: 11px; padding-top: 10px; }
+/* início */
+.hero { min-height: 230px; grid-template-columns: 1.6fr 1fr .6fr; }
+.hero-texto { padding: 26px 30px; gap: 10px; }
+.eyebrow { font-size: 10px; }
+.hero h2 { font-size: clamp(28px, 3.2vw, 42px); }
+.hero-texto p { font-size: 14px; }
+.hero-arte { padding: 20px; } .hero-marca { padding: 20px; }
+.lema { font-size: 10.5px; letter-spacing: .26em; line-height: 1.85; }
+.cartao-sec { padding: 14px 16px; }
+.sec-topo { margin-bottom: 10px; }
+.sec-topo h2 { font-size: 17px; gap: 8px; }
+.link-ver { font-size: 12px; }
+.btn-pausa { font-size: 11.5px; } .btn-pausa .icone-btn { width: 28px; height: 28px; }
+.inicio-grade { grid-template-columns: minmax(0, 1fr) 320px; }
+.carrossel { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 8px; }
+.seta-car { width: 32px; height: 32px; }
+.pessoas { gap: 14px; }
+.capa-pessoa { height: 92px; border-radius: 10px; }
+.iniciais-capa { font-size: 22px; }
+.pessoa h3 { font-size: 13.5px; } .pessoa p { font-size: 12px; }
+.fav { padding: 8px 10px; gap: 10px; }
+.fav .icone, .cartao-app .icone, .cartao-doc .icone { width: 38px; height: 38px; }
+.fav b { font-size: 13px; } .fav small { font-size: 11.5px; }
+.painel-marca { min-height: 150px; padding: 20px; }
+.painel-marca-baixo { min-height: 120px; }
+/* comunicados */
+.grade-com { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.cartao-com { border-radius: 12px; }
+.capa-card { height: 92px; }
+.cartao-com-corpo { padding: 11px 13px 10px; gap: 4px; }
+.cartao-com h3 { font-size: 14px; } .cartao-com p { font-size: 12px; }
+.cartao-com footer { font-size: 11px; padding-top: 6px; }
+.grade-com.linha { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+.grade-com.linha .cartao-com { flex-direction: row; }
+.grade-com.linha .capa-card { width: 92px; height: auto; flex: none; }
+.grade-com.linha .capa-icone svg { width: 26px; height: 26px; }
+.grade-com.linha .cartao-com p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.com-layout { grid-template-columns: minmax(0, 1fr) 270px; }
+.destaque-com { min-height: 230px; }
+.destaque-com-texto { padding: 24px 26px; gap: 10px; }
+.destaque-com h2 { font-size: clamp(22px, 2.4vw, 30px); }
+.destaque-com p { font-size: 13.5px; }
+.etiqueta { font-size: 10px; padding: 3px 8px; }
+.painel-lateral { padding: 14px 16px; }
+.painel-lateral h2 { font-size: 18px; margin-bottom: 4px; }
+.temas button { padding: 9px 4px; font-size: 13.5px; gap: 12px; }
+/* aplicações e documentos */
+.grade-apps { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.cartao-app { padding: 14px; gap: 10px; border-radius: 12px; }
+.cartao-app h3 { font-size: 15px; }
+.grade-docs { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.cartao-doc { padding: 13px; gap: 12px; border-radius: 12px; }
+/* barra de aplicativos */
+.lancador { width: 56px; padding: 10px 8px; gap: 10px; }
+.lancador.aberto { width: 290px; }
+.lancador-topo h2 { font-size: 16px; }
+.lancador-ico { width: 38px; height: 38px; border-radius: 10px; }
+.lancador-link { padding: 6px 8px; gap: 9px; border-radius: 10px; }
+.lancador-link .icone { width: 32px; height: 32px; }
+.lancador-link b { font-size: 13px; }
+.lancador-item .icone-btn { width: 30px; height: 30px; }
+
 /* ===== Abas do celular (rodapé fixo, como na referência) ===== */
 .abas-mobile { display: none; }
 

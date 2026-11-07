@@ -103,12 +103,13 @@ export function App() {
           <div className="busca-topo">
             <Icone nome="busca" tamanho={18} />
             <input type="search" placeholder="Buscar no portal" aria-label="Buscar no portal" value={busca} onChange={(e) => buscar(e.target.value)} />
+            <kbd className="selo-enter" aria-hidden="true">ENTER</kbd>
           </div>
           <span className="versao" title="Estado da API"><i aria-hidden="true" />Online · v{saude?.versao ?? '…'}</span>
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} ir={() => irPara('comunicados')} />
-          <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Meu perfil" title={perfil.nome}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={38} /></button>
+          <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Meu perfil" title={perfil.nome}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={34} /></button>
         </header>
 
         <div className="meio">

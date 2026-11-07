@@ -37,7 +37,7 @@ export function Inicio({ irPara, perfil, apps, favoritos, comunicados }: {
               <h2 id="com-rec"><Icone nome="comunicados" tamanho={24} /> Comunicados</h2>
               <button className="link-ver" onClick={() => irPara('comunicados')}>Ver todos os comunicados <Icone nome="seta" tamanho={16} /></button>
             </div>
-            {comunicados === null ? <p className="vazio">Carregando…</p> : <ListaComunicados itens={comunicados.slice(0, 3)} />}
+            {comunicados === null ? <p className="vazio">Carregando…</p> : <ListaComunicados itens={comunicados.slice(0, 3)} linha />}
           </section>
         </div>
 

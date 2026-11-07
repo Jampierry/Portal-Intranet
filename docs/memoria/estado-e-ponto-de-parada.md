@@ -16,6 +16,7 @@
 - Tela inicial vem do endereço (`#comunicados`, `#aplicacoes`, `#documentos`); Voltar do navegador funciona.
 - CSS novo em `web/src/portal.css`; tokens de tema continuam em `estilo.css` (o teste de contraste lê só ele).
 - Estilo novo **Di Paula** (`data-estilo=dipaula`, agora o padrão): menu carvão, fundo creme, ameixa de destaque, coral nos botões de chamada (coral um pouco mais escuro que o da imagem para passar no contraste). Tokens em `estilo.css`; passa no teste de contraste (claro e escuro). Conferido por screenshot no claro e no escuro.
+- Modo compacto (bloco "Modo compacto" no fim de `portal.css`): fonte base 13px, menu 216px com rótulo "ESPAÇO DE TRABALHO", busca de 36px com selo ENTER, cartões/botões/abas/barra de aplicativos menores, comunicados do Início em linha (capa + texto). Referência: protótipo compacto anterior + telas de `docs/origem-manus/design`.
 - **Sem fotos**: capas são blocos de cor do tema (`web/src/Capa.tsx`, aceita `foto` quando houver URL).
 - Verificado por screenshot (escuro): Início, Comunicados, celular. **Falta conferir**: modo claro e os outros 4 estilos, Aplicações/Documentos, menu recolhido.
 

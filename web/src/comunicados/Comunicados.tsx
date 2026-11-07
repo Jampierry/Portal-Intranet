@@ -22,8 +22,8 @@ export function CartaoComunicado({ c }: { c: Comunicado }) {
   );
 }
 
-export function ListaComunicados({ itens }: { itens: Comunicado[] }) {
-  return <div className="grade-com">{itens.map((c) => <CartaoComunicado key={c.slug} c={c} />)}</div>;
+export function ListaComunicados({ itens, linha = false }: { itens: Comunicado[]; linha?: boolean }) {
+  return <div className={`grade-com${linha ? ' linha' : ''}`}>{itens.map((c) => <CartaoComunicado key={c.slug} c={c} />)}</div>;
 }
 
 type Ordem = 'recentes' | 'antigos';

@@ -66,6 +66,7 @@ export function Menu(p: Props) {
       </div>
 
       <nav aria-label="Seções do portal">
+        {!mini && <span className="menu-label">ESPAÇO DE TRABALHO</span>}
         {ITENS.map(([id, nome, ativo]) => (
           <button key={id} className={`nitem${ativo ? '' : ' breve'}`} title={ativo ? nome : `${nome} — em breve`}
             aria-label={mini ? nome : undefined} aria-current={ativo && p.tela === id ? 'page' : undefined} aria-disabled={ativo ? undefined : true}
