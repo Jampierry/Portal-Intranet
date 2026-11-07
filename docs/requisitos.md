@@ -22,9 +22,9 @@ Produção/confecção · lideranças · RH/Pessoas · design/produto/qualidade 
 | RF-04 | Catálogo de apps: nome, descrição, categoria, URL, público, responsável, visibilidade, ícone, condição de acesso; destacar link externo | aplicacoes | ✅ (só Meu RH) |
 | RF-04b | Abertura por dispositivo: desktop nova aba; celular mesma aba + orientação de retorno | aplicacoes / shell | ✅ |
 | RF-05 | Documentos: título, categoria, versão, responsável, classificação, vigência; apontar ao repositório oficial | documentos | 🟡 catálogo fictício ✅; versão/responsável ⬜ |
-| RF-06 | Busca global sem vazar conteúdo não autorizado | shell | 🟡 busca de apps/comunicados/documentos ✅; global ⬜ |
+| RF-06 | Busca global sem vazar conteúdo não autorizado | shell | ✅ (`BuscaGlobal.tsx`, só o que a pessoa pode ver) |
 | RF-07 | Carrossel mês/ano: setas, indicadores, toque; rotação lenta e pausável; `prefers-reduced-motion`; teclado/leitor de tela | inicio | ✅ |
-| RF-08 | Administração e auditoria (quem publicou/alterou e quando) | (futuro: admin) | ⬜ |
+| RF-08 | Administração e auditoria (quem publicou/alterou e quando) | acessos | ✅ (perfis, permissões por ação, auditoria só-inclusão) |
 | RF-09 | Ajuda/FAQ e solicitações com dados mínimos | (futuro: ajuda) | ⬜ |
 | RF-10 | Lançador global de apps na direita: recolhível, favoritos no `localStorage`, gaveta no celular (fecha por botão/fundo/Esc) | aplicacoes + shell | ✅ |
 | RF-11 | Cabeçalho universal com nome da tela; sem título duplicado no corpo | shell | ✅ |

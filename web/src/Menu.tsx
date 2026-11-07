@@ -9,7 +9,7 @@ const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
-  mostrarPublicar: boolean; mostrarConfig: boolean;
+  mostrarPublicar: boolean; mostrarConfig: boolean; mostrarCalendario?: boolean; podeCriarData?: boolean; podeExcluirData?: boolean;
   /** Telas liberadas para o usuário (Início é sempre liberado). */
   telasLiberadas: Tela[];
 }
@@ -37,7 +37,7 @@ export function Menu(p: Props) {
         ))}
       </nav>
 
-      {!mini && <Calendario />}
+      {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} podeExcluir={p.podeExcluirData} />}
 
       {!mini && <div className="sbfoot"><span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span></div>}
     </aside>

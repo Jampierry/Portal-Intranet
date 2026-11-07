@@ -15,7 +15,8 @@ test('padrões: editor publica (sem aplicativos nem configurações), consulta s
   assert.ok(ed.includes('pub.comunicados.criar') && ed.includes('pub.comunicados.excluir') && ed.includes('documentos.restritos'));
   assert.ok(!ed.some((p) => p.startsWith('pub.aplicativos') || p.startsWith('cfg.')));
   const le = (await eu(app, await entrar(app, 'le'))).permissoes;
-  assert.deepEqual(le, ['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.pessoas', 'ver.ajuda']);
+  assert.deepEqual(le, ['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.calendario', 'ver.pessoas', 'ver.ajuda']);
+  assert.ok(ed.includes('calendario.criar') && ed.includes('calendario.excluir') && !le.includes('calendario.criar'));
 });
 
 test('perfis: só quem tem cfg.perfis.* mexe; admin é fixo; chaves inválidas são recusadas', async () => {

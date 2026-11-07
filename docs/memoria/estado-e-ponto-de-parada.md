@@ -141,3 +141,10 @@
 - **Calendário (menu) ainda não testado com o Zimbra real**: definir `ZIMBRA_API_URL` e `ZIMBRA_API_TOKEN` no servidor do portal, ligar o serviço Agenda no zimbra-mcp e liberar o IP em `ZIMBRA_API_IPS`.
 - Dúvidas em aberto com o usuário: deixar opcional ou remover a "Referência do consentimento" (LGPD) do Colaborador Destaque; controlar também as abas Favoritos/Todos e Mês/Ano por permissão; trocar o texto de exemplo de Missão/Visão/Valores pelo oficial; ícone do app "Meu RH" (buscar do app ou subir manualmente).
 - Lembretes: a configuração "reduzir animações" do Windows do usuário está ligada; os carrosséis (topo e Colaborador Destaque) ignoram essa configuração de propósito. Migrações vão até a 012 (rodam sozinhas ao subir o servidor). Pasta `MCP/` fica fora do Git (tem credenciais).
+
+## Integração Zimbra na tela, busca global e mapa do sistema (07/11/2026)
+- Configurações › Integrações (Zimbra): conexão (endereço + token do serviço, agenda da empresa), conta do Zimbra, serviços ligados, agendas usadas, testar. Módulo `modulos/integracoes`; conexão em `integracoes` (migração 013); o portal repassa a configuração ao serviço `MCP/zimbra-mcp` (que só aceita do próprio servidor).
+- Calendário: exige agenda escolhida (privacidade); datas criadas/excluídas pelo portal (`calendario.criar/excluir`); menu respeita `ver.calendario`.
+- Busca global no topo (`BuscaGlobal.tsx`). Ícones no lugar de nomes no alternador Catálogo/Lista.
+- Serviço Zimbra iniciado e conectado ao portal; serviço Agenda ligado. **Pendente do usuário:** escolher a agenda da empresa em Configurações › Integrações.
+- Mapa completo: `mapa-do-sistema.md`. 78 testes passam.

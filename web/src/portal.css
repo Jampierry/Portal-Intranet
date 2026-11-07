@@ -808,3 +808,37 @@ span.canal { color: var(--suave); }
 .campo-link-painel button[role=option]:hover, .campo-link-painel button[role=option]:focus-visible { background: var(--hover); }
 .campo-link-painel button[role=option][aria-selected=true] { background: var(--vinho-claro); color: var(--vinho-texto); }
 .campo-link-painel button[role=option] small { color: var(--suave); }
+
+/* Alternância de formato (ícones no lugar de nomes) */
+.pilulas.vistas button { width: 38px; min-width: 38px; padding: 0; display: inline-grid; place-items: center; }
+
+/* Configurações › Integrações */
+.int-bloco { display: grid; gap: 10px; }
+.int-bloco h3 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.int-servicos { border: 1px solid var(--linha-suave); border-radius: 12px; padding: 8px 12px; display: grid; gap: 4px; margin: 0; }
+.int-servicos legend { font-weight: 700; padding: 0 6px; }
+.int-servico { align-items: flex-start !important; }
+.int-servico span { display: flex; flex-direction: column; font-weight: 500; }
+.int-servico small { font-weight: 400; }
+.linha-smtp { display: flex; gap: 8px; }
+.linha-smtp .curto { width: 84px; flex: none; }
+code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radius: 5px; }
+
+/* Calendário: cadastrar e excluir datas */
+.cal-novo { margin-top: 4px; width: 100%; border: 1px dashed rgba(255, 255, 255, .35); background: transparent; color: inherit; border-radius: 8px; padding: 4px 6px; font: inherit; font-size: 11.5px; cursor: pointer; }
+.cal-novo:hover { background: rgba(255, 255, 255, .12); }
+.cal-x { margin-left: 4px; border: 0; background: transparent; color: inherit; opacity: .6; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+.cal-x:hover { opacity: 1; color: var(--coral, #e8604c); }
+
+/* Busca global do topo: resultados agrupados */
+.busca-topo { position: relative; }
+.busca-resultados { position: absolute; z-index: 50; top: calc(100% + 6px); right: 0; width: min(420px, 90vw); max-height: 70vh; overflow-y: auto; background: var(--card); border: 1px solid var(--campo); border-radius: 10px; box-shadow: 0 14px 32px rgba(0, 0, 0, .22); padding: 6px; display: grid; gap: 4px; }
+.busca-resultados .vazio { padding: 10px; margin: 0; }
+.busca-grupo { display: grid; gap: 1px; }
+.busca-grupo > span { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); padding: 6px 8px 2px; }
+.busca-grupo button, .busca-grupo .busca-item { display: flex; flex-direction: column; align-items: flex-start; gap: 0; width: 100%; text-align: left; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--texto); font: inherit; text-decoration: none; cursor: pointer; }
+.busca-grupo button:hover, .busca-grupo .busca-item:hover, .busca-grupo button:focus-visible { background: var(--hover); }
+.busca-grupo small { color: var(--suave); }
+.int-servicos label.perm-check { display: flex; flex-direction: row; align-items: flex-start; gap: 8px; margin: 0; padding: 4px 0; }
+.int-servicos label.perm-check input[type=checkbox] { margin-top: 2px; }
+.int-bloco .barra { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }

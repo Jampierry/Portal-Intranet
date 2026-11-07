@@ -24,6 +24,11 @@ export const CATALOGO: GrupoPermissao[] = [
       { chave: 'documentos.abrir', rotulo: 'Abrir o link do documento' },
       { chave: 'documentos.restritos', rotulo: 'Ver documentos restritos' },
     ] },
+    { id: 'calendario', rotulo: 'Calendário (menu)', acoes: [
+      { chave: 'ver.calendario', rotulo: 'Ver o calendário' },
+      { chave: 'calendario.criar', rotulo: 'Cadastrar datas importantes' },
+      { chave: 'calendario.excluir', rotulo: 'Excluir datas importantes' },
+    ] },
     { id: 'pessoas', rotulo: 'Pessoas (contatos)', acoes: [{ chave: 'ver.pessoas', rotulo: 'Acessar a tela' }] },
     { id: 'ajuda', rotulo: 'Ajuda', acoes: [{ chave: 'ver.ajuda', rotulo: 'Acessar a tela' }] },
   ] },
@@ -41,6 +46,7 @@ export const CATALOGO: GrupoPermissao[] = [
       { chave: 'cfg.perfis.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.perfis.criar', rotulo: 'Criar' },
       { chave: 'cfg.perfis.editar', rotulo: 'Editar' }, { chave: 'cfg.perfis.excluir', rotulo: 'Excluir' },
     ] },
+    { id: 'integracoes', rotulo: 'Integrações (Zimbra)', acoes: [{ chave: 'cfg.integracoes.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.integracoes.editar', rotulo: 'Editar e testar' }] },
     { id: 'auditoria', rotulo: 'Auditoria', acoes: [{ chave: 'cfg.auditoria.ver', rotulo: 'Ver a aba' }] },
   ] },
 ];
@@ -61,7 +67,7 @@ export interface PerfilInfo { codigo: string; nome: string; sistema: boolean; fi
 
 export const PADRAO_PERFIL: Record<string, string[]> = {
   editor: normalizar(TODAS.filter((c) => !c.startsWith('cfg.') && !c.startsWith('pub.aplicativos'))),
-  consulta: normalizar(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.pessoas', 'ver.ajuda']),
+  consulta: normalizar(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.calendario', 'ver.pessoas', 'ver.ajuda']),
 };
 
 export type Ajustes = Record<string, boolean>;

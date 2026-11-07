@@ -5,7 +5,7 @@ import { criarAppTeste, entrar } from '../../acessos/tests/ajuda.ts';
 import { limitesDoMes, limparCacheCalendario } from '../api/index.ts';
 
 const fetchOriginal = globalThis.fetch;
-afterEach(() => { globalThis.fetch = fetchOriginal; delete process.env.ZIMBRA_API_URL; delete process.env.ZIMBRA_API_TOKEN; limparCacheCalendario(); });
+afterEach(() => { globalThis.fetch = fetchOriginal; delete process.env.ZIMBRA_API_URL; delete process.env.ZIMBRA_API_TOKEN; delete process.env.ZIMBRA_AGENDA; limparCacheCalendario(); });
 const mesAtual = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 
 test('exige login e valida o mês', async () => {
@@ -24,7 +24,7 @@ test('sem ZIMBRA_API_URL/TOKEN: responde "não conectado", sem erro', async () =
 });
 
 test('conectado: manda o token ao Zimbra, devolve só campos públicos, filtra o mês e usa cache', async () => {
-  process.env.ZIMBRA_API_URL = 'http://zimbra.interno:8765/'; process.env.ZIMBRA_API_TOKEN = 'token-secreto';
+  process.env.ZIMBRA_API_URL = 'http://zimbra.interno:8765/'; process.env.ZIMBRA_API_TOKEN = 'token-secreto'; process.env.ZIMBRA_AGENDA = 'Empresa';
   const mes = mesAtual();
   const chamadas: { url: string; auth: string }[] = [];
   globalThis.fetch = (async (url: string, init?: { headers?: Record<string, string> }) => {
@@ -47,7 +47,7 @@ test('conectado: manda o token ao Zimbra, devolve só campos públicos, filtra o
 });
 
 test('Zimbra fora do ar: avisa e não derruba o portal', async () => {
-  process.env.ZIMBRA_API_URL = 'http://zimbra.interno:8765'; process.env.ZIMBRA_API_TOKEN = 't';
+  process.env.ZIMBRA_API_URL = 'http://zimbra.interno:8765'; process.env.ZIMBRA_API_TOKEN = 't'; process.env.ZIMBRA_AGENDA = 'Empresa';
   globalThis.fetch = (async () => { throw new Error('ECONNREFUSED'); }) as unknown as typeof fetch;
   const { app } = await criarAppTeste();
   const r = await app.inject({ url: '/api/calendario', headers: await entrar(app, 'le') });

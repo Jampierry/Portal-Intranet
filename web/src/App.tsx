@@ -4,6 +4,7 @@ import { PainelTema, useTema } from './tema';
 import { Menu, type Tela } from './Menu';
 import { Icone } from './icones';
 import { Avatar, usePerfil } from './perfil';
+import { BuscaGlobal } from './BuscaGlobal';
 import { JanelaConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
 import { pode, podeGerir, useSessao, type Usuario } from './sessao';
@@ -81,7 +82,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
   const admin = usuario.perfil === 'admin';
-  const podeConfig = ['usuarios', 'perfis', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`));
+  const podeConfig = ['usuarios', 'perfis', 'integracoes', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`));
   const telasLiberadas = (['comunicados', 'documentos', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
   const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
   const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
@@ -106,14 +107,14 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     });
   };
   const irPara = (t: Tela, slug?: string) => { setRota({ tela: t, slug }); setGaveta(false); try { history.pushState(null, '', t === 'inicio' ? location.pathname : `#${t}${slug ? `/${encodeURIComponent(slug)}` : ''}`); } catch { /* sem histórico */ } document.getElementById('conteudo-principal')?.scrollTo?.(0, 0); };
-  const buscar = (v: string) => { setBusca(v); if (v && tela === 'inicio') irPara('comunicados'); };
 
   return (
     <div className="app">
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        mostrarPublicar={gere} mostrarConfig={podeConfig} telasLiberadas={telasLiberadas} />
+        mostrarPublicar={gere} mostrarConfig={podeConfig} telasLiberadas={telasLiberadas}
+        mostrarCalendario={pode(usuario, 'ver.calendario')} podeCriarData={pode(usuario, 'calendario.criar')} podeExcluirData={pode(usuario, 'calendario.excluir')} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
@@ -121,10 +122,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
           <p className="aviso-universal" role="status"><Icone nome="info" tamanho={14} /><span>{AVISOS[tela]}</span></p>
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
-          <div className="busca-topo">
-            <Icone nome="busca" tamanho={14} />
-            <input type="search" placeholder="Buscar no portal" aria-label="Buscar no portal" value={busca} onChange={(e) => buscar(e.target.value)} />
-          </div>
+          <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} ir={() => irPara('comunicados')} />

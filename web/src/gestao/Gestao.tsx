@@ -1,3 +1,4 @@
+import { Icone } from '../icones';
 import { useState } from 'react';
 import { Crud, PermissoesCtx, Selo } from './Crud';
 import { Aplicacoes } from '../aplicacoes/Aplicacoes';
@@ -7,6 +8,7 @@ import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import { ListaPerfis } from './Permissoes';
+import { Integracoes } from './Integracoes';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -202,9 +204,9 @@ function Aplicativos({ busca, limparBusca, favoritos, alternarFavorito }: { busc
   const trocar = (v: 'catalogo' | 'lista') => { setVista(v); try { localStorage.setItem('portal.apps.vista', v); } catch { /* vale só nesta sessão */ } };
   return (
     <>
-      <div className="pilulas filtros" role="group" aria-label="Formato de exibição dos aplicativos">
-        <button aria-pressed={vista === 'catalogo'} onClick={() => trocar('catalogo')}>Catálogo</button>
-        <button aria-pressed={vista === 'lista'} onClick={() => trocar('lista')}>Lista</button>
+      <div className="pilulas filtros vistas" role="group" aria-label="Formato de exibição dos aplicativos">
+        <button aria-pressed={vista === 'catalogo'} onClick={() => trocar('catalogo')} title="Catálogo (cartões)" aria-label="Catálogo (cartões)"><Icone nome="vista-grade" tamanho={18} /></button>
+        <button aria-pressed={vista === 'lista'} onClick={() => trocar('lista')} title="Lista (tabela)" aria-label="Lista (tabela)"><Icone nome="vista-lista" tamanho={18} /></button>
       </div>
       {vista === 'catalogo'
         ? <Aplicacoes semCabecalho busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />
@@ -244,8 +246,8 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
   );
 }
 
-type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
-const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
+type AbaCfg = 'usuarios' | 'perfis' | 'integracoes' | 'auditoria';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['integracoes', 'Integrações'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
   const abas = ABAS_CONFIG.filter(([id]) => permissoes.includes(`cfg.${id}.ver`));
@@ -253,11 +255,13 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso e auditoria do portal." />
+      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, integrações e auditoria do portal." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
-      {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} /> : <Administracao parte={aba} souAdmin={souAdmin} permissoes={permissoes} />}
+      {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
+        : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
+        : <Administracao parte={aba} souAdmin={souAdmin} permissoes={permissoes} />}
     </>
   );
 }

@@ -4,6 +4,7 @@ import type { Banco } from './db.ts';
 import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
+import { rotasIntegracoes } from '../../modulos/integracoes/api/index.ts';
 import { rotasCalendario } from '../../modulos/calendario/api/index.ts';
 import { rotasBanners } from '../../modulos/banners/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
@@ -22,6 +23,7 @@ export const MODULOS = [
   { nome: 'documentos', rotas: rotasDocumentos },
   { nome: 'imagens', rotas: rotasImagens },
   { nome: 'inicio', rotas: rotasInicio },
+  { nome: 'integracoes', rotas: rotasIntegracoes },
   { nome: 'institucional', rotas: rotasInstitucional },
   { nome: 'pessoas', rotas: rotasPessoas },
 ];
