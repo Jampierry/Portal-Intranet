@@ -44,8 +44,8 @@ function Carrossel({ lista, tick, irPara, menor, titulo, pausa }: {
         </>
       )}
       {pausa && (
-        <button className="nov-pausa" disabled={pausa.reduzido} aria-pressed={pausa.parado} onClick={pausa.alternar} aria-label={pausa.parado ? 'Retomar rotação dos banners' : 'Pausar rotação dos banners'}>
-          <Icone nome={pausa.parado || pausa.reduzido ? 'tocar' : 'pausa'} tamanho={14} />
+        <button className="nov-pausa" aria-pressed={pausa.parado} onClick={pausa.alternar} aria-label={pausa.parado ? 'Retomar rotação dos banners' : 'Pausar rotação dos banners'}>
+          <Icone nome={pausa.parado ? 'tocar' : 'pausa'} tamanho={14} />
         </button>
       )}
     </section>
@@ -64,7 +64,7 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
   const [sobre, setSobre] = useState(false);
   const [parado, setParado] = useState(false);
   const reduzido = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const girando = maior > 1 && !sobre && !parado && !reduzido;
+  const girando = maior > 1 && !sobre && !parado; // gira sozinho mesmo com "reduzir animações" no Windows (a troca é só um esmaecer suave)
   useEffect(() => {
     if (!girando) return;
     const t = setInterval(() => setTick((x) => x + 1), 6500);
@@ -78,7 +78,7 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
   return (
     <div className={`novidades-grade${laterais.length === 0 ? ' so-principal' : ''}`}
       style={{ '--cols-lat': laterais.length } as CSSProperties}
-      onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)} onFocus={() => setSobre(true)} onBlur={() => setSobre(false)}>
+      onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)} onFocus={(e) => { if (e.target.matches(':focus-visible')) setSobre(true); }} onBlur={() => setSobre(false)}>
       {principal.length > 0
         ? <Carrossel lista={principal} tick={tick} irPara={irPara} titulo={titulos[0]} pausa={comPausa(0)} />
         : <div className="nov-slot">{padrao}</div>}
