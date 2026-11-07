@@ -224,8 +224,8 @@ const ABAS_PUBLICAR: [AbaPub, string][] = [
 export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
   perfil: PerfilAcesso; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
-  // Só as abas que a pessoa pode usar. Aplicativos sempre aparece para quem publica (sem 'cadastro' mostra só o catálogo).
-  const abas = ABAS_PUBLICAR.filter(([id]) => id === 'aplicacoes' || permissoes.includes(`pub.${id}`));
+  // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
+  const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}`));
   const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
@@ -246,16 +246,18 @@ export function Publicar({ perfil, permissoes, aba: pedida, aoMudarAba, busca, l
 
 type AbaCfg = 'usuarios' | 'perfis' | 'auditoria';
 const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['auditoria', 'Auditoria']];
-/** Configurações (só administrador): usuários, perfis e auditoria. */
-export function Configuracoes({ aba: pedida, aoMudarAba }: { aba?: string; aoMudarAba: (a: string) => void }) {
-  const aba: AbaCfg = ABAS_CONFIG.find(([id]) => id === pedida)?.[0] ?? ABAS_CONFIG[0][0];
+/** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
+export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
+  const abas = ABAS_CONFIG.filter(([id]) => permissoes.includes(`cfg.${id}`));
+  if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
+  const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
       <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso e auditoria do portal." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
-        {ABAS_CONFIG.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+        {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
-      {aba === 'perfis' ? <EditorPerfis /> : <Administracao parte={aba} />}
+      {aba === 'perfis' ? <EditorPerfis /> : <Administracao parte={aba} souAdmin={souAdmin} />}
     </>
   );
 }

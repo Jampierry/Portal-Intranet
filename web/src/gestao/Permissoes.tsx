@@ -67,7 +67,7 @@ export function EditorPerfis() {
           ))}
         </table>
       </div>
-      <p className="suave">Usuários, Perfis e Auditoria (Configurações) ficam sempre só com o administrador.</p>
+      <p className="suave">As abas de Configurações (Usuários, Perfis, Auditoria) também podem ser liberadas aqui. Quem não é administrador só consegue conceder o que ele mesmo tem e nunca altera administradores.</p>
       {falha && <p className="erro" role="alert">{falha}</p>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       <div className="barra"><button className="btn" disabled={!sujo || salvando} onClick={() => void salvar()}>{salvando ? 'Salvando…' : 'Salvar perfis'}</button></div>

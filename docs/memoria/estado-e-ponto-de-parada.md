@@ -117,3 +117,8 @@
 - No zimbra-mcp: ligar o serviço **Agenda** e escolher a(s) agenda(s) da empresa; liberar o IP do portal em `ZIMBRA_API_IPS`. A agenda lida é a da conta de serviço (calendário da empresa, não o pessoal de cada usuário).
 - Tela: `web/src/Calendario.tsx` no menu lateral (some com o menu recolhido e em janelas com menos de 780 px de altura). Dia com ponto = há data importante; clicar mostra a lista do dia.
 - Testes: `modulos/calendario/tests/api.test.ts` (Zimbra simulado). Ainda não testado com o serviço real.
+
+## Abas liberadas por perfil e por usuário
+- Novas permissões `cfg.usuarios`, `cfg.perfis`, `cfg.auditoria` (abas de Configurações) além de `pub.*` (abas de Publicar; a aba Aplicativos agora também depende de `pub.aplicativos`). Padrão: só o administrador tem `cfg.*`.
+- Quem não é administrador: não vê administradores, não cria/edita/redefine senha de admin, não edita o próprio cadastro e só concede permissões que ele mesmo tem (usuário e perfil) — sem escalar privilégio. Testes em `modulos/acessos/tests/permissoes.test.ts`.
+- Não são abas de tela e ficam fora: Favoritos/Todos (barra de aplicativos) e Mês/Ano (Colaborador Destaque).

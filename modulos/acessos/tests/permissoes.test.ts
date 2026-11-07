@@ -84,3 +84,38 @@ test('criar usuário já com ajustes', async () => {
   assert.equal(r.statusCode, 201);
   assert.ok(!r.json<{ efetivas: string[] }>().efetivas.includes('ver.pessoas'));
 });
+
+test('abas de Configurações: o administrador libera cada aba; sem liberar, 403', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const edita = await entrar(app, 'edita');
+  assert.equal((await app.inject({ url: '/api/usuarios', headers: edita })).statusCode, 403);
+  assert.equal((await app.inject({ url: '/api/auditoria', headers: edita })).statusCode, 403);
+  await put(app, `/api/usuarios/${idDe(db, 'edita')}`, adm, { permissoes: { 'cfg.auditoria': true } });
+  assert.equal((await app.inject({ url: '/api/auditoria', headers: edita })).statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/usuarios', headers: edita })).statusCode, 403); // outra aba continua fechada
+  // por perfil: dar cfg.usuarios a todo o perfil consulta
+  await put(app, '/api/perfis/consulta', adm, { permissoes: ['ver.comunicados', 'cfg.usuarios'] });
+  assert.equal((await app.inject({ url: '/api/usuarios', headers: await entrar(app, 'le') })).statusCode, 200);
+});
+
+test('quem gerencia usuários sem ser admin não escala privilégio', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  await put(app, `/api/usuarios/${idDe(db, 'edita')}`, adm, { permissoes: { 'cfg.usuarios': true } });
+  const edita = await entrar(app, 'edita');
+  const lista = (await app.inject({ url: '/api/usuarios', headers: edita })).json<{ perfil: string }[]>();
+  assert.ok(lista.length > 0 && lista.every((u) => u.perfil !== 'admin')); // administradores não aparecem
+  const base = { login: 'novo.user', nome: 'Novo Usuário', senha: 'Provisoria#2026' };
+  const criar = (p: object) => app.inject({ method: 'POST', url: '/api/usuarios', headers: edita, payload: { ...base, ...p } });
+  assert.equal((await criar({ perfil: 'admin' })).statusCode, 403);
+  assert.equal((await criar({ perfil: 'consulta', permissoes: { 'cfg.perfis': true } })).statusCode, 403); // ele não tem cfg.perfis
+  assert.equal((await criar({ perfil: 'consulta', permissoes: { 'pub.banners': true } })).statusCode, 201); // tem pub.banners pelo perfil editor
+  assert.equal((await put(app, `/api/usuarios/${idDe(db, 'master')}`, edita, { nome: 'Hackeado' })).statusCode, 403);
+  assert.equal((await put(app, `/api/usuarios/${idDe(db, 'edita')}`, edita, { nome: 'Eu mesma' })).statusCode, 403); // nem o próprio cadastro
+  assert.equal((await app.inject({ method: 'POST', url: `/api/usuarios/${idDe(db, 'master')}/senha`, headers: edita, payload: { senha: 'Outra#senha2026' } })).statusCode, 403);
+  // perfis: só concede o que ele mesmo tem
+  await put(app, `/api/usuarios/${idDe(db, 'edita')}`, adm, { permissoes: { 'cfg.usuarios': true, 'cfg.perfis': true } });
+  assert.equal((await put(app, '/api/perfis/consulta', edita, { permissoes: ['ver.comunicados', 'pub.aplicativos'] })).statusCode, 403);
+  assert.equal((await put(app, '/api/perfis/consulta', edita, { permissoes: ['ver.comunicados', 'pub.banners'] })).statusCode, 200);
+});

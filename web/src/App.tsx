@@ -81,6 +81,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
   const admin = usuario.perfil === 'admin';
+  const podeConfig = ['usuarios', 'perfis', 'auditoria'].some((a) => pode(usuario, `cfg.${a}`));
   const telasLiberadas = (['comunicados', 'documentos', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
   const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
   const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
@@ -112,7 +113,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <a className="pular" href="#conteudo-principal">Pular para o conteúdo</a>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
-        mostrarPublicar={gere} mostrarConfig={admin} telasLiberadas={telasLiberadas} />
+        mostrarPublicar={gere} mostrarConfig={podeConfig} telasLiberadas={telasLiberadas} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
@@ -141,8 +142,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
             {tela === 'publicar' && gere && <Publicar perfil={pode(usuario, 'pub.aplicativos') ? 'admin' : usuario.perfil} permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
-            {tela === 'configuracoes' && admin && <Configuracoes aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
-            {tela === 'configuracoes' && !admin && <p className="erro">Só o administrador acessa as configurações.</p>}
+            {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
+            {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}
             <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Portal Intranet</span></footer>
           </main>
           <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />

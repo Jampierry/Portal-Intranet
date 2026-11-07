@@ -27,7 +27,9 @@ function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => voi
   );
 }
 
-function Usuarios() {
+function Usuarios({ souAdmin }: { souAdmin: boolean }) {
+  // Quem não é administrador não cria nem promove administradores (o servidor também recusa).
+  const perfisEscolha = (Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).filter((p) => souAdmin || p !== 'admin');
   const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
   const [aviso, setAviso] = useState('');
   const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
@@ -73,7 +75,7 @@ function Usuarios() {
             <small className="suave">Só letras minúsculas, números, ponto, hífen e sublinhado. Ex.: maria.silva</small></label>
           <label>Perfil *
             <select value={novo.perfil} onChange={(e) => setNovo({ ...novo, perfil: e.target.value as PerfilAcesso })}>
-              {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+              {perfisEscolha.map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
             </select></label>
           <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
           <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
@@ -86,7 +88,7 @@ function Usuarios() {
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>Perfil *
             <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
-              {(Object.keys(ROTULO_PERFIL) as PerfilAcesso[]).map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
+              {perfisEscolha.map((p) => <option key={p} value={p}>{ROTULO_PERFIL[p]}</option>)}
             </select></label>
           <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
           <AjustesUsuario perfil={edit.perfil} ajustes={edit.permissoes} mudar={(permissoes) => setEdit({ ...edit, permissoes })} />
@@ -149,6 +151,6 @@ function Auditoria() {
   );
 }
 
-export function Administracao({ parte }: { parte: 'usuarios' | 'auditoria' }) {
-  return parte === 'usuarios' ? <Usuarios /> : <Auditoria />;
+export function Administracao({ parte, souAdmin }: { parte: 'usuarios' | 'auditoria'; souAdmin: boolean }) {
+  return parte === 'usuarios' ? <Usuarios souAdmin={souAdmin} /> : <Auditoria />;
 }

@@ -1,9 +1,9 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
 import { corpoObjeto, escolha, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { confereSenha, hashSenha } from './senha.ts';
-import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigir, HORAS_SESSAO, PERFIS, usuarioDaSessao } from './guard.ts';
+import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, HORAS_SESSAO, PERFIS, usuarioDaSessao } from './guard.ts';
 import { CATALOGO, lerAjustes, NOME_PERFIL, permissoesDoPerfil, permissoesEfetivas, PERFIS_EDITAVEIS, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 
 const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login']);
@@ -113,12 +113,19 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return { ok: true };
   });
 
-  // ----- Administração de usuários (somente admin master) -----
-  const admin = { preHandler: exigir('admin') };
+  // ----- Administração de usuários e perfis: abas de Configurações liberadas por permissão (cfg.*) -----
+  const aUsuarios = { preHandler: exigirPerm('cfg.usuarios') };
+  const aPerfis = { preHandler: exigirPerm('cfg.perfis') };
+  const aAmbos = { preHandler: exigirPerm('cfg.usuarios', 'cfg.perfis') };
+  const aAuditoria = { preHandler: exigirPerm('cfg.auditoria') };
+  // Quem não é administrador nunca mexe em administradores nem concede mais do que ele mesmo tem (sem escalar privilégio).
+  const ehAdmin = (req: FastifyRequest) => req.usuario!.perfil === 'admin';
+  const excede = (req: FastifyRequest, chaves: string[]) => !ehAdmin(req) && chaves.some((c) => !req.usuario!.permissoes.includes(c));
+  const NEGADO = { erro: 'Você não pode conceder mais acesso do que o seu, nem alterar administradores.' };
 
-  app.get('/api/usuarios', admin, async () => (db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all() as Record<string, unknown>[]).map((u) => paraTela(db, u)));
+  app.get('/api/usuarios', aUsuarios, async (req) => (db.prepare(`SELECT ${DTO} FROM usuarios ORDER BY nome`).all() as Record<string, unknown>[]).filter((u) => ehAdmin(req) || u.perfil !== 'admin').map((u) => paraTela(db, u)));
 
-  app.post('/api/usuarios', admin, async (req, resp) => {
+  app.post('/api/usuarios', aUsuarios, async (req, resp) => {
     const c = corpoObjeto(req.body);
     const login = String(texto(c, 'login', 'Login', { min: 3, max: 32 })).toLowerCase();
     if (!/^[a-z0-9._-]+$/.test(login)) throw new ErroValidacao('Login: use só letras minúsculas, números, ponto, hífen e sublinhado.');
@@ -128,13 +135,14 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
     const ajustes = ajustesDoCorpo(c);
+    if ((!ehAdmin(req) && perfil === 'admin') || excede(req, Object.keys(ajustes).filter((k) => ajustes[k]))) return resp.code(403).send(NEGADO);
     const r = db.prepare('INSERT INTO usuarios (login, nome, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, 1, ?, ?)')
       .run(login, nome, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
     auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
     return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
 
-  app.put<{ Params: { id: string } }>('/api/usuarios/:id', admin, async (req, resp) => {
+  app.put<{ Params: { id: string } }>('/api/usuarios/:id', aUsuarios, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
     const atual = db.prepare('SELECT id, nome, perfil, ativo, permissoes FROM usuarios WHERE id = ?').get(id) as { id: number; nome: string; perfil: string; ativo: number; permissoes: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
@@ -149,6 +157,11 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       if (n <= 1) return resp.code(400).send({ erro: 'É preciso manter pelo menos um administrador ativo.' });
     }
     const ajustes = c.permissoes === undefined ? lerAjustes(atual.permissoes) : ajustesDoCorpo(c);
+    if (!ehAdmin(req)) {
+      const antes = lerAjustes(atual.permissoes);
+      const novas = Object.keys(ajustes).filter((k) => ajustes[k] && !antes[k]);
+      if (id === req.usuario!.id || atual.perfil === 'admin' || perfil === 'admin' || excede(req, novas)) return resp.code(403).send(NEGADO);
+    }
     const ajustesJson = Object.keys(ajustes).length ? JSON.stringify(ajustes) : null;
     db.prepare('UPDATE usuarios SET nome = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, perfil, ativo, ajustesJson, id);
     if (ativo === 0 || perfil !== atual.perfil) db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
@@ -156,10 +169,11 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id) as Record<string, unknown>);
   });
 
-  app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', admin, async (req, resp) => {
+  app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', aUsuarios, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
-    const u = db.prepare('SELECT login FROM usuarios WHERE id = ?').get(id) as { login: string } | undefined;
+    const u = db.prepare('SELECT login, perfil FROM usuarios WHERE id = ?').get(id) as { login: string; perfil: string } | undefined;
     if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
+    if (!ehAdmin(req) && u.perfil === 'admin') return resp.code(403).send(NEGADO);
     const senha = String(texto(corpoObjeto(req.body), 'senha', 'Senha provisória', { max: 128 }));
     validarSenhaNova(senha, u.login);
     db.prepare('UPDATE usuarios SET senha_hash = ?, trocar_senha = 1 WHERE id = ?').run(hashSenha(senha), id);
@@ -170,24 +184,26 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
   });
 
   // ----- Perfis: o administrador escolhe o que cada perfil pode fazer e quais telas acessa -----
-  app.get('/api/perfis', admin, async () => ({
+  app.get('/api/perfis', aAmbos, async () => ({
     catalogo: CATALOGO,
     perfis: ['admin', ...PERFIS_EDITAVEIS].map((codigo) => ({ codigo, nome: NOME_PERFIL[codigo], fixo: codigo === 'admin', permissoes: permissoesDoPerfil(db, codigo) })),
   }));
 
-  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo', admin, async (req, resp) => {
+  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo', aPerfis, async (req, resp) => {
     const codigo = req.params.codigo;
     if (codigo === 'admin') return resp.code(400).send({ erro: 'O administrador sempre tem todas as permissões.' });
     if (!(PERFIS_EDITAVEIS as readonly string[]).includes(codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
     let lista: string[];
     try { lista = validarLista(corpoObjeto(req.body).permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
+    const antes = new Set(permissoesDoPerfil(db, codigo));
+    if (excede(req, lista.filter((c) => !antes.has(c)))) return resp.code(403).send(NEGADO);
     db.prepare('INSERT INTO perfis_permissoes (perfil, permissoes, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(perfil) DO UPDATE SET permissoes = excluded.permissoes, atualizado_em = excluded.atualizado_em')
       .run(codigo, JSON.stringify(lista), new Date().toISOString());
     auditar(db, req.usuario!.id, 'perfil_alterado', { perfil: codigo, permissoes: lista.length, de: TODAS.length });
     return { codigo, permissoes: lista };
   });
 
-  app.get('/api/auditoria', admin, async () =>
+  app.get('/api/auditoria', aAuditoria, async () =>
     db
       .prepare(
         `SELECT a.id, a.quando, a.acao, a.detalhe, u.nome AS usuario FROM auditoria a LEFT JOIN usuarios u ON u.id = a.usuario_id

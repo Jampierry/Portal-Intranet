@@ -21,6 +21,11 @@ export const CATALOGO: GrupoPermissao[] = [
     { chave: 'pub.contatos', rotulo: 'Contatos' },
     { chave: 'pub.aplicativos', rotulo: 'Aplicativos (cadastro)' },
   ] },
+  { grupo: 'Abas de Configurações', itens: [
+    { chave: 'cfg.usuarios', rotulo: 'Usuários' },
+    { chave: 'cfg.perfis', rotulo: 'Perfis' },
+    { chave: 'cfg.auditoria', rotulo: 'Auditoria' },
+  ] },
 ];
 
 export const TODAS: readonly string[] = CATALOGO.flatMap((g) => g.itens.map((i) => i.chave));
@@ -31,7 +36,7 @@ export const PERFIS_EDITAVEIS = ['editor', 'consulta'] as const;
 export const NOME_PERFIL: Record<string, string> = { admin: 'Administrador', editor: 'Editor', consulta: 'Consulta' };
 
 export const PADRAO_PERFIL: Record<string, string[]> = {
-  editor: TODAS.filter((c) => c !== 'pub.aplicativos'),
+  editor: TODAS.filter((c) => c !== 'pub.aplicativos' && !c.startsWith('cfg.')),
   consulta: TODAS.filter((c) => c.startsWith('ver.')),
 };
 
