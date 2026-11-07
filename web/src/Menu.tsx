@@ -1,4 +1,5 @@
 import { Icone, IconeSistema } from './icones';
+import { Calendario } from './Calendario';
 
 export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'pessoas' | 'ajuda';
 
@@ -35,6 +36,8 @@ export function Menu(p: Props) {
           </button>
         ))}
       </nav>
+
+      {!mini && <Calendario />}
 
       {!mini && <div className="sbfoot"><span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span></div>}
     </aside>

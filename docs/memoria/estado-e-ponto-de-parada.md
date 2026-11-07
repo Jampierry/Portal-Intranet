@@ -110,3 +110,10 @@
 - Migração 010: `destaques.mes` e `destaques.ano` (aproveita o rótulo antigo). Publicar › Colaborador Destaque agora pede **Mês** e **Ano** (não há mais "Mês/Ano" como tipo).
 - Início: aba **Mês** = destaques do mês vigente (sem selo de período); aba **Ano** = todos os do ano atual, com selo "Mês/Ano" sobre a foto. Data vigente = a do navegador.
 - Campo "Foto da pessoa" no cadastro (`foto_aprovada`). Testes em `modulos/inicio/tests/api.test.ts`.
+
+## Calendário de datas importantes (menu) ligado ao zimbra-mcp
+- Módulo `modulos/calendario/api`: `GET /api/calendario?mes=AAAA-MM` (login obrigatório) chama `GET /api/eventos` do serviço `MCP/zimbra-mcp` **pelo servidor** (token nunca vai ao navegador), com cache de 5 min; devolve só id/título/início/fim/dia_inteiro/local (sem organizador).
+- Configuração (variáveis de ambiente do servidor do portal): `ZIMBRA_API_URL` (ex.: http://127.0.0.1:8765), `ZIMBRA_API_TOKEN` (o mesmo `ZIMBRA_API_TOKEN` do zimbra-mcp) e, opcional, `ZIMBRA_AGENDA` (filtra a agenda por nome). Sem elas, o calendário aparece com o aviso "Agenda ainda não conectada ao Zimbra".
+- No zimbra-mcp: ligar o serviço **Agenda** e escolher a(s) agenda(s) da empresa; liberar o IP do portal em `ZIMBRA_API_IPS`. A agenda lida é a da conta de serviço (calendário da empresa, não o pessoal de cada usuário).
+- Tela: `web/src/Calendario.tsx` no menu lateral (some com o menu recolhido e em janelas com menos de 780 px de altura). Dia com ponto = há data importante; clicar mostra a lista do dia.
+- Testes: `modulos/calendario/tests/api.test.ts` (Zimbra simulado). Ainda não testado com o serviço real.
