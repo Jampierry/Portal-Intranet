@@ -133,3 +133,4 @@
 - Calendário no menu: sempre visível (compacto em janela baixa), acima do lema do rodapé.
 - Tabelas (Usuários, Perfis, Auditoria e todas as de Publicar): clicar no cabeçalho ordena (A→Z, Z→A, original). Hook `useOrdenacao` em `web/src/gestao/Ordenar.tsx`; `Coluna.ordem` opcional no Crud.
 - Publicar › Aplicativos: botão alterna entre Catálogo (cartões) e Lista (tabela); lembra a escolha neste navegador. Criar/Editar/Excluir continuam travados por pub.aplicativos.criar/editar/excluir.
+- Banners › Link do botão: seleção com pesquisa (comunicados + páginas do portal) ou endereço externo (`CampoLink.tsx`, tipo `link` no Crud). Grava #comunicados/<slug>.

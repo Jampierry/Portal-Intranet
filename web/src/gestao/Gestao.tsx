@@ -63,7 +63,7 @@ function Banners() {
         { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel da esquerda)', max: 160 },
         { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo: esquerda ≈ 1000 × 330 px; meio e direita ≈ 700 × 330 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
         { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
-        { chave: 'link', rotulo: 'Link do botão', max: 300, dica: 'Página do portal (ex.: #comunicados) ou endereço https://…', metade: true },
+        { chave: 'link', rotulo: 'Link do botão', tipo: 'link', max: 300, dica: 'Escolha um comunicado ou página do portal, ou use um endereço externo. Preencha também o texto do botão.', metade: true },
         { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
         { chave: 'ativo', rotulo: 'Ativo (aparece no Início)', tipo: 'check' },
         { chave: 'exibir_de', rotulo: 'Exibir a partir de (opcional)', tipo: 'data', metade: true },

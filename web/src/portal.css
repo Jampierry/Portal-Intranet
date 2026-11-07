@@ -793,3 +793,18 @@ span.canal { color: var(--suave); }
 .dados th button.ord::after { content: '↕'; font-size: 11px; opacity: .35; }
 .dados th button.ord.asc::after { content: '▲'; opacity: .9; font-size: 9px; }
 .dados th button.ord.desc::after { content: '▼'; opacity: .9; font-size: 9px; }
+
+/* Campo "Link do botão": seleção com pesquisa (comunicados e páginas) */
+.campo-link { display: grid; gap: 4px; }
+.campo-link-caixa { position: relative; }
+.campo-link > label { font-weight: 600; }
+.campo-link-botao { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+.campo-link-botao span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.campo-link-painel { position: absolute; z-index: 40; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--card); border: 1px solid var(--linha); border-radius: 12px; box-shadow: 0 12px 28px rgba(0, 0, 0, .18); padding: 8px; display: grid; gap: 6px; }
+.campo-link-painel ul { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; display: grid; gap: 1px; }
+.campo-link-painel li.grupo > span { display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); padding: 6px 8px 2px; }
+.campo-link-painel li.vazio { padding: 8px; color: var(--suave); }
+.campo-link-painel button[role=option] { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.campo-link-painel button[role=option]:hover, .campo-link-painel button[role=option]:focus-visible { background: var(--hover); }
+.campo-link-painel button[role=option][aria-selected=true] { background: var(--vinho-claro); color: var(--vinho-texto); }
+.campo-link-painel button[role=option] small { color: var(--suave); }
