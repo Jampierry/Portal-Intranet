@@ -1161,3 +1161,8 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 /* Configurações: dicas de onde fica cada coisa e painel lateral dos Comunicados na prévia */
 .empcfg-onde { margin: 0; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; background: var(--afundado); }
 .prev-painel-marca { margin: 0; border-radius: var(--raio); }
+
+/* Carrossel da tela de entrada: troca com fade e a imagem em destaque se aproxima devagar. Com "reduzir movimento" ligado no sistema, as imagens ainda se alternam (sem fade nem zoom) e param ao passar o mouse. */
+@keyframes entrar-zoom { from { transform: scale(1); } to { transform: scale(1.07); } }
+.entrar-fundo-img.ativa { animation: entrar-zoom 14s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .entrar-fundo-img.ativa { animation: none; } }
