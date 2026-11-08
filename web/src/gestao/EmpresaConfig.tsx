@@ -104,6 +104,16 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           </fieldset>
 
           <fieldset className="empcfg-bloco">
+            <legend>Aniversário da empresa</legend>
+            <div className="empcfg-linha duas">
+              <label className="empcfg-campo">Data de fundação (opcional)
+                <input type="date" value={cfg.fundacao ?? ''} max={new Date().toISOString().slice(0, 10)} disabled={!edita} onChange={(e) => set({ fundacao: e.target.value || null })} />
+              </label>
+            </div>
+            <small className="suave">Com a data, o Início mostra a contagem regressiva para o aniversário da empresa e comemora no dia.</small>
+          </fieldset>
+
+          <fieldset className="empcfg-bloco">
             <legend>Rodapé</legend>
             <div className="empcfg-linha duas">
               <label className="empcfg-campo">Frase do rodapé (em todas as telas)

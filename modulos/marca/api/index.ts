@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
-import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
+import { corpoObjeto, dataIso, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { guardarImagem } from '../../imagens/api/index.ts';
 
@@ -25,6 +25,8 @@ export interface ConfigEmpresa {
   /** Versão da logo para o tema escuro (a anterior vale para o tema claro). */
   logo_nome_escuro: string | null;
   feriados_municipais: FeriadoMunicipal[];
+  /** Data de fundação (AAAA-MM-DD, opcional): o Início mostra a contagem regressiva do aniversário da empresa. */
+  fundacao: string | null;
 }
 export interface ConfigEntrada {
   fundo: 'cor' | 'imagem' | 'carrossel';
@@ -39,7 +41,7 @@ export interface ConfigEntrada {
 export const PADRAO_EMPRESA: ConfigEmpresa = {
   nome: 'Sua Empresa', nome_portal: 'Portal Intranet', slogan: '', frase_rodape: 'Conectando pessoas, ideias e grandes movimentos.',
   lema: ['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO'], rotulo_destaque: 'DESTAQUE', lema_destaque: ['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE'],
-  logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [],
+  logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [], fundacao: null,
 };
 export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
 
@@ -87,7 +89,7 @@ function validarEmpresa(c: Record<string, unknown>): ConfigEmpresa {
   return {
     nome: curto(c.nome, 'Nome da empresa', 40, true), nome_portal: curto(c.nome_portal, 'Nome do portal', 40, true),
     slogan: curto(c.slogan, 'Slogan', 60), frase_rodape: curto(c.frase_rodape, 'Frase do rodapé', 120),
-    lema: listaDeLinhas(c.lema, 'Frase dos painéis'), rotulo_destaque: curto(c.rotulo_destaque, 'Rótulo do destaque', 20), lema_destaque: listaDeLinhas(c.lema_destaque, 'Frase do destaque'), logo: imagemPropria(c.logo, 'Ícone'), logo_nome: imagemPropria(c.logo_nome, 'Logo do tema claro'), logo_nome_escuro: imagemPropria(c.logo_nome_escuro, 'Logo do tema escuro'), feriados_municipais: feriados,
+    lema: listaDeLinhas(c.lema, 'Frase dos painéis'), rotulo_destaque: curto(c.rotulo_destaque, 'Rótulo do destaque', 20), lema_destaque: listaDeLinhas(c.lema_destaque, 'Frase do destaque'), logo: imagemPropria(c.logo, 'Ícone'), logo_nome: imagemPropria(c.logo_nome, 'Logo do tema claro'), logo_nome_escuro: imagemPropria(c.logo_nome_escuro, 'Logo do tema escuro'), feriados_municipais: feriados, fundacao: dataIso(c, 'fundacao', 'Data de fundação'),
   };
 }
 function validarEntrada(c: Record<string, unknown>): ConfigEntrada {

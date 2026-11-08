@@ -28,22 +28,29 @@ export async function rotasPessoasMes(app: FastifyInstance, { db }: { db: Banco;
     const h = hojeLocal();
     const aniv = (db.prepare('SELECT nome, area, dia, mes, foto FROM aniversariantes WHERE autorizado = 1 AND mes = ? ORDER BY dia, nome').all(h.mes) as { nome: string; area: string; dia: number; mes: number; foto: string | null }[])
       .map((a) => ({ ...a, iniciais: iniciais(a.nome), hoje: a.dia === h.dia }));
+    // Tempo de casa: quem faz aniversário de admissão neste mês (a partir de 1 ano)
+    const ano = Number(h.iso.slice(0, 4));
+    const casa = (db.prepare("SELECT nome, area, foto, admissao FROM aniversariantes WHERE autorizado = 1 AND admissao IS NOT NULL AND CAST(substr(admissao, 6, 2) AS INTEGER) = ? ORDER BY substr(admissao, 9, 2), nome").all(h.mes) as { nome: string; area: string; foto: string | null; admissao: string }[])
+      .map((a) => ({ nome: a.nome, area: a.area, foto: a.foto, iniciais: iniciais(a.nome), dia: Number(a.admissao.slice(8, 10)), anos: ano - Number(a.admissao.slice(0, 4)), hoje: Number(a.admissao.slice(8, 10)) === h.dia }))
+      .filter((a) => a.anos >= 1);
     const novos = (db.prepare('SELECT nome, area, funcao, entrada, mensagem, foto FROM novos_colaboradores WHERE autorizado = 1 AND entrada <= ? AND entrada >= ? ORDER BY entrada DESC, nome').all(h.iso, somarDias(h.iso, -JANELA_NOVOS_DIAS)) as { nome: string }[])
       .map((n) => ({ ...n, iniciais: iniciais(n.nome) }));
-    return resp.header('Cache-Control', 'no-cache').send({ mes: h.mes, aniversariantes: aniv, novos });
+    return resp.header('Cache-Control', 'no-cache').send({ mes: h.mes, aniversariantes: aniv, casa, novos });
   });
 
   // ----- Gestão: aniversariantes -----
-  const CAMPOS_A = 'id, nome, area, dia, mes, foto, autorizado';
+  const CAMPOS_A = 'id, nome, area, dia, mes, admissao, foto, autorizado';
   const lerAniversariante = (c: Record<string, unknown>) => {
     const dia = Number(c.dia), mes = Number(c.mes);
     if (!diaMesValido(dia, mes)) throw new ErroValidacao('Aniversário: informe um dia e um mês válidos.');
-    return { nome: String(texto(c, 'nome', 'Nome', { min: 2, max: 80 })), area: String(texto(c, 'area', 'Área', { max: 60 })), dia, mes, foto: foto(c), autorizado: c.autorizado ? 1 : 0 };
+    const admissao = dataIso(c, 'admissao', 'Data de admissão');
+    if (admissao && admissao > hojeLocal().iso) throw new ErroValidacao('Data de admissão: não pode ser no futuro.');
+    return { nome: String(texto(c, 'nome', 'Nome', { min: 2, max: 80 })), area: String(texto(c, 'area', 'Área', { max: 60 })), dia, mes, admissao, foto: foto(c), autorizado: c.autorizado ? 1 : 0 };
   };
   app.get('/api/gestao/aniversariantes', { preHandler: exigirPerm('pub.aniversariantes.ver') }, async () => db.prepare(`SELECT ${CAMPOS_A} FROM aniversariantes ORDER BY mes, dia, nome`).all());
   app.post('/api/gestao/aniversariantes', { preHandler: exigirPerm('pub.aniversariantes.criar') }, async (req, resp) => {
     const d = lerAniversariante(corpoObjeto(req.body));
-    const id = Number(db.prepare('INSERT INTO aniversariantes (nome, area, dia, mes, foto, autorizado) VALUES (?, ?, ?, ?, ?, ?)').run(d.nome, d.area, d.dia, d.mes, d.foto, d.autorizado).lastInsertRowid);
+    const id = Number(db.prepare('INSERT INTO aniversariantes (nome, area, dia, mes, admissao, foto, autorizado) VALUES (?, ?, ?, ?, ?, ?, ?)').run(d.nome, d.area, d.dia, d.mes, d.admissao, d.foto, d.autorizado).lastInsertRowid);
     auditar(db, req.usuario!.id, 'aniversariante_criado', { id, area: d.area });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS_A} FROM aniversariantes WHERE id = ?`).get(id));
   });
@@ -51,7 +58,7 @@ export async function rotasPessoasMes(app: FastifyInstance, { db }: { db: Banco;
     const id = inteiro(req.params.id, 'Aniversariante');
     if (!db.prepare('SELECT 1 FROM aniversariantes WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Aniversariante não encontrado.' });
     const d = lerAniversariante(corpoObjeto(req.body));
-    db.prepare('UPDATE aniversariantes SET nome = ?, area = ?, dia = ?, mes = ?, foto = ?, autorizado = ? WHERE id = ?').run(d.nome, d.area, d.dia, d.mes, d.foto, d.autorizado, id);
+    db.prepare('UPDATE aniversariantes SET nome = ?, area = ?, dia = ?, mes = ?, admissao = ?, foto = ?, autorizado = ? WHERE id = ?').run(d.nome, d.area, d.dia, d.mes, d.admissao, d.foto, d.autorizado, id);
     auditar(db, req.usuario!.id, 'aniversariante_alterado', { id, area: d.area });
     return db.prepare(`SELECT ${CAMPOS_A} FROM aniversariantes WHERE id = ?`).get(id);
   });
@@ -70,15 +77,15 @@ export async function rotasPessoasMes(app: FastifyInstance, { db }: { db: Banco;
     if (itens.length === 0) throw new ErroValidacao('Nenhuma linha para importar.');
     if (itens.length > 2000) throw new ErroValidacao('Importe no máximo 2000 linhas por vez.');
     const existe = db.prepare('SELECT id FROM aniversariantes WHERE nome = ? AND dia = ? AND mes = ?');
-    const ins = db.prepare('INSERT INTO aniversariantes (nome, area, dia, mes, foto, autorizado) VALUES (?, ?, ?, ?, NULL, 1)');
-    const upd = db.prepare('UPDATE aniversariantes SET area = ?, autorizado = 1 WHERE id = ?');
+    const ins = db.prepare('INSERT INTO aniversariantes (nome, area, dia, mes, admissao, foto, autorizado) VALUES (?, ?, ?, ?, ?, NULL, 1)');
+    const upd = db.prepare('UPDATE aniversariantes SET area = ?, admissao = COALESCE(?, admissao), autorizado = 1 WHERE id = ?');
     let novos = 0, atualizados = 0;
     const erros: string[] = [];
     itens.forEach((it, i) => {
       try {
         const d = lerAniversariante({ ...(it as Record<string, unknown>), autorizado: true });
         const e = existe.get(d.nome, d.dia, d.mes) as { id: number } | undefined;
-        if (e) { upd.run(d.area, e.id); atualizados++; } else { ins.run(d.nome, d.area, d.dia, d.mes); novos++; }
+        if (e) { upd.run(d.area, d.admissao, e.id); atualizados++; } else { ins.run(d.nome, d.area, d.dia, d.mes, d.admissao); novos++; }
       } catch (x) { erros.push(`Linha ${i + 1}: ${x instanceof Error ? x.message : 'inválida'}`); }
     });
     auditar(db, req.usuario!.id, 'aniversariantes_importados', { novos, atualizados, erros: erros.length });

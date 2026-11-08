@@ -7,7 +7,7 @@ import { Crud, JanelaForm, PermissoesCtx, Selo } from './Crud';
 const s = (v: string | null | undefined) => v ?? '';
 const AVISO_LGPD = 'Só aparece no portal quem estiver com "Autorizou divulgar" marcado (LGPD). Registre a autorização antes de marcar.';
 
-interface Aniv { id: number; nome: string; area: string; dia: number; mes: number; foto: string | null; autorizado: number }
+interface Aniv { id: number; nome: string; area: string; dia: number; mes: number; admissao: string | null; foto: string | null; autorizado: number }
 interface Resultado { novos: number; atualizados: number; erros: string[]; total_erros: number }
 
 /** Lê "dd/mm", "dd/mm/aaaa" ou "aaaa-mm-dd" e devolve só dia e mês (o ano de nascimento não é guardado). */
@@ -19,16 +19,25 @@ function diaMesDe(txt: string): { dia: number; mes: number } | null {
   return m ? { dia: Number(m[2]), mes: Number(m[1]) } : null;
 }
 /** Planilha CSV (separada por ; , ou tab): nome, área e aniversário. A linha de cabeçalho, se houver, é ignorada. */
-export function lerPlanilha(texto: string): { itens: { nome: string; area: string; dia: number; mes: number }[]; ignoradas: number } {
+/** Data de admissão: dd/mm/aaaa ou aaaa-mm-dd (com ano, senão não dá para contar o tempo de casa). */
+function admissaoDe(txt: string): string | null {
+  const t = txt.trim();
+  let m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  return m ? t : null;
+}
+export function lerPlanilha(texto: string): { itens: { nome: string; area: string; dia: number; mes: number; admissao?: string }[]; ignoradas: number } {
   const linhas = texto.replace(/^﻿/, '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const itens: { nome: string; area: string; dia: number; mes: number }[] = [];
+  const itens: { nome: string; area: string; dia: number; mes: number; admissao?: string }[] = [];
   let ignoradas = 0;
   linhas.forEach((l, i) => {
     const sep = l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',';
-    const [nome = '', area = '', aniv = ''] = l.split(sep).map((c) => c.trim().replace(/^"|"$/g, ''));
+    const [nome = '', area = '', aniv = '', adm = ''] = l.split(sep).map((c) => c.trim().replace(/^"|"$/g, ''));
     const dm = diaMesDe(aniv);
     if (!dm) { if (i > 0) ignoradas++; return; } // a 1ª linha sem data costuma ser o cabeçalho
-    itens.push({ nome, area, ...dm });
+    const admissao = admissaoDe(adm);
+    itens.push({ nome, area, ...dm, ...(admissao ? { admissao } : {}) });
   });
   return { itens, ignoradas };
 }
@@ -44,10 +53,10 @@ function ImportarAniversariantes({ aoFechar, aoConcluir }: { aoFechar: () => voi
         const r = await api<Resultado>('/api/gestao/aniversariantes/importar', { itens: lido.itens, autorizado: ok });
         aoConcluir(`Importação: ${r.novos} novo(s), ${r.atualizados} atualizado(s)${r.total_erros ? `, ${r.total_erros} linha(s) com problema (${r.erros.slice(0, 3).join('; ')})` : ''}.`);
       }}>
-      <p className="suave" style={{ marginTop: 0 }}>Colunas, nesta ordem: <b>nome</b>, <b>área</b>, <b>aniversário</b> (dd/mm). Separe por ponto e vírgula, vírgula ou tab. Se a pessoa já existir (mesmo nome e dia), a área é atualizada. O ano de nascimento, se vier, é descartado.</p>
+      <p className="suave" style={{ marginTop: 0 }}>Colunas, nesta ordem: <b>nome</b>, <b>área</b>, <b>aniversário</b> (dd/mm) e, se quiser o tempo de casa, <b>admissão</b> (dd/mm/aaaa). Separe por ponto e vírgula, vírgula ou tab. Se a pessoa já existir (mesmo nome e dia), a área é atualizada. O ano de nascimento, se vier, é descartado.</p>
       <label>Arquivo CSV (opcional)<input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={(e) => { void lerArquivo(e.target.files?.[0]); e.target.value = ''; }} /></label>
       <label>Ou cole as linhas aqui
-        <textarea rows={8} value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={'Ana Souza;Costura;12/03\nBruno Lima;Corte;05/11'} />
+        <textarea rows={8} value={txt} onChange={(e) => setTxt(e.target.value)} placeholder={'Ana Souza;Costura;12/03;05/11/2019\nBruno Lima;Corte;05/11'} />
       </label>
       <p className="suave" role="status">{lido.itens.length} linha(s) válida(s){lido.ignoradas ? `; ${lido.ignoradas} ignorada(s) por falta de data` : ''}.</p>
       <label className="linha"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />O RH tem a autorização dessas pessoas para divulgar o aniversário</label>
@@ -79,6 +88,7 @@ export function Aniversariantes() {
           { chave: 'area', rotulo: 'Área', obrigatorio: true, max: 60, metade: true },
           { chave: 'dia', rotulo: 'Dia do aniversário', tipo: 'select', opcoes: Array.from({ length: 31 }, (_, i) => [String(i + 1), String(i + 1)] as [string, string]), metade: true },
           { chave: 'mes', rotulo: 'Mês do aniversário', tipo: 'select', opcoes: MESES_LONGOS.map((m, i) => [String(i + 1), m] as [string, string]), metade: true },
+          { chave: 'admissao', rotulo: 'Data de admissão (opcional)', tipo: 'data', dica: 'Com a data, o Início mostra “N anos de casa” no mês do aniversário de admissão (a partir de 1 ano).' },
           { chave: 'autorizado', rotulo: 'Autorizou divulgar', tipo: 'check', dica: AVISO_LGPD },
         ]}
         colunas={[
@@ -87,8 +97,8 @@ export function Aniversariantes() {
           { titulo: 'Aniversário', ver: (r) => `${String(r.dia).padStart(2, '0')}/${String(r.mes).padStart(2, '0')}`, ordem: (r) => r.mes * 100 + r.dia },
           { titulo: 'Divulgação', ver: (r) => (r.autorizado ? <Selo texto="Autorizado" tom="ok" /> : <Selo texto="Não aparece" tom="aviso" />) },
         ]}
-        valoresNovos={{ foto: '', nome: '', area: '', dia: '1', mes: String(new Date().getMonth() + 1), autorizado: false }}
-        paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, dia: String(r.dia), mes: String(r.mes), autorizado: !!r.autorizado })}
+        valoresNovos={{ foto: '', nome: '', area: '', dia: '1', mes: String(new Date().getMonth() + 1), admissao: '', autorizado: false }}
+        paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, dia: String(r.dia), mes: String(r.mes), admissao: s(r.admissao), autorizado: !!r.autorizado })}
       />
       {importar && <ImportarAniversariantes aoFechar={() => setImportar(false)} aoConcluir={(m) => { setAviso(m); setVersao((v) => v + 1); setImportar(false); }} />}
     </>

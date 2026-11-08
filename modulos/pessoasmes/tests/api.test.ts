@@ -51,3 +51,25 @@ test('importação em lote exige a confirmação da autorização, atualiza repe
   assert.equal(lista.length, 1);
   assert.deepEqual([lista[0].area, lista[0].autorizado], ['Acabamento', 1]);
 });
+
+test('tempo de casa: quem faz aniversário de admissão no mês, a partir de 1 ano; admissão futura é recusada; fundação da empresa valida a data', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita'), adm = await entrar(app, 'master');
+  const mes = hoje.getMonth() + 1;
+  const adms = (anos: number, m = mes) => `${hoje.getFullYear() - anos}-${dois(m)}-15`;
+  const a = (p: object) => app.inject({ method: 'POST', url: '/api/gestao/aniversariantes', headers: ed, payload: { area: 'Costura', dia: 2, mes: outroMes, autorizado: true, ...p } });
+  assert.equal((await a({ nome: 'Cinco Anos', admissao: adms(5) })).statusCode, 201);
+  await a({ nome: 'Recém Chegado', admissao: adms(0) }); // menos de 1 ano: não entra
+  await a({ nome: 'Outro Mês', admissao: adms(3, outroMes) });
+  await a({ nome: 'Sem Admissão' });
+  await a({ nome: 'Sem Autorização', admissao: adms(2), autorizado: false });
+  const r = (await app.inject({ url: '/api/pessoas-do-mes', headers: await entrar(app, 'le') })).json<{ casa: { nome: string; anos: number }[] }>();
+  assert.deepEqual(r.casa.map((x) => [x.nome, x.anos]), [['Cinco Anos', 5]]);
+  assert.equal((await a({ nome: 'Futuro', admissao: `${hoje.getFullYear() + 1}-01-01` })).statusCode, 400);
+
+  const put = (corpo: object) => app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, 'content-type': 'application/json' }, payload: { nome: 'X', nome_portal: 'P', ...corpo } });
+  assert.equal((await put({ fundacao: 'ontem' })).statusCode, 400);
+  assert.equal((await put({ fundacao: '1999-03-12' })).json<{ fundacao: string }>().fundacao, '1999-03-12');
+  assert.equal((await app.inject({ url: '/api/empresa' })).json<{ fundacao: string }>().fundacao, '1999-03-12');
+  assert.equal((await put({})).json<{ fundacao: string | null }>().fundacao, null);
+});

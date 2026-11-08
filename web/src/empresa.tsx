@@ -15,11 +15,12 @@ export interface ConfigEmpresa {
   logo_nome: string | null;
   logo_nome_escuro: string | null;
   feriados_municipais: FeriadoMunicipal[];
+  fundacao: string | null;
 }
 export const PADRAO_EMPRESA: ConfigEmpresa = {
   nome: 'Sua Empresa', nome_portal: 'Portal Intranet', slogan: '', frase_rodape: 'Conectando pessoas, ideias e grandes movimentos.',
   lema: ['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO'], rotulo_destaque: 'DESTAQUE', lema_destaque: ['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE'],
-  logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [],
+  logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [], fundacao: null,
 };
 
 let atual: ConfigEmpresa = { ...PADRAO_EMPRESA, lema: [...PADRAO_EMPRESA.lema] };
