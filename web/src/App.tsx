@@ -155,7 +155,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Minha conta" title={`${perfil.nome} — minha conta`}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={28} /></button>
         </header>
 
-        <div className="meio">
+        <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
             {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} veComunicados={libera('comunicados')} veDocumentos={libera('documentos')} />}
