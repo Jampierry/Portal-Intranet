@@ -11,7 +11,7 @@ Fontes: [B2B Stack – intranets e redes sociais corporativas](https://www.b2bst
 | Cadastro de datas importantes pelo administrador | Configurações › Calendário (datas, feriados do ano gerados, repetição anual) e botão *Data importante* na tela | **Feito** |
 | Conteúdo/atalhos por público (audience targeting) | Aplicativos **restritos** por pessoa (Publicar › Aplicativos marca; Configurações › Usuários › Aplicativos libera) | **Feito** |
 | Permissões por perfil e por usuário | Já existia (perfis personalizados + ajustes por usuário) | Já existia |
-| Mural de aniversariantes e de tempo de casa | Falta (depende de cadastro de data de nascimento/admissão) | Ideia |
+| Mural de aniversariantes e novos colaboradores | Cartão no Início; o RH cadastra em Publicar (aba Aniversariantes, com importação de planilha, e aba Novos colaboradores), só com autorização marcada; guarda só dia e mês | **Feito (08/11/2026)** |
 | Pesquisa de clima / pulso | Falta | Ideia |
 | Confirmação de leitura de comunicados obrigatórios | Já em `melhorias-futuras.md` | Ideia |
 | Notificações (e-mail/push) de novos comunicados | Já em `melhorias-futuras.md`; o serviço Zimbra já tem rota de notificação | Ideia |
@@ -21,6 +21,6 @@ Fontes: [B2B Stack – intranets e redes sociais corporativas](https://www.b2bst
 
 ## Próximas sugestões (ordem)
 1. Notificação de comunicado urgente por e-mail via serviço Zimbra.
-2. Aniversariantes (exige campo de nascimento com consentimento, LGPD).
+2. ~~Aniversariantes~~ (feito); falta o "tempo de casa" (aniversário de empresa).
 3. Liberar aplicativos também **por perfil** (hoje é por pessoa).
 4. Confirmação de leitura.
