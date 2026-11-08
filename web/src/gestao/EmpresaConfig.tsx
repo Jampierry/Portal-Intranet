@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone, IconeSistema } from '../icones';
 import { Capa, Lema } from '../Capa';
-import { MarcaEntrada, useEntrada } from '../MarcaEntrada';
 import { definirEmpresa, LogoNome, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
 
 async function enviarIcone(arq: File): Promise<string> {
@@ -48,7 +47,6 @@ const ACEITA = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
  *  Os textos dos Comunicados ficam na aba Comunicados; o fundo e as frases da tela de login, em Tela de entrada; os feriados, em Calendário. */
 export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
   const { edita, cfg, mudou, aviso, erro, enviando, set, salvar, trocarImagem } = useConfigEmpresa(permissoes, 'Dados da empresa salvos. Já valem em todas as telas.');
-  const entrada = useEntrada();
   if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
   const logoUma = (campo: 'logo_nome' | 'logo_nome_escuro', tema: 'claro' | 'escuro', remover: string) => (
     <div className="empcfg-icone empcfg-logonome">
@@ -114,7 +112,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
             </div>
           </fieldset>
 
-          <p className="suave empcfg-onde">Procurando outra coisa? Frases e rótulo dos comunicados: aba <b>Comunicados</b>. Fundo, imagens e frases da tela de login: aba <b>Tela de entrada</b>. Feriados: aba <b>Calendário</b>.</p>
+          <p className="suave empcfg-onde">Procurando outra coisa? Frases e rótulo dos comunicados: aba <b>Comunicados</b>. A tela de login, com a prévia dela: aba <b>Tela de entrada</b> (ela usa o nome e a logo daqui). Feriados: aba <b>Calendário</b>.</p>
 
           {edita && (
             <div className="entcfg-rodape">
@@ -125,21 +123,6 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
 
         <aside className="empcfg-previa" aria-label="Prévia">
           <small className="suave">Como vai aparecer</small>
-          <span className="prev-rotulo">Tela de entrada (login)</span>
-          <div className="prev-login" aria-label="Prévia da tela de entrada">
-            <main className="entrar">
-              <MarcaEntrada cfg={entrada} empresa={cfg} />
-              <section className="entrar-form">
-                <div className="entrar-card">
-                  <small className="entrar-eyebrow">{cfg.nome_portal}</small>
-                  <h1>Entrar no portal</h1>
-                  <p className="suave">Use o login e a senha que o administrador criou para você.</p>
-                  <div className="entrar-campos"><span className="prev-campo">seu.login</span><span className="prev-campo">Sua senha</span><span className="btn entrar-botao">Entrar</span></div>
-                </div>
-                <small className="suave entrar-rodape">{cfg.nome}</small>
-              </section>
-            </main>
-          </div>
           <span className="prev-rotulo">Menu lateral</span>
           <div className="menu prev-menu-real">
             <div className="sbtop">

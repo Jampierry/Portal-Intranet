@@ -1153,10 +1153,6 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .empcfg-previa { padding: 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--vinho) 50%, transparent); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); box-shadow: 0 8px 24px -14px color-mix(in srgb, var(--vinho) 70%, transparent); }
 .empcfg-previa > small.suave { color: var(--vinho-texto); }
 .prev-rotulo { color: var(--vinho-texto); font-weight: 700; }
-.prev-login { zoom: .27; border-radius: 28px; overflow: hidden; box-shadow: 0 0 0 4px color-mix(in srgb, var(--vinho) 45%, transparent); pointer-events: none; }
-.prev-login .entrar { min-height: 0; height: 760px; }
-.prev-login .entrar-form { margin: auto; }
-.prev-campo { display: block; padding: 14px 16px; border: 1px solid var(--linha); border-radius: 12px; color: var(--suave); font-size: 15px; background: var(--campo); }
 
 /* Configurações: dicas de onde fica cada coisa e painel lateral dos Comunicados na prévia */
 .empcfg-onde { margin: 0; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; background: var(--afundado); }
