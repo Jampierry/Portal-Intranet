@@ -22,7 +22,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
   const [salvo, setSalvo] = useState('');
   const [aviso, setAviso] = useState('');
   const [erro, setErro] = useState('');
-  const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState<'' | 'logo' | 'logo_nome'>('');
   useEffect(() => { api<ConfigEmpresa>('/api/empresa').then((c) => { const v = { ...PADRAO_EMPRESA, ...c }; setCfg(v); setSalvo(JSON.stringify(v)); }).catch((e: Error) => setErro(e.message)); }, []);
   if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
   const mudou = JSON.stringify(cfg) !== salvo;
@@ -32,7 +32,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
     try { const r = await api<ConfigEmpresa>('/api/gestao/empresa', cfg, 'PUT'); const v = { ...PADRAO_EMPRESA, ...r }; setCfg(v); setSalvo(JSON.stringify(v)); definirEmpresa(v); setAviso('Dados da empresa salvos. Já valem em todas as telas.'); }
     catch (e) { setErro((e as Error).message); }
   };
-  const trocarIcone = async (arq?: File) => { if (!arq) return; setErro(''); setEnviando(true); try { set({ logo: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(false); } };
+  const trocarImagem = async (campo: 'logo' | 'logo_nome', arq?: File) => { if (!arq) return; setErro(''); setEnviando(campo); try { set({ [campo]: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(''); } };
   const feriado = (k: number, p: Partial<ConfigEmpresa['feriados_municipais'][number]>) => set({ feriados_municipais: cfg.feriados_municipais.map((f, i) => (i === k ? { ...f, ...p } : f)) });
 
   return (
@@ -49,8 +49,8 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 <span className="empcfg-icone-img">{cfg.logo ? <img src={cfg.logo} alt="Ícone atual" /> : <IconeSistema tamanho={40} />}</span>
                 {edita && (
                   <span className="empcfg-icone-acoes">
-                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando ? 'Enviando…' : 'Trocar ícone'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={enviando} onChange={(e) => { void trocarIcone(e.target.files?.[0]); e.target.value = ''; }} />
+                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo' ? 'Enviando…' : 'Trocar ícone'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
                     {cfg.logo && <button type="button" className="empcfg-link" onClick={() => set({ logo: null })}>Usar o padrão</button>}
                   </span>
@@ -59,11 +59,22 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
               <label className="empcfg-campo">Nome da empresa *
                 <input value={cfg.nome} maxLength={40} disabled={!edita} onChange={(e) => set({ nome: e.target.value })} />
               </label>
+              <div className="empcfg-icone empcfg-logonome">
+                <span className="empcfg-logo-img">{cfg.logo_nome ? <img src={cfg.logo_nome} alt="Logo atual" /> : <small>Sem logo: aparece o nome escrito</small>}</span>
+                {edita && (
+                  <span className="empcfg-icone-acoes">
+                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome' ? 'Enviando…' : 'Trocar logo'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome', e.target.files?.[0]); e.target.value = ''; }} />
+                    </label>
+                    {cfg.logo_nome && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome: null })}>Usar o nome escrito</button>}
+                  </span>
+                )}
+              </div>
               <label className="empcfg-campo">Nome do portal *
                 <input value={cfg.nome_portal} maxLength={40} disabled={!edita} onChange={(e) => set({ nome_portal: e.target.value })} />
               </label>
             </div>
-            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. Ícone quadrado, até 5 MB.</small>
+            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Até 5 MB cada.</small>
           </fieldset>
 
           <fieldset className="empcfg-bloco">
@@ -110,7 +121,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
 
           {edita && (
             <div className="entcfg-rodape">
-              <button className="btn" disabled={!mudou || enviando || !cfg.nome.trim() || !cfg.nome_portal.trim()} onClick={() => void salvar()}>Salvar dados da empresa</button>
+              <button className="btn" disabled={!mudou || !!enviando || !cfg.nome.trim() || !cfg.nome_portal.trim()} onClick={() => void salvar()}>Salvar dados da empresa</button>
             </div>
           )}
         </div>
@@ -119,7 +130,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           <small className="suave">Como vai aparecer</small>
           <div className="prev-menu">
             <span className="prev-logo">{cfg.logo ? <img src={cfg.logo} alt="" /> : <IconeSistema tamanho={30} />}</span>
-            <span className="prev-nome"><b>{cfg.nome || '—'}</b>{cfg.slogan && <small>{cfg.slogan}</small>}</span>
+            <span className="prev-nome">{cfg.logo_nome ? <img className="empnome-img" src={cfg.logo_nome} alt={cfg.nome} /> : <b>{cfg.nome || '—'}</b>}{cfg.slogan && <small>{cfg.slogan}</small>}</span>
           </div>
           <div className="prev-destaque">
             {cfg.rotulo_destaque && <span className="etiqueta">{cfg.rotulo_destaque}</span>}

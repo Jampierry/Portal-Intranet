@@ -26,7 +26,7 @@ export function Menu(p: Props) {
         <button className="appbtn" onClick={p.alternar} aria-expanded={!mini} aria-label={mini ? 'Expandir menu' : 'Recolher menu'} title={mini ? 'Expandir menu' : 'Recolher menu'}>
           <LogoEmpresa tamanho={30} />
         </button>
-        <div className="brandtxt"><span className="empnome">{empresa.nome}</span>{empresa.slogan && <span>{empresa.slogan}</span>}</div>
+        <div className="brandtxt">{empresa.logo_nome ? <img className="empnome-img" src={empresa.logo_nome} alt={empresa.nome} /> : <span className="empnome">{empresa.nome}</span>}{empresa.slogan && <span>{empresa.slogan}</span>}</div>
       </div>
 
       <nav aria-label="Seções do portal">

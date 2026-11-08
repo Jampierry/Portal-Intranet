@@ -65,4 +65,14 @@ test('tela de entrada: só quem tem permissão altera; imagem só é pública se
   assert.equal((await app.inject({ url: logo })).statusCode, 404);
   await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo } });
   assert.equal((await app.inject({ url: logo })).statusCode, 200);
+
+  // logo do nome (imagem larga que substitui o nome escrito): só imagem enviada por esta tela e só aparece quando em uso
+  const up3 = await app.inject({ method: 'POST', url: '/api/gestao/empresa/imagens', headers: { ...adm, 'content-type': 'image/png' }, payload: PNG });
+  const logoNome = up3.json<{ url: string }>().url;
+  assert.equal((await app.inject({ url: logoNome })).statusCode, 404);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: 'https://externo/x.png' } })).statusCode, 400);
+  const salvo = await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: logoNome } });
+  assert.equal(salvo.statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/empresa' })).json<{ logo_nome: string }>().logo_nome, logoNome);
+  assert.equal((await app.inject({ url: logoNome })).statusCode, 200);
 });

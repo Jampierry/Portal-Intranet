@@ -47,7 +47,7 @@ export function MarcaEntrada({ cfg, previa = false }: { cfg: ConfigEntrada; prev
       {imagens.length > 0 && <div className="entrar-fundo-veu" style={{ background: `linear-gradient(180deg, rgba(0,0,0,${veu * 0.55}) 0%, rgba(0,0,0,${veu}) 100%)` }} />}
       <div className="entrar-logo">
         <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />
-        <span>{empresa.nome}</span>
+        {empresa.logo_nome ? <img className="entrar-nome-img" src={empresa.logo_nome} alt={empresa.nome} /> : <span>{empresa.nome}</span>}
       </div>
       <div className="entrar-frase">
         {cfg.texto_extra && <p className="entrar-extra">{cfg.texto_extra}</p>}
