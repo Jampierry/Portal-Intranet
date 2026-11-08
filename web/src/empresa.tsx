@@ -47,12 +47,14 @@ export function LogoEmpresa({ tamanho = 32, classe }: { tamanho?: number; classe
   return logo ? <img className={classe} src={logo} alt="" width={tamanho} height={tamanho} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={tamanho} />;
 }
 
-/** Logo da empresa no lugar do nome escrito. Com as duas versões, o CSS mostra a do tema em uso (data-tema); com só uma, ela vale para os dois temas. Sem logo, devolve nada. */
-export function LogoNome({ cfg, classe }: { cfg?: Pick<ConfigEmpresa, 'nome' | 'logo_nome' | 'logo_nome_escuro'>; classe: string }) {
+/** Logo da empresa no lugar do nome escrito. A versão "claro" tem letras escuras (para fundo claro); a "escuro", letras claras (para fundo escuro).
+ *  sobre="menu": escolhe pela cor do menu/lateral do login (escuro na maioria dos estilos), não pelo tema; sobre="tema" (padrão): pelo tema em uso.
+ *  Com só uma versão, ela vale para os dois casos. Sem logo, devolve nada. */
+export function LogoNome({ cfg, classe, sobre = 'tema' }: { cfg?: Pick<ConfigEmpresa, 'nome' | 'logo_nome' | 'logo_nome_escuro'>; classe: string; sobre?: 'tema' | 'menu' }) {
   const emp = useEmpresa();
   const c = cfg ?? emp;
   const { logo_nome: claro, logo_nome_escuro: escuro } = c;
   if (!claro && !escuro) return null;
   if (!claro || !escuro) return <img className={classe} src={(claro || escuro)!} alt={c.nome} />;
-  return <><img className={`${classe} logo-tema-claro`} src={claro} alt={c.nome} /><img className={`${classe} logo-tema-escuro`} src={escuro} alt="" aria-hidden="true" /></>;
+  return <><img className={`${classe} logo-${sobre}-claro`} src={claro} alt={c.nome} /><img className={`${classe} logo-${sobre}-escuro`} src={escuro} alt="" aria-hidden="true" /></>;
 }

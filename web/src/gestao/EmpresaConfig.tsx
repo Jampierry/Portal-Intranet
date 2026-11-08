@@ -53,7 +53,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
   const logoUma = (campo: 'logo_nome' | 'logo_nome_escuro', tema: 'claro' | 'escuro', remover: string) => (
     <div className="empcfg-icone empcfg-logonome">
       <span className={`empcfg-logo-img ${tema}`}>{cfg[campo] ? <img src={cfg[campo]!} alt={`Logo para o tema ${tema}`} /> : <small>Sem logo</small>}</span>
-      <small className="empcfg-rot">Tema {tema}</small>
+      <small className="empcfg-rot">{tema === 'claro' ? 'Para fundo claro' : 'Para fundo escuro'}</small>
       {edita && (
         <span className="empcfg-icone-acoes">
           <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === campo ? 'Enviando…' : 'Trocar logo'}
@@ -93,7 +93,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 <input value={cfg.nome_portal} maxLength={40} disabled={!edita} onChange={(e) => set({ nome_portal: e.target.value })} />
               </label>
             </div>
-            <small className="suave">O nome aparece no menu, na tela de login, no Início, nos comunicados e no rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. PNG, JPG, WebP, GIF ou SVG (sem scripts), até 5 MB cada.</small>
+            <small className="suave">O nome aparece no menu, na tela de login, no Início, nos comunicados e no rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para fundo claro (letras escuras) e outra para fundo escuro (letras claras): o menu lateral e a lateral do login usam a versão que combina com a cor do menu do estilo escolhido, e o portal troca sozinho. Na maioria dos estilos o menu é escuro, então vale a logo para fundo escuro. Com só uma, ela vale para todos. PNG, JPG, WebP, GIF ou SVG (sem scripts), até 5 MB cada.</small>
           </fieldset>
 
           <fieldset className="empcfg-bloco">
@@ -144,7 +144,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           <div className="menu prev-menu-real">
             <div className="sbtop">
               <span className="appbtn">{cfg.logo ? <img src={cfg.logo} alt="" width={30} height={30} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={30} />}</span>
-              <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
+              <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" sobre="menu" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
             </div>
           </div>
           <span className="prev-rotulo">Rodapé</span>

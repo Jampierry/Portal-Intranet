@@ -25,7 +25,7 @@
   --suave: color-mix(in srgb, var(--texto) 66%, var(--card));
   --ok-fundo: color-mix(in srgb, var(--ok) 15%, var(--card));
   --erro-fundo: color-mix(in srgb, var(--erro) 14%, var(--card));
-  --menu-texto: #f1ecee; --menu-suave: #b9aeb3; --menu-linha: rgba(255, 255, 255, .12); --menu-hover: rgba(255, 255, 255, .08);
+  --menu-texto: #f1ecee; --menu-suave: #b9aeb3; --menu-veu: 255, 255, 255; --menu-polo: #fff; --menu-linha: rgba(var(--menu-veu), .12); --menu-hover: rgba(var(--menu-veu), .08);
   color-scheme: light;
 }
 
@@ -62,6 +62,16 @@
 /* Oceano */
 :root[data-tema=claro][data-estilo=oceano] { --fundo: #e4edf0; --card: #eff5f7; --texto: #10222b; --menu: #0f2f3d; --menu-texto: #ecf5f8; --menu-suave: #a9c6d1; --acento-padrao: #9acfdb; --sobre-acento: #0c2a33; --coral: #e0644a; }
 :root[data-tema=escuro][data-estilo=oceano] { --fundo: #0f2029; --card: #162c37; --texto: #e2eff4; --menu: #0b1a22; --menu-texto: #e4f0f5; --menu-suave: #9fbdc9; --acento-padrao: #427784; --sobre-acento: #ffffff; --coral: #f27f66; }
+
+/* GitHub (paleta Primer) e Notion: menu CLARO no tema claro e escuro no tema escuro. --menu-veu / --menu-polo invertem as sobreposições do menu (branco sobre escuro, preto sobre claro). */
+:root[data-tema=claro][data-estilo=github] { --fundo: #ffffff; --card: #f6f8fa; --texto: #1f2328; --menu: #f6f8fa; --menu-texto: #1f2328; --menu-suave: #59636e; --menu-veu: 0, 0, 0; --menu-polo: #000; --acento-padrao: #0969da; --sobre-acento: #ffffff; --coral: #bc4c00; --sobre-coral: #ffffff; }
+:root[data-tema=escuro][data-estilo=github] { --fundo: #161b22; --card: #1c2128; --texto: #e6edf3; --menu: #0d1117; --menu-texto: #e6edf3; --menu-suave: #9aa4b0; --acento-padrao: #1f6feb; --sobre-acento: #ffffff; --coral: #f0883e; --sobre-coral: #10131a; }
+:root[data-tema=claro][data-estilo=notion] { --fundo: #ffffff; --card: #fbfbfa; --texto: #2b2a26; --menu: #f7f6f3; --menu-texto: #2b2a26; --menu-suave: #6b6965; --menu-veu: 0, 0, 0; --menu-polo: #000; --acento-padrao: #1a6fc4; --sobre-acento: #ffffff; --coral: #c4620a; --sobre-coral: #ffffff; }
+:root[data-tema=escuro][data-estilo=notion] { --fundo: #191919; --card: #252525; --texto: #e3e2e0; --menu: #202020; --menu-texto: #e3e2e0; --menu-suave: #9b9a97; --acento-padrao: #2672b8; --sobre-acento: #ffffff; --coral: #ffa344; --sobre-coral: #191919; }
+/* menu claro: linha de separação e botões/faixas que usavam a cor do menu como fundo escuro */
+:root[data-menu=claro] .menu { border-right: 1px solid var(--menu-linha); }
+:root[data-menu=claro] .btn-pri { background: var(--vinho); color: var(--sobre-acento); }
+:root[data-menu=claro] .hero.novidades { background: color-mix(in srgb, var(--vinho) 80%, #000); }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--fundo); color: var(--texto); font: 400 14px/1.45 var(--fonte); }

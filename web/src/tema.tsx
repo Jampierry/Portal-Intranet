@@ -34,6 +34,8 @@ function aplicar(c: Config) {
   const escuro = c.modo === 'escuro' || (c.modo === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
   raiz.dataset.tema = escuro ? 'escuro' : 'claro';
   raiz.dataset.estilo = c.estilo;
+  // menu claro (só em alguns estilos, no modo claro): decide a logo exibida sobre o menu e sobre a lateral do login
+  raiz.dataset.menu = !escuro && ESTILOS.find((e) => e.id === c.estilo)?.menuClaro ? 'claro' : 'escuro';
   const z = c.escala / 100;
   raiz.style.setProperty('zoom', String(z));
   raiz.style.setProperty('--zoom', String(z));

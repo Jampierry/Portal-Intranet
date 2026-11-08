@@ -50,7 +50,7 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
       {imagens.length > 0 && <div className="entrar-fundo-veu" style={{ background: `linear-gradient(180deg, rgba(0,0,0,${veu * 0.55}) 0%, rgba(0,0,0,${veu}) 100%)` }} />}
       <div className="entrar-logo">
         {rascunho ? (rascunho.logo ? <img className="entrar-logo-img" src={rascunho.logo} alt="" width={34} height={34} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={34} />) : <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />}
-        {(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome cfg={rascunho} classe="entrar-nome-img" /> : <span>{empresa.nome}</span>}
+        {(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome cfg={rascunho} classe="entrar-nome-img" sobre="menu" /> : <span>{empresa.nome}</span>}
       </div>
       <div className="entrar-frase">
         {cfg.texto_extra && <p className="entrar-extra">{cfg.texto_extra}</p>}
