@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone, IconeSistema } from '../icones';
+import { Capa, Lema } from '../Capa';
 import { definirEmpresa, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
 
 async function enviarIcone(arq: File): Promise<string> {
@@ -128,16 +129,27 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
 
         <aside className="empcfg-previa" aria-label="Prévia">
           <small className="suave">Como vai aparecer</small>
-          <div className="prev-menu">
-            <span className="prev-logo">{cfg.logo ? <img src={cfg.logo} alt="" /> : <IconeSistema tamanho={30} />}</span>
-            <span className="prev-nome">{cfg.logo_nome ? <img className="empnome-img" src={cfg.logo_nome} alt={cfg.nome} /> : <b>{cfg.nome || '—'}</b>}{cfg.slogan && <small>{cfg.slogan}</small>}</span>
+          <span className="prev-rotulo">Menu lateral</span>
+          <div className="menu prev-menu-real">
+            <div className="sbtop">
+              <span className="appbtn">{cfg.logo ? <img src={cfg.logo} alt="" width={30} height={30} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={30} />}</span>
+              <div className="brandtxt">{cfg.logo_nome ? <img className="empnome-img" src={cfg.logo_nome} alt={cfg.nome} /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
+            </div>
           </div>
-          <div className="prev-destaque">
-            {cfg.rotulo_destaque && <span className="etiqueta">{cfg.rotulo_destaque}</span>}
-            <b>Título do comunicado em destaque</b>
-            {limpas(cfg.lema_destaque).length > 0 && <span className="prev-lema">{limpas(cfg.lema_destaque).map((l) => <i key={l}>{l}</i>)}</span>}
+          <span className="prev-rotulo">Comunicado em destaque (Comunicados)</span>
+          <div className="prev-escala">
+            <section className="destaque-com" aria-label="Prévia do comunicado em destaque">
+              <div className="destaque-com-texto">
+                {cfg.rotulo_destaque && <span className="etiqueta">{cfg.rotulo_destaque}</span>}
+                <h2>Título do comunicado em destaque</h2>
+                <p>Resumo do comunicado, como aparece para quem lê.</p>
+                <span className="btn btn-pri">Saiba mais <Icone nome="seta" tamanho={16} /></span>
+              </div>
+              <Capa semente="previa-empresa" icone="comunicados">{limpas(cfg.lema_destaque).length > 0 && <Lema linhas={limpas(cfg.lema_destaque)} classe="lema-capa" />}</Capa>
+            </section>
           </div>
-          <div className="prev-rodape"><b>{cfg.nome || '—'}</b>{cfg.frase_rodape ? ` | ${cfg.frase_rodape}` : ''}<span>{cfg.nome_portal}</span></div>
+          <span className="prev-rotulo">Rodapé</span>
+          <footer className="rodape-portal prev-rodape-real"><span><b>{cfg.nome || '—'}</b>{cfg.frase_rodape ? ` | ${cfg.frase_rodape}` : ''}</span><span>{cfg.nome_portal}</span></footer>
         </aside>
       </div>
     </section>

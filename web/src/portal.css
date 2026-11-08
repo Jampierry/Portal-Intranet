@@ -1130,10 +1130,11 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .empcfg-icone-acoes { justify-items: center; text-align: center; }
 .empcfg-logonome { align-self: end; }
 
-/* Prévia "Como vai aparecer": painel em cor de destaque do tema, para se distinguir do formulário */
-.empcfg-previa { padding: 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--vinho) 50%, transparent); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); box-shadow: 0 8px 24px -14px color-mix(in srgb, var(--vinho) 70%, transparent); }
-.empcfg-previa > small.suave { color: var(--vinho-texto); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
-.empcfg-previa .prev-menu { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--vinho) 55%, transparent); }
-.empcfg-previa .prev-destaque { background: var(--card); border-color: color-mix(in srgb, var(--vinho) 40%, transparent); border-left: 4px solid var(--vinho); }
-.empcfg-previa .prev-rodape { padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px dashed color-mix(in srgb, var(--vinho) 45%, transparent); color: var(--texto); }
-.empcfg-previa .prev-rodape b { color: var(--vinho-texto); }
+/* Prévia da empresa: usa os mesmos componentes e estilos das telas reais (menu, comunicado em destaque, rodapé) */
+.empcfg-previa > small.suave { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+.prev-rotulo { font-size: 11px; color: var(--suave); margin-top: 2px; }
+.prev-menu-real.menu { position: static; transform: none; inset: auto; z-index: auto; width: 100%; height: auto; padding: 10px; border-radius: 14px; overflow: visible; }
+.prev-menu-real .sbtop { margin: 0; padding: 4px 6px; }
+.prev-escala { zoom: .55; border-radius: var(--raio); overflow: hidden; }
+.prev-escala .destaque-com { grid-template-columns: 1fr 1fr; min-height: 230px; }
+.prev-rodape-real { margin-top: 0; padding-top: 8px; }
