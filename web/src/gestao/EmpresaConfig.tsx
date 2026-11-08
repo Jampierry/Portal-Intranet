@@ -14,36 +14,60 @@ async function enviarIcone(arq: File): Promise<string> {
   if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
   return j.url;
 }
-const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const linhasDe = (v: string) => v.split('\n').slice(0, 5);
 const limpas = (l: string[]) => l.map((x) => x.trim()).filter(Boolean);
+type CampoImagem = 'logo' | 'logo_nome' | 'logo_nome_escuro';
 
-/** Configurações › Empresa: nome, textos e ícone que aparecem no menu, rodapé, login e painéis; feriados municipais. Com prévia ao lado. */
-export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
+/** Dados da empresa em edição (rascunho), compartilhados pelas abas Empresa e Comunicados: cada aba grava o conjunto completo. */
+function useConfigEmpresa(permissoes: string[], aviso0: string) {
   const edita = permissoes.includes('cfg.empresa.editar');
-  const entrada = useEntrada();
   const [cfg, setCfg] = useState<ConfigEmpresa | null>(null);
   const [salvo, setSalvo] = useState('');
   const [aviso, setAviso] = useState('');
   const [erro, setErro] = useState('');
-  const [enviando, setEnviando] = useState<'' | 'logo' | 'logo_nome' | 'logo_nome_escuro'>('');
+  const [enviando, setEnviando] = useState<'' | CampoImagem>('');
   useEffect(() => { api<ConfigEmpresa>('/api/empresa').then((c) => { const v = { ...PADRAO_EMPRESA, ...c }; setCfg(v); setSalvo(JSON.stringify(v)); }).catch((e: Error) => setErro(e.message)); }, []);
-  if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
-  const mudou = JSON.stringify(cfg) !== salvo;
-  const set = (p: Partial<ConfigEmpresa>) => { setCfg({ ...cfg, ...p }); setAviso(''); };
+  const mudou = !!cfg && JSON.stringify(cfg) !== salvo;
+  const set = (p: Partial<ConfigEmpresa>) => { if (cfg) { setCfg({ ...cfg, ...p }); setAviso(''); } };
   const salvar = async () => {
     setErro(''); setAviso('');
-    try { const r = await api<ConfigEmpresa>('/api/gestao/empresa', cfg, 'PUT'); const v = { ...PADRAO_EMPRESA, ...r }; setCfg(v); setSalvo(JSON.stringify(v)); definirEmpresa(v); setAviso('Dados da empresa salvos. Já valem em todas as telas.'); }
+    try { const r = await api<ConfigEmpresa>('/api/gestao/empresa', cfg, 'PUT'); const v = { ...PADRAO_EMPRESA, ...r }; setCfg(v); setSalvo(JSON.stringify(v)); definirEmpresa(v); setAviso(aviso0); }
     catch (e) { setErro((e as Error).message); }
   };
-  const trocarImagem = async (campo: 'logo' | 'logo_nome' | 'logo_nome_escuro', arq?: File) => { if (!arq) return; setErro(''); setEnviando(campo); try { set({ [campo]: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(''); } };
-  const feriado = (k: number, p: Partial<ConfigEmpresa['feriados_municipais'][number]>) => set({ feriados_municipais: cfg.feriados_municipais.map((f, i) => (i === k ? { ...f, ...p } : f)) });
+  const trocarImagem = async (campo: CampoImagem, arq?: File) => { if (!arq) return; setErro(''); setEnviando(campo); try { set({ [campo]: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(''); } };
+  return { edita, cfg, mudou, aviso, erro, enviando, set, salvar, trocarImagem };
+}
+
+function Mensagens({ aviso, erro }: { aviso: string; erro: string }) {
+  return <>{aviso && <p className="ok" role="status" style={{ margin: 0 }}>{aviso}</p>}{erro && <p className="erro" role="alert" style={{ margin: 0 }}>{erro}</p>}</>;
+}
+
+const ACEITA = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
+
+/** Configurações › Empresa: identidade (ícone, logo, nomes), menu lateral e rodapé. Cada seção mostra, ao lado, como fica na tela onde aparece.
+ *  Os textos dos Comunicados ficam na aba Comunicados; o fundo e as frases da tela de login, em Tela de entrada; os feriados, em Calendário. */
+export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
+  const { edita, cfg, mudou, aviso, erro, enviando, set, salvar, trocarImagem } = useConfigEmpresa(permissoes, 'Dados da empresa salvos. Já valem em todas as telas.');
+  const entrada = useEntrada();
+  if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
+  const logoUma = (campo: 'logo_nome' | 'logo_nome_escuro', tema: 'claro' | 'escuro', remover: string) => (
+    <div className="empcfg-icone empcfg-logonome">
+      <span className={`empcfg-logo-img ${tema}`}>{cfg[campo] ? <img src={cfg[campo]!} alt={`Logo para o tema ${tema}`} /> : <small>Sem logo</small>}</span>
+      <small className="empcfg-rot">Tema {tema}</small>
+      {edita && (
+        <span className="empcfg-icone-acoes">
+          <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === campo ? 'Enviando…' : 'Trocar logo'}
+            <input type="file" accept={ACEITA} className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem(campo, e.target.files?.[0]); e.target.value = ''; }} />
+          </label>
+          {cfg[campo] && <button type="button" className="empcfg-link" onClick={() => set({ [campo]: null })}>{remover}</button>}
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <section className="calcfg">
-      {aviso && <p className="ok" role="status" style={{ margin: 0 }}>{aviso}</p>}
-      {erro && <p className="erro" role="alert" style={{ margin: 0 }}>{erro}</p>}
-
+      <Mensagens aviso={aviso} erro={erro} />
       <div className="empcfg">
         <div className="empcfg-form">
           <fieldset className="empcfg-bloco">
@@ -54,7 +78,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 {edita && (
                   <span className="empcfg-icone-acoes">
                     <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo' ? 'Enviando…' : 'Trocar ícone'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo', e.target.files?.[0]); e.target.value = ''; }} />
+                      <input type="file" accept={ACEITA} className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
                     {cfg.logo && <button type="button" className="empcfg-link" onClick={() => set({ logo: null })}>Usar o padrão</button>}
                   </span>
@@ -63,78 +87,34 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
               <label className="empcfg-campo">Nome da empresa *
                 <input value={cfg.nome} maxLength={40} disabled={!edita} onChange={(e) => set({ nome: e.target.value })} />
               </label>
-              <div className="empcfg-icone empcfg-logonome">
-                <span className="empcfg-logo-img claro">{cfg.logo_nome ? <img src={cfg.logo_nome} alt="Logo para o tema claro" /> : <small>Sem logo</small>}</span>
-                <small className="empcfg-rot">Tema claro</small>
-                {edita && (
-                  <span className="empcfg-icone-acoes">
-                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome' ? 'Enviando…' : 'Trocar logo'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome', e.target.files?.[0]); e.target.value = ''; }} />
-                    </label>
-                    {cfg.logo_nome && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome: null })}>Remover</button>}
-                  </span>
-                )}
-              </div>
-              <div className="empcfg-icone empcfg-logonome">
-                <span className="empcfg-logo-img escuro">{cfg.logo_nome_escuro ? <img src={cfg.logo_nome_escuro} alt="Logo para o tema escuro" /> : <small>Sem logo</small>}</span>
-                <small className="empcfg-rot">Tema escuro</small>
-                {edita && (
-                  <span className="empcfg-icone-acoes">
-                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome_escuro' ? 'Enviando…' : 'Trocar logo'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome_escuro', e.target.files?.[0]); e.target.value = ''; }} />
-                    </label>
-                    {cfg.logo_nome_escuro && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome_escuro: null })}>Remover</button>}
-                  </span>
-                )}
-              </div>
+              {logoUma('logo_nome', 'claro', 'Remover')}
+              {logoUma('logo_nome_escuro', 'escuro', 'Remover')}
               <label className="empcfg-campo">Nome do portal *
                 <input value={cfg.nome_portal} maxLength={40} disabled={!edita} onChange={(e) => set({ nome_portal: e.target.value })} />
               </label>
             </div>
-            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. PNG, JPG, WebP, GIF ou SVG (sem scripts), até 5 MB cada.</small>
+            <small className="suave">O nome aparece no menu, na tela de login, no Início, nos comunicados e no rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. PNG, JPG, WebP, GIF ou SVG (sem scripts), até 5 MB cada.</small>
           </fieldset>
 
           <fieldset className="empcfg-bloco">
-            <legend>Textos</legend>
+            <legend>Menu lateral</legend>
             <div className="empcfg-linha duas">
-              <label className="empcfg-campo">Slogan
+              <label className="empcfg-campo">Slogan (abaixo do nome, no menu)
                 <input value={cfg.slogan} maxLength={60} disabled={!edita} onChange={(e) => set({ slogan: e.target.value })} placeholder="Opcional" />
               </label>
-              <label className="empcfg-campo">Frase do rodapé
+            </div>
+          </fieldset>
+
+          <fieldset className="empcfg-bloco">
+            <legend>Rodapé</legend>
+            <div className="empcfg-linha duas">
+              <label className="empcfg-campo">Frase do rodapé (em todas as telas)
                 <input value={cfg.frase_rodape} maxLength={120} disabled={!edita} onChange={(e) => set({ frase_rodape: e.target.value })} placeholder="Opcional" />
               </label>
             </div>
-            <div className="empcfg-linha tres">
-              <label className="empcfg-campo">Frase do painel dos Comunicados
-                <textarea rows={3} value={cfg.lema.join('\n')} disabled={!edita} onChange={(e) => set({ lema: linhasDe(e.target.value) })} placeholder="Uma linha por frase" />
-              </label>
-              <label className="empcfg-campo">Rótulo do comunicado em destaque
-                <input value={cfg.rotulo_destaque} maxLength={20} disabled={!edita} onChange={(e) => set({ rotulo_destaque: e.target.value })} placeholder="DESTAQUE" />
-              </label>
-              <label className="empcfg-campo">Frase sobre a capa do destaque
-                <textarea rows={3} value={cfg.lema_destaque.join('\n')} disabled={!edita} onChange={(e) => set({ lema_destaque: linhasDe(e.target.value) })} placeholder="Uma linha por frase" />
-              </label>
-            </div>
-            <small className="suave">As frases usam até 5 linhas, uma por linha. A frase da tela de login fica em Tela de entrada.</small>
           </fieldset>
 
-          <fieldset className="empcfg-bloco">
-            <legend>Feriados municipais</legend>
-            {cfg.feriados_municipais.map((f, k) => (
-              <div key={k} className="empcfg-feriado">
-                <input value={f.titulo} maxLength={80} disabled={!edita} onChange={(e) => feriado(k, { titulo: e.target.value })} placeholder="Nome do feriado" aria-label="Nome do feriado" />
-                <input type="number" min={1} max={31} value={f.dia} disabled={!edita} onChange={(e) => feriado(k, { dia: Number(e.target.value) })} aria-label="Dia" />
-                <select value={f.mes} disabled={!edita} onChange={(e) => feriado(k, { mes: Number(e.target.value) })} aria-label="Mês">
-                  {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-                </select>
-                {edita && <button type="button" className="empcfg-x" aria-label="Remover feriado" onClick={() => set({ feriados_municipais: cfg.feriados_municipais.filter((_, i) => i !== k) })}>×</button>}
-              </div>
-            ))}
-            <div className="empcfg-rodape-bloco">
-              <small className="suave">{cfg.feriados_municipais.length === 0 ? 'Nenhum cadastrado. ' : ''}Usados em Calendário › “Gerar feriados”.</small>
-              {edita && <button type="button" className="btn btn-sec btn-pequeno" disabled={cfg.feriados_municipais.length >= 10} onClick={() => set({ feriados_municipais: [...cfg.feriados_municipais, { titulo: '', dia: 1, mes: 1 }] })}><Icone nome="mais" tamanho={13} /> Adicionar feriado</button>}
-            </div>
-          </fieldset>
+          <p className="suave empcfg-onde">Procurando outra coisa? Frases e rótulo dos comunicados: aba <b>Comunicados</b>. Fundo, imagens e frases da tela de login: aba <b>Tela de entrada</b>. Feriados: aba <b>Calendário</b>.</p>
 
           {edita && (
             <div className="entcfg-rodape">
@@ -167,6 +147,54 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
               <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
             </div>
           </div>
+          <span className="prev-rotulo">Rodapé</span>
+          <footer className="rodape-portal prev-rodape-real"><span><b>{cfg.nome || '—'}</b>{cfg.frase_rodape ? ` | ${cfg.frase_rodape}` : ''}</span><span>{cfg.nome_portal}</span></footer>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+/** Configurações › Comunicados: textos do painel e do comunicado em destaque da tela Comunicados, com prévia ao lado. */
+export function ComunicadosConfig({ permissoes }: { permissoes: string[] }) {
+  const { edita, cfg, mudou, aviso, erro, set, salvar } = useConfigEmpresa(permissoes, 'Textos dos comunicados salvos. Já valem na tela Comunicados.');
+  if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
+  return (
+    <section className="calcfg">
+      <Mensagens aviso={aviso} erro={erro} />
+      <div className="empcfg">
+        <div className="empcfg-form">
+          <fieldset className="empcfg-bloco">
+            <legend>Comunicado em destaque</legend>
+            <div className="empcfg-linha duas">
+              <label className="empcfg-campo">Rótulo (etiqueta sobre o título)
+                <input value={cfg.rotulo_destaque} maxLength={20} disabled={!edita} onChange={(e) => set({ rotulo_destaque: e.target.value })} placeholder="DESTAQUE" />
+              </label>
+              <label className="empcfg-campo">Frase sobre a capa
+                <textarea rows={3} value={cfg.lema_destaque.join('\n')} disabled={!edita} onChange={(e) => set({ lema_destaque: linhasDe(e.target.value) })} placeholder="Uma linha por frase" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="empcfg-bloco">
+            <legend>Painel lateral</legend>
+            <div className="empcfg-linha duas">
+              <label className="empcfg-campo">Frase do painel (abaixo dos temas)
+                <textarea rows={3} value={cfg.lema.join('\n')} disabled={!edita} onChange={(e) => set({ lema: linhasDe(e.target.value) })} placeholder="Uma linha por frase" />
+              </label>
+            </div>
+            <small className="suave">As frases usam até 5 linhas, uma por linha.</small>
+          </fieldset>
+
+          {edita && (
+            <div className="entcfg-rodape">
+              <button className="btn" disabled={!mudou} onClick={() => void salvar()}>Salvar textos dos comunicados</button>
+            </div>
+          )}
+        </div>
+
+        <aside className="empcfg-previa" aria-label="Prévia">
+          <small className="suave">Como vai aparecer</small>
           <span className="prev-rotulo">Comunicado em destaque (Comunicados)</span>
           <div className="prev-escala">
             <section className="destaque-com" aria-label="Prévia do comunicado em destaque">
@@ -179,8 +207,8 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
               <Capa semente="previa-empresa" icone="comunicados">{limpas(cfg.lema_destaque).length > 0 && <Lema linhas={limpas(cfg.lema_destaque)} classe="lema-capa" />}</Capa>
             </section>
           </div>
-          <span className="prev-rotulo">Rodapé</span>
-          <footer className="rodape-portal prev-rodape-real"><span><b>{cfg.nome || '—'}</b>{cfg.frase_rodape ? ` | ${cfg.frase_rodape}` : ''}</span><span>{cfg.nome_portal}</span></footer>
+          <span className="prev-rotulo">Painel lateral (Comunicados)</span>
+          <section className="painel-marca prev-painel-marca">{limpas(cfg.lema).length > 0 && <Lema linhas={limpas(cfg.lema)} />}<b>{cfg.nome}</b>{cfg.slogan && <small>{cfg.slogan}</small>}</section>
         </aside>
       </div>
     </section>

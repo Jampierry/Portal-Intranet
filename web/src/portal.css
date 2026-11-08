@@ -1157,3 +1157,7 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .prev-login .entrar { min-height: 0; height: 760px; }
 .prev-login .entrar-form { margin: auto; }
 .prev-campo { display: block; padding: 14px 16px; border: 1px solid var(--linha); border-radius: 12px; color: var(--suave); font-size: 15px; background: var(--campo); }
+
+/* Configurações: dicas de onde fica cada coisa e painel lateral dos Comunicados na prévia */
+.empcfg-onde { margin: 0; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; background: var(--afundado); }
+.prev-painel-marca { margin: 0; border-radius: var(--raio); }

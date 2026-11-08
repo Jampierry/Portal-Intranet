@@ -11,7 +11,7 @@ import { ListaPerfis } from './Permissoes';
 import { Integracoes } from './Integracoes';
 import { CalendarioConfig } from './CalendarioConfig';
 import { EntradaConfig } from './EntradaConfig';
-import { EmpresaConfig } from './EmpresaConfig';
+import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
 
 const s = (v: string | null | undefined) => v ?? '';
@@ -255,16 +255,16 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
   );
 }
 
-type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'calendario' | 'entrada' | 'integracoes' | 'auditoria';
-const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['calendario', 'Calendário'], ['entrada', 'Tela de entrada'], ['integracoes', 'Integrações'], ['auditoria', 'Auditoria']];
+type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'calendario' | 'integracoes' | 'auditoria';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
-  const abas = ABAS_CONFIG.filter(([id]) => (id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id}.ver`)));
+  const abas = ABAS_CONFIG.filter(([id]) => (id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, calendário, tela de entrada, integrações e auditoria do portal." />
+      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, tela de entrada, comunicados, calendário, integrações e auditoria do portal." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
@@ -273,6 +273,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
         : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
         : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />
         : aba === 'empresa' ? <EmpresaConfig permissoes={permissoes} />
+        : aba === 'comunicados' ? <ComunicadosConfig permissoes={permissoes} />
         : <Administracao parte={aba} souAdmin={souAdmin} permissoes={permissoes} />}
     </>
   );
