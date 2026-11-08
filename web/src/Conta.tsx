@@ -30,6 +30,20 @@ export function FormTrocarSenha({ aoConcluir }: { aoConcluir: () => void }) {
   );
 }
 
+/** Preferência dos avisos de comunicados por e-mail (só aparece com e-mail cadastrado pelo administrador). */
+function AvisosEmailPessoa() {
+  const [d, setD] = useState<{ email: string | null; avisos_email: number } | null>(null);
+  useEffect(() => { api<{ email: string | null; avisos_email: number }>('/api/eu/avisos').then(setD).catch(() => setD(null)); }, []);
+  if (!d) return null;
+  if (!d.email) return <p className="suave" style={{ fontSize: 13 }}>Avisos por e-mail: nenhum e-mail cadastrado para você. Peça ao administrador.</p>;
+  return (
+    <label className="linha" style={{ marginTop: 8 }}>
+      <input type="checkbox" checked={!!d.avisos_email} onChange={async (e) => setD(await api('/api/eu/avisos', { avisos_email: e.target.checked }, 'PUT'))} />
+      Receber avisos de comunicados no e-mail <b>{d.email}</b>
+    </label>
+  );
+}
+
 /** Janela "Minha conta": dados do usuário, avatar (guardado neste navegador), troca de senha e sair. */
 export function JanelaConta({ usuario, avatar, mudarAvatar, sair, fechar }: {
   usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; sair: () => void; fechar: () => void;
@@ -55,6 +69,7 @@ export function JanelaConta({ usuario, avatar, mudarAvatar, sair, fechar }: {
             ))}
           </div>
           <hr className="divisor" />
+          <AvisosEmailPessoa />
           {feito && <p className="ok" role="status">Senha alterada.</p>}
           {!trocando ? <button className="btn btn-sec" onClick={() => { setTrocando(true); setFeito(false); }}>Trocar senha</button>
             : <FormTrocarSenha aoConcluir={() => { setTrocando(false); setFeito(true); }} />}

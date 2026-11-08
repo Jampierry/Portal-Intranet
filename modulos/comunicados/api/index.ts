@@ -1,3 +1,4 @@
+import { avisarNovoComunicado } from '../../avisos/api/index.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
@@ -52,6 +53,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     ).run(slug, d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, req.usuario!.id, d.exibir_de, d.exibir_ate, d.status === 'publicado' ? hoje() : null, agora, agora);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'comunicado_criado', { id, titulo: d.titulo, status: d.status });
+    if (d.status === 'publicado') void avisarNovoComunicado(db, slug, req.usuario!.id); // e-mail de aviso (se ligado em Integrações)
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
   });
 
@@ -66,6 +68,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
       `UPDATE comunicados SET titulo = ?, resumo = ?, corpo = ?, imagem = ?, categoria = ?, prioridade = ?, status = ?, exibir_de = ?, exibir_ate = ?, publicado_em = ?, atualizado_em = ? WHERE id = ?`,
     ).run(d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, d.exibir_de, d.exibir_ate, publicado_em, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'comunicado_alterado', { id, titulo: d.titulo, de: atual.status, para: d.status });
+    if (d.status === 'publicado') { const s = (db.prepare('SELECT slug FROM comunicados WHERE id = ?').get(id) as { slug: string }).slug; void avisarNovoComunicado(db, s, req.usuario!.id); }
     return db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id);
   });
 

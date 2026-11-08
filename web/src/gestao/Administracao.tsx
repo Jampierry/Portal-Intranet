@@ -7,7 +7,7 @@ import type { PerfilAcesso } from '../sessao';
 import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 import { useOrdenacao } from './Ordenar';
 
-interface Usr { id: number; login: string; nome: string; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
+interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -77,7 +77,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
     situacao: (u) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado'), acesso: (u) => u.ultimo_acesso,
   });
   const [aviso, setAviso] = useState('');
-  const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
+  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
   const [apps, setApps] = useState<Usr | null>(null);
@@ -92,7 +92,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         <p className="suave" style={{ margin: 0 }}>
           O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
         </p>
-        {libera('criar') && <button className="btn" onClick={() => setNovo({ login: '', nome: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>}
+        {libera('criar') && <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>}
       </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -139,6 +139,8 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         <JanelaForm titulo="Novo usuário" rotuloEnviar="Criar usuário" aoFechar={() => setNovo(null)}
           aoEnviar={async () => { await api('/api/usuarios', novo); setAviso(`Usuário "${novo.login}" criado. Senha provisória: ${novo.senha}`); setNovo(null); recarregar(); }}>
           <label>Nome completo *<input value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} maxLength={80} required /></label>
+          <label>E-mail (opcional)<input type="email" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" />
+            <small className="suave">Usado nos avisos de comunicados por e-mail (a pessoa pode desligar em Minha conta).</small></label>
           <label>Login *<input value={novo.login} onChange={(e) => setNovo({ ...novo, login: e.target.value.toLowerCase() })} maxLength={32} minLength={3} required autoCapitalize="none" spellCheck={false} />
             <small className="suave">Só letras minúsculas, números, ponto, hífen e sublinhado. Ex.: maria.silva</small></label>
           <label>Perfil *
@@ -152,8 +154,9 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
       {edit && (
         <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
+          <label>E-mail (opcional)<input type="email" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" /></label>
           <label>Perfil *
             <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
@@ -177,7 +180,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 }
 
 const ACAO: Record<string, string> = {
-  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
+  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',

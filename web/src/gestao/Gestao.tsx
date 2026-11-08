@@ -14,6 +14,7 @@ import { EntradaConfig } from './EntradaConfig';
 import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
 import { Aniversariantes, NovosColaboradores } from './PessoasMes';
+import { AvisosEmail } from './AvisosEmail';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -272,7 +273,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
-        : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
+        : aba === 'integracoes' ? <><Integracoes permissoes={permissoes} /><AvisosEmail permissoes={permissoes} /></>
         : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
         : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />
         : aba === 'empresa' ? <EmpresaConfig permissoes={permissoes} />

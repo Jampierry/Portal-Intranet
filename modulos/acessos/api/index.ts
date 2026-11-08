@@ -14,12 +14,19 @@ const SENHA_MIN = 8;
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
-const DTO = 'id, login, nome, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
+const DTO = 'id, login, nome, email, avisos_email, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
 
 /** Usuário para a tela de administração: ajustes viram objeto e vêm também as permissões que valem de fato. */
 function paraTela(db: Banco, u: Record<string, unknown>) {
   const ajustes = lerAjustes(u.permissoes as string | null);
   return { ...u, permissoes: ajustes, efetivas: permissoesEfetivas(db, String(u.perfil), u.permissoes as string | null) };
+}
+/** E-mail opcional (vazio = sem e-mail); usado nos avisos por e-mail. */
+function emailDoCorpo(c: Record<string, unknown>): string | null {
+  const v = String(c.email ?? '').trim().toLowerCase();
+  if (!v) return null;
+  if (v.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) throw new ErroValidacao('E-mail: informe um endereço válido (ex.: nome@empresa.com.br).');
+  return v;
 }
 /** Perfil informado precisa existir (do sistema ou personalizado). */
 function perfilDoCorpo(db: Banco, c: Record<string, unknown>, padrao: string) {
@@ -138,13 +145,14 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     if (!/^[a-z0-9._-]+$/.test(login)) throw new ErroValidacao('Login: use só letras minúsculas, números, ponto, hífen e sublinhado.');
     const nome = String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
     const perfil = perfilDoCorpo(db, c, 'consulta');
+    const email = emailDoCorpo(c);
     const senha = String(texto(c, 'senha', 'Senha provisória', { max: 128 }));
     validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
     const ajustes = ajustesDoCorpo(c);
     if ((!ehAdmin(req) && perfil === 'admin') || excede(req, Object.keys(ajustes).filter((k) => ajustes[k]))) return resp.code(403).send(NEGADO);
-    const r = db.prepare('INSERT INTO usuarios (login, nome, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, 1, ?, ?)')
-      .run(login, nome, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
+    const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, ?, 1, ?, ?)')
+      .run(login, nome, email, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
     auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
     return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
@@ -155,6 +163,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     if (!atual) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
     const c = corpoObjeto(req.body);
     const nome = c.nome === undefined ? atual.nome : String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
+    const email = c.email === undefined ? (db.prepare('SELECT email FROM usuarios WHERE id = ?').get(id) as { email: string | null }).email : emailDoCorpo(c);
     const perfil = perfilDoCorpo(db, c, atual.perfil);
     const ativo = c.ativo === undefined ? atual.ativo : c.ativo ? 1 : 0;
     const deixaDeSerAdminAtivo = atual.perfil === 'admin' && atual.ativo === 1 && (perfil !== 'admin' || ativo === 0);
@@ -170,7 +179,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       if (id === req.usuario!.id || atual.perfil === 'admin' || perfil === 'admin' || excede(req, novas)) return resp.code(403).send(NEGADO);
     }
     const ajustesJson = Object.keys(ajustes).length ? JSON.stringify(ajustes) : null;
-    db.prepare('UPDATE usuarios SET nome = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, perfil, ativo, ajustesJson, id);
+    db.prepare('UPDATE usuarios SET nome = ?, email = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, email, perfil, ativo, ajustesJson, id);
     if (ativo === 0 || perfil !== atual.perfil) db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
     auditar(db, req.usuario!.id, 'usuario_alterado', { id, perfil, ativo, ajustes });
     return paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id) as Record<string, unknown>);
