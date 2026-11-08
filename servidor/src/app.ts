@@ -10,6 +10,7 @@ import { rotasBanners } from '../../modulos/banners/api/index.ts';
 import { rotasDocumentos } from '../../modulos/documentos/api/index.ts';
 import { rotasInstitucional } from '../../modulos/institucional/api/index.ts';
 import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
+import { rotasPessoasMes } from '../../modulos/pessoasmes/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 import { rotasMarca } from '../../modulos/marca/api/index.ts';
@@ -28,6 +29,7 @@ export const MODULOS = [
   { nome: 'institucional', rotas: rotasInstitucional },
   { nome: 'marca', rotas: rotasMarca },
   { nome: 'pessoas', rotas: rotasPessoas },
+  { nome: 'pessoasmes', rotas: rotasPessoasMes },
 ];
 
 export async function criarApp(db: Banco, producao = false) {

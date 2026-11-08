@@ -9,7 +9,7 @@ import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
 
 export /** Quem pode criar ou editar algo que leva imagem (comunicados, banners, documentos, destaques, contatos, aplicativos). */
-const PUB_QUE_ENVIAM_IMAGEM = ['comunicados', 'banners', 'destaques', 'aplicativos', 'documentos', 'contatos'].flatMap((a) => [`pub.${a}.criar`, `pub.${a}.editar`]);
+const PUB_QUE_ENVIAM_IMAGEM = ['comunicados', 'banners', 'destaques', 'aplicativos', 'documentos', 'contatos', 'aniversariantes', 'novos'].flatMap((a) => [`pub.${a}.criar`, `pub.${a}.editar`]);
 const LIMITE_BYTES = 5 * 1024 * 1024;
 const TIPOS = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/x-icon': 'ico', 'image/vnd.microsoft.icon': 'ico' } as const;
 const MIME_POR_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };

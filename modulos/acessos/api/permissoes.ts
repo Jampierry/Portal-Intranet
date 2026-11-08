@@ -37,6 +37,7 @@ export const CATALOGO: GrupoPermissao[] = [
     crud('comunicados', 'Comunicados'), crud('banners', 'Banners (Novidades)'),
     { id: 'institucional', rotulo: 'Missão, Visão e Valores', acoes: [{ chave: 'pub.institucional.ver', rotulo: 'Ver a aba' }, { chave: 'pub.institucional.editar', rotulo: 'Editar' }] },
     crud('documentos', 'Documentos'), crud('destaques', 'Colaborador Destaque'), crud('contatos', 'Contatos'), crud('aplicativos', 'Aplicativos (cadastro)'),
+    crud('aniversariantes', 'Aniversariantes (RH)'), crud('novos', 'Novos colaboradores (RH)'),
   ] },
   { grupo: 'Configurações (abas)', areas: [
     { id: 'usuarios', rotulo: 'Usuários', acoes: [
