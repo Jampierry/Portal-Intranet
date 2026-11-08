@@ -1093,3 +1093,23 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
   .meio-fixo .calp-dia, .meio-fixo .calp-vazio { min-height: 0; overflow: hidden; }
   .meio-fixo .calp-lado { position: static; align-self: stretch; min-height: 0; overflow-y: auto; overflow-x: hidden; align-content: start; scrollbar-width: thin; }
 }
+
+/* ===== Calendário e painel lateral na cor do menu esquerdo (destaque fixo em cada tema e modo) ===== */
+.calp { --c-fundo: var(--menu); --c-texto: var(--menu-texto); --c-suave: var(--menu-suave); --c-linha: var(--menu-linha); --c-hover: var(--menu-hover); --c-faixa: rgba(255, 255, 255, .06); }
+.calp-grade, .calp-lado { background: var(--c-fundo); color: var(--c-texto); border-color: var(--c-linha); box-shadow: 0 6px 20px -10px rgba(0, 0, 0, .45); }
+.calp-sem { background: rgba(255, 255, 255, .09); color: var(--c-suave); }
+.calp-dia, .calp-vazio { border-color: var(--c-linha); color: var(--c-texto); }
+.calp-dia.fds, .calp-vazio { background: var(--c-faixa); }
+.calp-dia:hover, .calp-dia.fds:hover { background: var(--c-hover); }
+.calp-dia > b { color: var(--c-texto); }
+.calp-dia.hoje > b { background: var(--coral); color: var(--sobre-coral); }
+.calp-dia.sel { outline-color: var(--coral); background: rgba(255, 255, 255, .1); }
+.calp-dia > small { color: var(--c-suave); }
+/* tinta da cor do tipo/agenda sobre o fundo do menu; faixa e bolinha clareadas para aparecerem no fundo escuro */
+.calp-chip { color: var(--c-texto); background: color-mix(in srgb, var(--cor) 38%, var(--c-fundo)); border-left-color: color-mix(in srgb, var(--cor) 45%, #fff); }
+.calp-lado h3 { color: var(--c-texto); }
+.calp-lado .calp-h3 { border-top-color: var(--c-linha); }
+.calp-lado .suave, .calp-lado small { color: var(--c-suave); }
+.calp-lado .calp-link { color: var(--c-texto); }
+.calp-lado .calp-lista i { background: color-mix(in srgb, var(--cor) 45%, #fff); box-shadow: none; }
+.calp-lado .calp-lista b { color: var(--c-texto); }
