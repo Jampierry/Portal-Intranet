@@ -52,13 +52,28 @@ function Carrossel({ lista, tick, irPara, menor, titulo, pausa }: {
   );
 }
 
+/** true enquanto a janela casa com a media query (acompanha redimensionar e girar o celular). */
+function useMedia(consulta: string): boolean {
+  const [ok, setOk] = useState(() => typeof matchMedia === 'function' && matchMedia(consulta).matches);
+  useEffect(() => {
+    const m = matchMedia(consulta);
+    const f = () => setOk(m.matches);
+    f(); m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, [consulta]);
+  return ok;
+}
+
 /** Topo do Início: um carrossel grande (esquerda) e até dois menores (direita), girando juntos.
- *  Cada banner escolhe em qual carrossel aparece (Publicar › Banners). Carrossel grande vazio = faixa padrão. */
+ *  Cada banner escolhe em qual carrossel aparece (Publicar › Banners). Carrossel grande vazio = faixa padrão.
+ *  No celular (até 700 px) não cabem três faixas: viram um carrossel só, na ordem esquerda, meio, direita; terminados os da esquerda, entram os do meio e assim por diante. */
 export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPara: (t: Tela, slug?: string) => void; padrao: ReactNode }) {
   const por = (p: string) => banners.filter((b) => b.posicao === p);
   const principal = por('principal');
   const laterais = [por('lateral1'), por('lateral2')].filter((l) => l.length > 0);
-  const maior = Math.max(principal.length, ...laterais.map((l) => l.length));
+  const movel = useMedia('(max-width: 700px)');
+  const unico = [...principal, ...laterais.flat()];
+  const maior = movel ? unico.length : Math.max(principal.length, ...laterais.map((l) => l.length));
 
   const [tick, setTick] = useState(0);
   const [sobre, setSobre] = useState(false);
@@ -74,6 +89,14 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
   const pausa = { parado, alternar: () => setParado(!parado), reduzido };
   const comPausa = (idx: number) => (maior > 1 && idx === 0 ? pausa : undefined); // um botão de pausa só, no primeiro carrossel exibido
   const titulos = ['Destaques', 'Avisos rápidos', 'Mais novidades'];
+
+  if (movel && unico.length > 0) {
+    return (
+      <div className="novidades-grade so-principal" onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)}>
+        <Carrossel lista={unico} tick={tick} irPara={irPara} titulo="Novidades" pausa={comPausa(0)} />
+      </div>
+    );
+  }
 
   return (
     <div className={`novidades-grade${laterais.length === 0 ? ' so-principal' : ''}`}
