@@ -1194,3 +1194,17 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 
 /* Logo sobre o menu / lateral do login: versão por cor do menu (data-menu), não pelo tema */
 :root[data-menu=claro] .logo-menu-escuro, :root:not([data-menu=claro]) .logo-menu-claro { display: none; }
+
+/* Calendário do menu quando o menu é CLARO: cartão branco com borda, dia selecionado na cor de destaque e pontos em tons escuros (os pastéis só funcionam sobre fundo escuro) */
+:root[data-menu=claro] .cal-menu { background: #fff; border: 1px solid var(--menu-linha); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+:root[data-menu=claro] .cal-sem { opacity: .8; }
+:root[data-menu=claro] .cal-dia:hover, :root[data-menu=claro] .cal-nav:hover { background: rgba(var(--menu-veu), .07); }
+:root[data-menu=claro] .cal-dia.sel { background: var(--vinho); color: var(--sobre-acento); }
+:root[data-menu=claro] .cal-dia.sel .cal-pontos i { box-shadow: 0 0 0 1px #fff; }
+:root[data-menu=claro] .cal-menu .k-feriado { --c: #cf222e; } :root[data-menu=claro] .cal-menu .k-municipal { --c: #0969da; } :root[data-menu=claro] .cal-menu .k-facultativo { --c: #bf3989; } :root[data-menu=claro] .cal-menu .k-evento { --c: #1a7f37; }
+:root[data-menu=claro] .cal-menu .k-ag0 { --c: #0969da; } :root[data-menu=claro] .cal-menu .k-ag1 { --c: #9a6700; } :root[data-menu=claro] .cal-menu .k-ag2 { --c: #1a7f37; } :root[data-menu=claro] .cal-menu .k-ag3 { --c: #bf3989; }
+:root[data-menu=claro] .cal-legenda { background: #fff; box-shadow: 0 6px 18px rgba(0, 0, 0, .15); }
+/* dias do calendário do menu: círculo (não oval) para o destaque do dia atual e do selecionado */
+.cal-dia { width: 24px; justify-self: center; }
+@media (max-height: 800px) and (min-width: 861px) { .cal-dia { width: 20px; } }
+@media (max-height: 640px) and (min-width: 861px) { .cal-dia { width: 17px; } }
