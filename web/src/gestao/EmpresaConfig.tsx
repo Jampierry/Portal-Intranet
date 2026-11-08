@@ -6,9 +6,10 @@ import { MarcaEntrada, useEntrada } from '../MarcaEntrada';
 import { definirEmpresa, LogoNome, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
 
 async function enviarIcone(arq: File): Promise<string> {
-  if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem PNG, JPG, WebP ou GIF.');
+  const ehSvg = /\.svg$/i.test(arq.name) || arq.type === 'image/svg+xml';
+  if (!ehSvg && !/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem PNG, JPG, WebP, GIF ou SVG.');
   if (arq.size > 5 * 1024 * 1024) throw new Error('A imagem passa de 5 MB. Escolha uma menor.');
-  const r = await fetch('/api/gestao/empresa/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
+  const r = await fetch('/api/gestao/empresa/imagens', { method: 'POST', headers: { 'Content-Type': ehSvg ? 'image/svg+xml' : arq.type }, body: arq, credentials: 'same-origin' });
   const j = await r.json().catch(() => ({})) as { url?: string; erro?: string };
   if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
   return j.url;
@@ -53,7 +54,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 {edita && (
                   <span className="empcfg-icone-acoes">
                     <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo' ? 'Enviando…' : 'Trocar ícone'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo', e.target.files?.[0]); e.target.value = ''; }} />
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
                     {cfg.logo && <button type="button" className="empcfg-link" onClick={() => set({ logo: null })}>Usar o padrão</button>}
                   </span>
@@ -68,7 +69,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 {edita && (
                   <span className="empcfg-icone-acoes">
                     <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome' ? 'Enviando…' : 'Trocar logo'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome', e.target.files?.[0]); e.target.value = ''; }} />
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
                     {cfg.logo_nome && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome: null })}>Remover</button>}
                   </span>
@@ -80,7 +81,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 {edita && (
                   <span className="empcfg-icone-acoes">
                     <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome_escuro' ? 'Enviando…' : 'Trocar logo'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome_escuro', e.target.files?.[0]); e.target.value = ''; }} />
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome_escuro', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
                     {cfg.logo_nome_escuro && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome_escuro: null })}>Remover</button>}
                   </span>
@@ -90,7 +91,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 <input value={cfg.nome_portal} maxLength={40} disabled={!edita} onChange={(e) => set({ nome_portal: e.target.value })} />
               </label>
             </div>
-            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. Até 5 MB cada.</small>
+            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. PNG, JPG, WebP, GIF ou SVG (sem scripts), até 5 MB cada.</small>
           </fieldset>
 
           <fieldset className="empcfg-bloco">

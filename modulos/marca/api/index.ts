@@ -43,8 +43,8 @@ export const PADRAO_EMPRESA: ConfigEmpresa = {
 };
 export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
 
-const URL_IMAGEM = /^\/api\/publico\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)$/;
-const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };
+const URL_IMAGEM = /^\/api\/publico\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/;
+const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon', svg: 'image/svg+xml' };
 
 function ler<T>(db: Banco, chave: string, padrao: T): T {
   const r = db.prepare('SELECT valor FROM portal_config WHERE chave = ?').get(chave) as { valor: string } | undefined;
@@ -109,20 +109,23 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
 
   // Só entrega imagens que alguma configuração usa (o resto da pasta de imagens continua exigindo login).
   app.get<{ Params: { nome: string } }>('/api/publico/imagens/:nome', async (req, resp) => {
-    const m = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico)$/.exec(req.params.nome);
+    const m = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/.exec(req.params.nome);
     const url = `/api/publico/imagens/${req.params.nome}`;
     const emp = lerEmpresa(db), usada = lerEntrada(db).imagens.includes(url) || emp.logo === url || emp.logo_nome === url || emp.logo_nome_escuro === url;
     const pasta = resolve(process.env.PASTA_IMAGENS ?? join(config.raiz, 'dados-privados', 'imagens'));
     const arq = m ? join(pasta, req.params.nome) : '';
     if (!m || !usada || !existsSync(arq)) return resp.code(404).send({ erro: 'Imagem não encontrada.' });
-    return resp.header('Content-Type', MIME[m[1]]).header('X-Content-Type-Options', 'nosniff').header('Cache-Control', 'public, max-age=3600').send(readFileSync(arq));
+    resp.header('Content-Type', MIME[m[1]]).header('X-Content-Type-Options', 'nosniff').header('Cache-Control', 'public, max-age=3600');
+    if (m[1] === 'svg') resp.header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox"); // SVG aberto direto no navegador não executa nada
+    return resp.send(readFileSync(arq));
   });
 
+  app.addContentTypeParser('image/svg+xml', { parseAs: 'buffer', bodyLimit: 1024 * 1024 }, (_req, corpo, feito) => feito(null, corpo));
   const envio = (perm: string, acao: string) => app.post('/api/gestao/' + acao + '/imagens', { preHandler: exigirPerm(perm), bodyLimit: 5 * 1024 * 1024 }, async (req, resp) => {
     const corpo = req.body;
     if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha uma imagem PNG, JPG, WebP ou GIF.' });
-    const salvo = guardarImagem(corpo);
-    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como imagem PNG, JPG, WebP ou GIF.' });
+    const salvo = guardarImagem(corpo, { aceitarSvg: acao === 'empresa' });
+    if (!salvo) return resp.code(400).send({ erro: acao === 'empresa' ? 'Arquivo não reconhecido como imagem PNG, JPG, WebP, GIF ou SVG (sem scripts).' : 'Arquivo não reconhecido como imagem PNG, JPG, WebP ou GIF.' });
     auditar(db, req.usuario!.id, `${acao}_imagem_enviada`, { nome: salvo.nome, bytes: corpo.length });
     return resp.code(201).send({ url: `/api/publico/imagens/${salvo.nome}` });
   });

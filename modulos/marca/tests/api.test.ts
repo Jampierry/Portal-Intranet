@@ -84,4 +84,21 @@ test('tela de entrada: só quem tem permissão altera; imagem só é pública se
   assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: logoNome, logo_nome_escuro: logoEscuro } })).statusCode, 200);
   assert.equal((await app.inject({ url: '/api/empresa' })).json<{ logo_nome_escuro: string }>().logo_nome_escuro, logoEscuro);
   assert.equal((await app.inject({ url: logoEscuro })).statusCode, 200);
+
+  // logo em SVG: aceita o vetor limpo; recusa script, eventos e links externos; não vale para as imagens da Tela de entrada
+  const svgOk = Buffer.from('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h10v10z" fill="#123"/></svg>');
+  const envioSvg = (corpo: Buffer, rota = 'empresa') => app.inject({ method: 'POST', url: `/api/gestao/${rota}/imagens`, headers: { ...adm, 'content-type': 'image/svg+xml' }, payload: corpo });
+  for (const ruim of ['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><path d="M0 0"/></svg>', '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://externo/x.png"/></svg>', '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>'])
+    assert.equal((await envioSvg(Buffer.from(ruim))).statusCode, 400, ruim);
+  assert.equal((await envioSvg(svgOk, 'entrada')).statusCode, 400);
+  const upSvg = await envioSvg(svgOk);
+  assert.equal(upSvg.statusCode, 201);
+  const logoSvg = upSvg.json<{ url: string }>().url;
+  assert.match(logoSvg, /\.svg$/);
+  assert.equal((await app.inject({ url: logoSvg })).statusCode, 404);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: logoSvg } })).statusCode, 200);
+  const entregue = await app.inject({ url: logoSvg });
+  assert.equal(entregue.statusCode, 200);
+  assert.equal(entregue.headers['content-type'], 'image/svg+xml');
+  assert.match(String(entregue.headers['content-security-policy']), /sandbox/);
 });

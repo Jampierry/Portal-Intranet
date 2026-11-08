@@ -14,7 +14,7 @@ const LIMITE_BYTES = 5 * 1024 * 1024;
 const TIPOS = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/x-icon': 'ico', 'image/vnd.microsoft.icon': 'ico' } as const;
 const MIME_POR_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };
 
-/** Confere os primeiros bytes (não confia no tipo informado). SVG fica de fora de propósito: pode carregar script. */
+/** Confere os primeiros bytes (não confia no tipo informado). SVG só entra por guardarImagem com aceitarSvg, depois de svgSeguro (pode carregar script). */
 function extensaoPeloConteudo(b: Buffer): string | null {
   if (b.length > 12 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'png';
   if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'jpg';
@@ -24,11 +24,24 @@ function extensaoPeloConteudo(b: Buffer): string | null {
   return null;
 }
 
+/** Texto de um SVG sem nada que execute ou busque coisa de fora (script, eventos, foreignObject, links externos, DTD/entidades). Devolve null se não for um SVG seguro. */
+export function svgSeguro(b: Buffer): string | null {
+  if (b.length < 20 || b.length > 1024 * 1024) return null;
+  const t = b.toString('utf8').replace(/^﻿/, '');
+  if (!/^\s*(<\?xml[^>]*\?>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(t) || !/<\/svg>\s*$/i.test(t)) return null;
+  if (/<!DOCTYPE|<!ENTITY|<script|<foreignObject|<iframe|<embed|<object|<audio|<video|<animate|<set[\s>]|@import/i.test(t)) return null;
+  if (/\son[a-z]+\s*=|javascript:|vbscript:|data:text|data:application/i.test(t)) return null;
+  if (/(?:href|src)\s*=\s*["']\s*(?!#)/i.test(t)) return null; // só referências internas (#id)
+  if (/url\(\s*["']?\s*(?!#)/i.test(t)) return null;
+  return t;
+}
+
 const pastaImagens = () => resolve(process.env.PASTA_IMAGENS ?? join(config.raiz, 'dados-privados', 'imagens'));
 
 /** Confere o conteúdo e guarda a imagem na pasta do portal. Devolve o endereço, ou null se não for imagem aceita. */
-export function guardarImagem(corpo: Buffer): { nome: string; url: string } | null {
-  const ext = extensaoPeloConteudo(corpo);
+/** `aceitarSvg` só para logotipos da marca (SVG conferido por svgSeguro); comunicados e demais usos continuam sem SVG. */
+export function guardarImagem(corpo: Buffer, opcoes: { aceitarSvg?: boolean } = {}): { nome: string; url: string } | null {
+  const ext = extensaoPeloConteudo(corpo) ?? (opcoes.aceitarSvg && svgSeguro(corpo) ? 'svg' : null);
   if (!ext) return null;
   const nome = `${randomBytes(12).toString('hex')}.${ext}`;
   mkdirSync(pastaImagens(), { recursive: true });
