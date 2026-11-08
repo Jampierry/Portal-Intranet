@@ -1,12 +1,30 @@
+import { useEffect, useState } from 'react';
 import { Icone } from './icones';
 import { LogoEmpresa, LogoNome, useEmpresa } from './empresa';
 import { Calendario } from './Calendario';
+import { isoDe } from './calendarioTipos';
 
 export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pessoas' | 'ajuda';
 
 // Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];
 const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pessoas', 'Pessoas'], ['ajuda', 'Ajuda']];
+
+const MESES_CURTOS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+/** Menu recolhido: o dia de hoje num quadradinho (mês em cima, dia grande). Clicar abre o Calendário já no dia de hoje. Atualiza sozinho na virada do dia. */
+function DiaMini({ abrir }: { abrir: (iso: string) => void }) {
+  const [agora, setAgora] = useState(() => new Date());
+  useEffect(() => { const t = setInterval(() => setAgora((a) => { const n = new Date(); return n.toDateString() === a.toDateString() ? a : n; }), 60_000); return () => clearInterval(t); }, []);
+  const iso = isoDe(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const rotulo = `Hoje, ${DIAS_LONGOS[agora.getDay()]}, ${agora.getDate()} de ${MESES_CURTOS[agora.getMonth()].toLowerCase()}. Abrir o calendário`;
+  return (
+    <button type="button" className="dia-mini" onClick={() => abrir(iso)} title={rotulo} aria-label={rotulo}>
+      <span className="dia-mini-mes">{MESES_CURTOS[agora.getMonth()]}</span>
+      <b>{agora.getDate()}</b>
+    </button>
+  );
+}
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
@@ -38,6 +56,8 @@ export function Menu(p: Props) {
           </button>
         ))}
       </nav>
+
+      {mini && p.mostrarCalendario !== false && <DiaMini abrir={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
 
       {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} podeExcluir={p.podeExcluirData} abrirCalendario={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
 
