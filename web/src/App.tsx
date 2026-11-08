@@ -24,7 +24,7 @@ interface Saude { ok: boolean; versao: string; modulos: string[] }
 
 const ABAS: [Tela | 'menu' | 'apps', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['apps', 'Aplicativos', 'apps'], ['menu', 'Menu', 'menu']];
 
-// Avisos de cada tela, mostrados na barra superior (barra universal) em vez de dentro da página.
+// Dica de cada tela, mostrada no "i" ao lado do título (barra superior) em vez de dentro da página.
 const AVISOS: Record<Tela, string> = {
   inicio: 'Aplicativos: use a barra da direita. No computador abrem em nova aba; no celular, use Voltar do navegador.',
   comunicados: 'Avisos publicados pelas áreas responsáveis.',
@@ -46,6 +46,40 @@ const rotaDoEndereco = (): Rota => {
   if (t === 'gestao') t = ['usuarios', 'auditoria'].includes(slug) ? 'configuracoes' : 'publicar';
   return TELAS.includes(t as Tela) ? { tela: t as Tela, slug: slug ? decodeURIComponent(slug) : undefined } : { tela: 'inicio' };
 };
+/** "i" ao lado do título da tela: abre uma dica curta sobre a tela (antes ocupava a barra inteira). */
+function DicaTela({ texto }: { texto: string }) {
+  const [aberto, setAberto] = useState(false);
+  const raiz = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setAberto(false); };
+    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') setAberto(false); };
+    document.addEventListener('mousedown', fora); document.addEventListener('keydown', tecla);
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', tecla); };
+  }, [aberto]);
+  useEffect(() => { setAberto(false); }, [texto]);
+  return (
+    <span className="dica-tela" ref={raiz}>
+      <button type="button" className="dica-tela-btn" aria-label="Sobre esta tela" aria-expanded={aberto} onClick={() => setAberto(!aberto)}><Icone nome="info" tamanho={15} /></button>
+      {aberto && <span className="dica-tela-painel" role="note">{texto}</span>}
+    </span>
+  );
+}
+
+/** Faixa da barra superior: o comunicado urgente mais recente (com "+N" se houver mais). Sem urgente, não mostra nada. */
+function FaixaUrgente({ itens, abrir }: { itens: Comunicado[]; abrir: (slug?: string) => void }) {
+  if (itens.length === 0) return <span className="faixa-espaco" />;
+  const [c, ...resto] = itens;
+  return (
+    <p className="faixa-urgente" role="status">
+      <Icone nome="sino" tamanho={14} />
+      <b>Urgente</b>
+      <button type="button" onClick={() => abrir(c.slug)} title={c.titulo}>{c.titulo}</button>
+      {resto.length > 0 && <button type="button" className="faixa-mais" onClick={() => abrir()} title="Ver todos os comunicados">+{resto.length}</button>}
+    </p>
+  );
+}
+
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
 interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
 function Sino({ itens, ir, pedidos, irPedidos }: { itens: Comunicado[]; ir: () => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
@@ -145,8 +179,9 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <div className="corpo">
         <header className="topo">
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
+          <DicaTela texto={AVISOS[tela]} />
           <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
-          <p className="aviso-universal" role="status"><Icone nome="info" tamanho={14} /><span>{AVISOS[tela]}</span></p>
+          <FaixaUrgente itens={urgentes} abrir={(slug) => irPara('comunicados', slug)} />
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
