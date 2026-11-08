@@ -1166,3 +1166,18 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 @keyframes entrar-zoom { from { transform: scale(1); } to { transform: scale(1.07); } }
 .entrar-fundo-img.ativa { animation: entrar-zoom 14s ease-out both; }
 @media (prefers-reduced-motion: reduce) { .entrar-fundo-img.ativa { animation: none; } }
+
+/* Carrossel da entrada, versão suave: fade longo com leve desfoque e cada imagem com um movimento próprio (aproxima, desliza, afasta); a que sai segue se movendo até sumir. */
+.entrar-fundo-img { transition: opacity 1.8s cubic-bezier(.4, 0, .2, 1), filter 1.8s ease; filter: blur(6px); will-change: opacity, transform; }
+.entrar-fundo-img.ativa { filter: blur(0); }
+.entrar-fundo-img.ativa, .entrar-fundo-img.saindo { animation-duration: var(--dur, 9s); animation-timing-function: ease-out; animation-fill-mode: both; }
+.entrar-fundo-img.saindo { z-index: -3; }
+.kb0.ativa, .kb0.saindo { animation-name: kb-aproxima; }
+.kb1.ativa, .kb1.saindo { animation-name: kb-esquerda; }
+.kb2.ativa, .kb2.saindo { animation-name: kb-afasta; }
+.kb3.ativa, .kb3.saindo { animation-name: kb-direita; }
+@keyframes kb-aproxima { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+@keyframes kb-esquerda { from { transform: scale(1.1) translateX(2.5%); } to { transform: scale(1.1) translateX(-2.5%); } }
+@keyframes kb-afasta { from { transform: scale(1.13); } to { transform: scale(1.02); } }
+@keyframes kb-direita { from { transform: scale(1.1) translateX(-2.5%); } to { transform: scale(1.1) translateX(2.5%); } }
+@media (prefers-reduced-motion: reduce) { .entrar-fundo-img { transition: opacity .6s ease; filter: none; } .entrar-fundo-img.ativa, .entrar-fundo-img.saindo { animation: none; } }
