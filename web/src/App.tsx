@@ -5,7 +5,7 @@ import { Menu, type Tela } from './Menu';
 import { Icone } from './icones';
 import { Avatar, usePerfil } from './perfil';
 import { BuscaGlobal } from './BuscaGlobal';
-import { JanelaConta } from './Conta';
+import { MenuConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
 import { pode, podeGerir, useSessao, type Usuario } from './sessao';
 import { Publicar, Configuracoes } from './gestao/Gestao';
@@ -112,7 +112,6 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const [rota, setRota] = useState<Rota>(rotaDoEndereco);
   const tela = rota.tela;
   const [gaveta, setGaveta] = useState(false);
-  const [perfilAberto, setPerfilAberto] = useState(false);
   const [lancador, setLancador] = useState(false);
   const [busca, setBusca] = useState('');
   const [favoritos, setFavoritos] = useState<string[]>([]);
@@ -178,7 +177,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} />
-          <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Minha conta" title={`${perfil.nome} — minha conta`}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={28} /></button>
+          <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} />
         </header>
 
         <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
@@ -206,7 +205,6 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : id === 'apps' ? setLancador(true) : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
         ))}
       </nav>
-      {perfilAberto && <JanelaConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} fechar={() => setPerfilAberto(false)} />}
     </div>
   );
 }

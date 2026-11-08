@@ -44,38 +44,59 @@ function AvisosEmailPessoa() {
   );
 }
 
-/** Janela "Minha conta": dados do usuário, avatar (guardado neste navegador), troca de senha e sair. */
-export function JanelaConta({ usuario, avatar, mudarAvatar, sair, fechar }: {
-  usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; sair: () => void; fechar: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
+/** Instalação do portal como aplicativo (PWA): o navegador avisa quando dá para instalar; guardamos o aviso para o botão do menu. */
+interface EventoInstalar extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
+let instalador: EventoInstalar | null = null;
+if (typeof window !== 'undefined') {
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); instalador = e as EventoInstalar; });
+  addEventListener('appinstalled', () => { instalador = null; });
+}
+const emApp = () => typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
+
+/** Menu da conta (abre ao clicar no avatar, igual ao menu de aparência): dados, avatar, avisos por e-mail, senha, instalar o portal e sair. */
+export function MenuConta({ usuario, avatar, mudarAvatar, sair }: { usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; sair: () => void }) {
+  const [aberto, setAberto] = useState(false);
   const [trocando, setTrocando] = useState(false);
   const [feito, setFeito] = useState(false);
-  useEffect(() => { ref.current?.showModal(); }, []);
+  const raiz = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setAberto(false); };
+    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') setAberto(false); };
+    document.addEventListener('mousedown', fora); document.addEventListener('keydown', tecla);
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', tecla); };
+  }, [aberto]);
+  useEffect(() => { if (!aberto) { setTrocando(false); setFeito(false); } }, [aberto]);
+  const instalar = async () => { if (!instalador) return; await instalador.prompt(); await instalador.userChoice.catch(() => null); instalador = null; setAberto(false); };
   return (
-    <dialog className="janela" ref={ref} onClose={fechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label="Minha conta">
-      <div className="janela-form">
-        <header><h2>Minha conta</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
-        <div className="janela-corpo">
-          <div className="conta-dados">
-            <Avatar nome={usuario.nome} avatar={avatar} tamanho={48} />
-            <div><b>{usuario.nome}</b><br /><span className="suave">{usuario.login} · {usuario.perfil_nome}</span></div>
+    <div className="tema-raiz" ref={raiz}>
+      <button className="avbtn" onClick={() => setAberto(!aberto)} aria-expanded={aberto} aria-haspopup="dialog" aria-label="Minha conta" title={`${usuario.nome} — minha conta`}>
+        <Avatar nome={usuario.nome} avatar={avatar} tamanho={28} />
+      </button>
+      {aberto && (
+        <div className="tema-painel conta-painel" role="dialog" aria-label="Minha conta">
+          <div className="conta-topo">
+            <Avatar nome={usuario.nome} avatar={avatar} tamanho={44} />
+            <div className="conta-quem"><b>{usuario.nome}</b><small className="suave">{usuario.login} · {usuario.perfil_nome}</small></div>
+            <button className="icone-btn conta-sair" onClick={sair} aria-label="Sair do sistema" title="Sair do sistema">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+            </button>
           </div>
-          <p className="suave" style={{ margin: '12px 0 6px', fontWeight: 700, fontSize: 13 }}>Avatar</p>
+          <h3>Avatar</h3>
           <div className="avgal">
-            <button type="button" className={`avopt${avatar === null ? ' on' : ''}`} aria-label="Usar as iniciais" onClick={() => mudarAvatar(null)}><Avatar nome={usuario.nome} avatar={null} tamanho={44} /></button>
+            <button type="button" className={`avopt${avatar === null ? ' on' : ''}`} aria-label="Usar as iniciais" onClick={() => mudarAvatar(null)}><Avatar nome={usuario.nome} avatar={null} tamanho={32} /></button>
             {Array.from({ length: AVATARES_QTD }, (_, i) => (
-              <button type="button" key={i} className={`avopt${avatar === i ? ' on' : ''}`} aria-label={`Avatar ${i + 1}`} aria-pressed={avatar === i} onClick={() => mudarAvatar(i)}><Avatar nome={usuario.nome} avatar={i} tamanho={44} /></button>
+              <button type="button" key={i} className={`avopt${avatar === i ? ' on' : ''}`} aria-label={`Avatar ${i + 1}`} aria-pressed={avatar === i} onClick={() => mudarAvatar(i)}><Avatar nome={usuario.nome} avatar={i} tamanho={32} /></button>
             ))}
           </div>
-          <hr className="divisor" />
           <AvisosEmailPessoa />
-          {feito && <p className="ok" role="status">Senha alterada.</p>}
-          {!trocando ? <button className="btn btn-sec" onClick={() => { setTrocando(true); setFeito(false); }}>Trocar senha</button>
+          <h3>Segurança</h3>
+          {feito && <p className="ok" role="status" style={{ margin: '0 0 8px' }}>Senha alterada.</p>}
+          {!trocando ? <button className="btn btn-sec btn-pequeno" onClick={() => { setTrocando(true); setFeito(false); }}>Trocar senha</button>
             : <FormTrocarSenha aoConcluir={() => { setTrocando(false); setFeito(true); }} />}
+          {instalador && !emApp() && <><h3>Aplicativo</h3><button className="btn btn-sec btn-pequeno" onClick={() => void instalar()}>Instalar o portal neste dispositivo</button></>}
         </div>
-        <footer><button className="btn btn-sec" onClick={sair}>Sair da conta</button><button className="btn" onClick={() => ref.current?.close()}>Fechar</button></footer>
-      </div>
-    </dialog>
+      )}
+    </div>
   );
 }

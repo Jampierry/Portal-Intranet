@@ -1278,3 +1278,15 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .pulso-barra i { display: block; height: 100%; background: var(--vinho); border-radius: 99px; }
 .pulso-coment { margin: 0; padding-left: 18px; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
 @media (max-width: 520px) { .pulso-notas small { display: none; } }
+
+/* Menu da conta (abre como o menu de aparência) */
+.conta-painel { width: 340px; max-height: calc((100vh / var(--zoom, 1)) - 90px); overflow-y: auto; }
+.conta-topo { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--linha-suave); }
+.conta-quem { display: grid; min-width: 0; flex: 1; line-height: 1.25; }
+.conta-quem b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conta-sair { flex: none; color: var(--erro); }
+.conta-sair:hover { background: var(--erro-fundo); }
+.conta-painel .avgal { grid-template-columns: repeat(auto-fill, 40px); gap: 6px; }
+.conta-painel .entrar-campos { gap: 6px; }
+.conta-painel .entrar-campos input { height: 34px; font-size: 13px; }
+@media (max-width: 860px) { .conta-painel { right: -8px; width: min(340px, calc((100vw / var(--zoom, 1)) - 24px)); } }

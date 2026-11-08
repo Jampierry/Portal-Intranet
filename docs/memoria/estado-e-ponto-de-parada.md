@@ -14,6 +14,8 @@
 - **PWA:** `web/public/manifest.webmanifest`, `sw.js` (nunca guarda `/api`), ícones 192/512, registro só em produção. Instalar: abrir o site publicado (HTTPS) no celular › "Adicionar à tela inicial".
 - Calendário em tela sem rolagem da página (só o painel de eventos rola, barra fina), calendário e painel na cor do menu, carrossel da entrada animado, banners do celular em carrossel único, abas do lançador (Todos os apps primeiro).
 
+- **Menu da conta:** o avatar na barra superior abre um menu igual ao de aparência (dados, avatar, avisos por e-mail, trocar senha, **instalar o portal** quando o navegador permitir e ícone de **sair do sistema**); a janela "Minha conta" foi removida. **Perfil RH** pronto (migração 025, código `p-rh`).
+
 **Próximos passos / pendências:** (1) conferir tudo no navegador depois de publicar (várias telas foram validadas só por captura de teste e testes automáticos); (2) cadastrar e-mails dos usuários e ligar os avisos em Integrações (precisa do serviço Zimbra conectado); (3) criar o perfil "RH" em Configurações › Perfis com as abas Aniversariantes, Novos colaboradores e Pesquisa de pulso; (4) PWA: precisa de HTTPS no servidor de produção; notificações *push* de verdade (Web Push) ficam como melhoria futura; (5) ideias que sobraram: recuperação de senha por e-mail (agora há e-mail por usuário), SSO, anexos de documentos.
 
 
