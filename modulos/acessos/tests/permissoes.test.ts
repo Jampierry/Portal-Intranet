@@ -24,7 +24,7 @@ test('perfis: só quem tem cfg.perfis.* mexe; admin é fixo; chaves inválidas s
   assert.equal((await app.inject({ url: '/api/perfis', headers: await entrar(app, 'edita') })).statusCode, 403);
   const adm = await entrar(app, 'master');
   const r = (await app.inject({ url: '/api/perfis', headers: adm })).json<{ perfis: { codigo: string; fixo: boolean }[] }>();
-  assert.deepEqual(r.perfis.map((p) => [p.codigo, p.fixo]), [['admin', true], ['editor', false], ['consulta', false]]);
+  assert.deepEqual(r.perfis.map((p) => [p.codigo, p.fixo]), [['admin', true], ['editor', false], ['consulta', false], ['p-rh', false]]);
   assert.equal((await put(app, '/api/perfis/admin', adm, { permissoes: [] })).statusCode, 400);
   assert.equal((await put(app, '/api/perfis/editor', adm, { permissoes: ['voar'] })).statusCode, 400);
   assert.equal((await put(app, '/api/perfis/visitante', adm, { permissoes: [] })).statusCode, 404);
@@ -161,8 +161,8 @@ test('perfis personalizados: criar, usar em um usuário, editar, e só apagar se
   assert.deepEqual(maria.permissoes, ['ver.comunicados', 'pub.comunicados.ver', 'pub.comunicados.criar']);
   assert.equal(maria.perfil_nome, 'Recursos Humanos');
   assert.equal((await app.inject({ method: 'POST', url: '/api/usuarios', headers: adm, payload: { login: 'sem.perfil', nome: 'Sem Perfil', perfil: 'inventado', senha: 'Provisoria#2026' } })).statusCode, 400);
-  const ed = await put(app, `/api/perfis/${rh.codigo}`, adm, { nome: 'RH', permissoes: ['ver.comunicados'] });
-  assert.equal(ed.json<{ nome: string }>().nome, 'RH');
+  const ed = await put(app, `/api/perfis/${rh.codigo}`, adm, { nome: 'RH Central', permissoes: ['ver.comunicados'] });
+  assert.equal(ed.json<{ nome: string }>().nome, 'RH Central');
   const sis = await put(app, '/api/perfis/editor', adm, { nome: 'Outro nome' });
   assert.equal(sis.json<{ nome: string }>().nome, 'Editor');
   assert.equal((await app.inject({ method: 'DELETE', url: '/api/perfis/editor', headers: adm })).statusCode, 400);
