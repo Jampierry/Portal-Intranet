@@ -11,13 +11,19 @@
         var r = document.documentElement;
         var escuro = c.modo === 'escuro' || ((c.modo || 'auto') === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
         r.dataset.tema = escuro ? 'escuro' : 'claro';
-        r.dataset.estilo = ['dipaula', 'bordo', 'meianoite', 'ardosia', 'grafite', 'oceano'].indexOf(c.estilo) >= 0 ? c.estilo : 'dipaula';
+        r.dataset.estilo = ['dipaula', 'bordo', 'meianoite', 'ardosia', 'grafite', 'oceano', 'github', 'notion'].indexOf(c.estilo) >= 0 ? c.estilo : 'dipaula';
         var z = (c.escala >= 80 && c.escala <= 150) ? Math.round(c.escala) / 100 : 1;
         r.style.zoom = z;
         r.style.setProperty('--zoom', z);
       } catch (e) {}
     </script>
     <link rel="icon" type="image/svg+xml" href="/icone.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icones/icone-192.png" />
+    <meta name="theme-color" content="#652b4a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Portal" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />

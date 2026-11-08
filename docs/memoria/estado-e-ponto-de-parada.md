@@ -1,5 +1,22 @@
 # Estado e ponto de parada
 
+## Sessão de 08/11/2026 (tudo enviado ao GitHub; `main`)
+**Repositórios:** o Portal é `Jampierry/Portal-Intranet` (esta pasta, branch `main`); o app de comissão é outro repositório (`comissao-di-paula`, branch `f05-dashboard-novo`). Não misturar: conferir `git remote -v` antes de commitar. Banco novo: rodar `npm run banco:migrar` (migrações 019 a 024 abaixo). Testes: `npm test` (106), `npm run typecheck`, `npm run build`.
+
+**Feito nesta sessão (todos com teste):**
+- **Configurações em abas por assunto:** Empresa (ícone, logo clara e escura em PNG/JPG/WebP/GIF/**SVG** sem script, nomes, slogan, rodapé, fundação) · Tela de entrada (com prévia do login) · **Comunicados** (rótulo/frases do destaque e do painel) · Calendário (feriados) · Integrações · Auditoria. Logo no menu escolhida pela cor do menu (`data-menu`), não pelo tema.
+- **Estilos novos GitHub e Notion** (menu claro no tema claro, escuro no escuro); calendário do menu e quadradinho do dia/hora no menu recolhido.
+- **Início:** cartão "Pessoas do mês" (aniversariantes, **tempo de casa**, novos colaboradores) e faixa de **aniversário da empresa** (contagem regressiva). RH cadastra em **Publicar › Aniversariantes / Novos colaboradores** (importação de planilha CSV; só aparece com "Autorizou divulgar", LGPD; aniversário guarda só dia e mês). Migrações 019 e 023.
+- **Aplicativos restritos por perfil + extras por usuário** (migração 020): Configurações › Perfis libera por perfil; Usuários › Aplicativos soma extras; a pessoa vê a soma; admin vê tudo.
+- **Aviso de comunicado por e-mail** (migração 021): e-mail por usuário (opcional) + opção de desligar em "Minha conta"; Integrações liga/desliga, "só urgentes" e endereço do portal; envia pelo serviço Zimbra (`/api/notificar`), uma vez por comunicado.
+- **Confirmação de leitura** (migração 022): comunicado marca "Exigir confirmação"; botão "Li e estou ciente"; pendências no sino e em Avisos importantes; relatório "Leituras" (quem leu e quem falta).
+- **Pesquisa de pulso anônima** (migração 024): Publicar › Pesquisa de pulso; uma aberta por vez; resposta sem usuário nem hora; resultado só com 5+ respostas.
+- **PWA:** `web/public/manifest.webmanifest`, `sw.js` (nunca guarda `/api`), ícones 192/512, registro só em produção. Instalar: abrir o site publicado (HTTPS) no celular › "Adicionar à tela inicial".
+- Calendário em tela sem rolagem da página (só o painel de eventos rola, barra fina), calendário e painel na cor do menu, carrossel da entrada animado, banners do celular em carrossel único, abas do lançador (Todos os apps primeiro).
+
+**Próximos passos / pendências:** (1) conferir tudo no navegador depois de publicar (várias telas foram validadas só por captura de teste e testes automáticos); (2) cadastrar e-mails dos usuários e ligar os avisos em Integrações (precisa do serviço Zimbra conectado); (3) criar o perfil "RH" em Configurações › Perfis com as abas Aniversariantes, Novos colaboradores e Pesquisa de pulso; (4) PWA: precisa de HTTPS no servidor de produção; notificações *push* de verdade (Web Push) ficam como melhoria futura; (5) ideias que sobraram: recuperação de senha por e-mail (agora há e-mail por usuário), SSO, anexos de documentos.
+
+
 ## Portal genérico (08/11/2026)
 - Nada de nome de empresa fixo: Configurações › **Empresa** (`cfg.empresa.*`, tabela `portal_config`, módulo `modulos/marca`) guarda nome, nome do portal, slogan, ícone, frases, rótulo/frase do destaque e feriados municipais; Configurações › **Tela de entrada** (`cfg.entrada.*`) guarda o fundo do login (cor, imagem, carrossel) e textos.
 - Leitura pública (`/api/empresa`, `/api/entrada`, `/api/publico/imagens/:nome`); instalações com usuários ganham os textos da Di Paula pela migração 017, instalações novas nascem neutras ("Sua Empresa").
