@@ -15,6 +15,7 @@ import { EntradaConfig } from './EntradaConfig';
 import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
 import { Aniversariantes, NovosColaboradores } from './PessoasMes';
+import { PesquisaPulso } from './Pulso';
 import { AvisosEmail } from './AvisosEmail';
 
 const s = (v: string | null | undefined) => v ?? '';
@@ -266,9 +267,9 @@ function Aplicativos({ busca, limparBusca, favoritos, alternarFavorito }: { busc
   );
 }
 
-type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'aniversariantes' | 'novos' | 'contatos' | 'aplicacoes';
+type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'aniversariantes' | 'novos' | 'pulso' | 'contatos' | 'aplicacoes';
 const ABAS_PUBLICAR: [AbaPub, string][] = [
-  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['aniversariantes', 'Aniversariantes'], ['novos', 'Novos colaboradores'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
+  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['aniversariantes', 'Aniversariantes'], ['novos', 'Novos colaboradores'], ['pulso', 'Pesquisa de pulso'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
@@ -292,6 +293,7 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
       {aba === 'destaques' && <Destaques />}
       {aba === 'aniversariantes' && <Aniversariantes />}
       {aba === 'novos' && <NovosColaboradores />}
+      {aba === 'pulso' && <PesquisaPulso />}
       {aba === 'contatos' && <Contatos />}
       {aba === 'aplicacoes' && <Aplicativos busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
       </PermissoesCtx.Provider>
