@@ -1242,3 +1242,14 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
   .inicio-lateral > .cartao-sec:last-child { flex: 1 1 300px; min-height: 0; }
   .inicio-lateral > .cartao-sec:last-child .mini-lista { flex: none; max-height: none; overflow: visible; }
 }
+
+/* Confirmação de leitura de comunicado */
+.leitura-pede { margin-top: 18px; padding: 14px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--coral) 55%, transparent); background: color-mix(in srgb, var(--coral) 10%, var(--card)); display: grid; gap: 10px; justify-items: start; }
+.leitura-pede p { margin: 0; }
+.leitura-ok { margin: 18px 0 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 99px; background: var(--ok-fundo); color: var(--ok); font-weight: 700; font-size: 13px; }
+.leitura-rel { display: grid; gap: 12px; }
+.leitura-barra { height: 10px; border-radius: 99px; background: var(--afundado); overflow: hidden; }
+.leitura-barra > i { display: block; height: 100%; background: var(--ok); }
+.leitura-listas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.leitura-listas ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+.leitura-listas li { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: var(--afundado); }

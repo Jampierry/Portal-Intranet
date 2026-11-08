@@ -30,11 +30,28 @@ export function ListaComunicados({ itens, linha = false }: { itens: Comunicado[]
 
 type Ordem = 'recentes' | 'antigos';
 
+type ComDetalhe = Comunicado & { corpo: string | null; lido_em?: string | null };
+/** Caixa "Li e estou ciente" (só em comunicado que exige confirmação de leitura). */
+function ConfirmarLeitura({ c, aoConfirmar }: { c: ComDetalhe; aoConfirmar: (quando: string) => void }) {
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState('');
+  if (!c.exige_leitura) return null;
+  if (c.lido) return <p className="leitura-ok" role="status"><Icone nome="info" tamanho={16} /> Leitura confirmada{c.lido_em ? ` em ${dataCurta(c.lido_em.slice(0, 10))}` : ''}.</p>;
+  const confirmar = async () => { setErro(''); setOcupado(true); try { const r = await api<{ lido_em: string }>(`/api/comunicados/${encodeURIComponent(c.slug)}/confirmar`, {}); aoConfirmar(r.lido_em); } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); } };
+  return (
+    <div className="leitura-pede" role="group" aria-label="Confirmação de leitura">
+      <p><b>Este comunicado pede a confirmação da sua leitura.</b> Leia o texto acima e confirme que está ciente.</p>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      <button className="btn" disabled={ocupado} onClick={() => void confirmar()}>{ocupado ? 'Confirmando…' : 'Li e estou ciente'}</button>
+    </div>
+  );
+}
+
 /** Detalhe de um comunicado publicado: categoria, data, corpo em parágrafos e outros da mesma categoria. */
 function ComunicadoDetalhe({ slug }: { slug: string }) {
-  const [c, setC] = useState<(Comunicado & { corpo: string | null }) | null | 'erro'>(null);
+  const [c, setC] = useState<ComDetalhe | null | 'erro'>(null);
   const { dados } = useLista<Comunicado>('/api/comunicados');
-  useEffect(() => { setC(null); api<Comunicado & { corpo: string | null }>(`/api/comunicados/${encodeURIComponent(slug)}`).then(setC).catch(() => setC('erro')); }, [slug]);
+  useEffect(() => { setC(null); api<ComDetalhe>(`/api/comunicados/${encodeURIComponent(slug)}`).then(setC).catch(() => setC('erro')); }, [slug]);
   const voltar = <a className="link-ver voltar" href="#comunicados"><Icone nome="esq" tamanho={15} /> Voltar aos comunicados</a>;
   if (c === 'erro') return <><Cabecalho interno titulo="Comunicado não encontrado" sub="Ele pode ter sido arquivado ou o endereço está incorreto." />{voltar}</>;
   if (c === null) return <p className="vazio">Carregando…</p>;
@@ -50,6 +67,7 @@ function ComunicadoDetalhe({ slug }: { slug: string }) {
           <h1>{c.titulo}</h1>
           <p className="suave detalhe-data"><Icone nome="calendario" tamanho={15} /> Publicado em {dataCurta(c.publicado_em)}</p>
           {paragrafos.map((p, i) => <p key={i} className={i === 0 ? 'detalhe-lead' : undefined}>{p}</p>)}
+          <ConfirmarLeitura c={c} aoConfirmar={(quando) => setC({ ...c, lido: 1, lido_em: quando })} />
         </div>
       </article>
       {outros.length > 0 && <section aria-labelledby="outros-com"><div className="barra"><h2 id="outros-com">Mais em {c.categoria}</h2></div><ListaComunicados itens={outros} /></section>}

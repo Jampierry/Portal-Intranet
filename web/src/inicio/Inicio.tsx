@@ -17,7 +17,9 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
   const empresa = useEmpresa();
   const { dados: docs } = useLista<Documento>(veDocumentos ? '/api/documentos' : null);
   const { dados: banners } = useLista<Banner>('/api/banners');
-  const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
+  // Avisos importantes: os urgentes e os que pedem a sua confirmação de leitura (sem repetir).
+  const pedeLeitura = (c: Comunicado) => !!c.exige_leitura && !c.lido;
+  const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente' || pedeLeitura(c)).slice(0, 3);
   // Documentos mais recentemente revisados (os sem data de revisão ficam por último).
   const recentes = [...(docs ?? [])].sort((a, b) => (b.revisado_em ?? '').localeCompare(a.revisado_em ?? '')).slice(0, 4);
   const heroPadrao = (
@@ -63,7 +65,7 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
                   <li key={c.slug}>
                     <a className="mini-item" href={`#comunicados/${encodeURIComponent(c.slug)}`}>
                       <span className="mini-ico urgente"><Icone nome="comunicados" tamanho={18} /></span>
-                      <span className="texto"><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></span>
+                      <span className="texto"><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}{pedeLeitura(c) ? ' · confirme a leitura' : ''}</small></span>
                       <Icone nome="dir" tamanho={15} />
                     </a>
                   </li>

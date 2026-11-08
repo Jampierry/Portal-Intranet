@@ -68,9 +68,9 @@ function DicaTela({ texto }: { texto: string }) {
 
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
 interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
-function Sino({ itens, ir, pedidos, irPedidos }: { itens: Comunicado[]; ir: () => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
+function Sino({ itens, leitura, ir, pedidos, irPedidos }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
   const [aberto, setAberto] = useState(false);
-  const total = itens.length + pedidos.length;
+  const total = itens.length + leitura.length + pedidos.length;
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -91,9 +91,13 @@ function Sino({ itens, ir, pedidos, irPedidos }: { itens: Comunicado[]; ir: () =
           {pedidos.map((p) => (
             <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{p.nome} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
           ))}
-          {pedidos.length > 0 && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
-          {itens.length === 0 && pedidos.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
-            <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
+          {(pedidos.length > 0 || leitura.length > 0) && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
+          {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
+            <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
+          ))}
+          {leitura.length > 0 && <small className="aviso-grupo">Pedem a sua confirmação de leitura</small>}
+          {leitura.map((c) => (
+            <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)} · clique para ler e confirmar</small></button>
           ))}
         </div>
       )}
@@ -121,7 +125,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const telasLiberadas = (['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
   const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
   const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
-  const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente');
+  const leitura = (comunicados ?? []).filter((c) => c.exige_leitura && !c.lido);
+  const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente' && !leitura.includes(c));
   // Quem pode redefinir senhas recebe no sino os pedidos de "Esqueci minha senha" (atualiza a cada minuto e ao trocar de tela).
   const veSenha = pode(usuario, 'cfg.usuarios.senha');
   const [pedidos, setPedidos] = useState<PedidoSenha[]>([]);
@@ -172,7 +177,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
-          <Sino itens={urgentes} ir={() => irPara('comunicados')} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} />
+          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} />
           <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Minha conta" title={`${perfil.nome} — minha conta`}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={28} /></button>
         </header>
 
