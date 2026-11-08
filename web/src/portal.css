@@ -1181,3 +1181,13 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 @keyframes kb-afasta { from { transform: scale(1.13); } to { transform: scale(1.02); } }
 @keyframes kb-direita { from { transform: scale(1.1) translateX(-2.5%); } to { transform: scale(1.1) translateX(2.5%); } }
 @media (prefers-reduced-motion: reduce) { .entrar-fundo-img { transition: opacity .6s ease; filter: none; } .entrar-fundo-img.ativa, .entrar-fundo-img.saindo { animation: none; } }
+
+/* Lateral da entrada: o texto extra (opcional) vira o título do bloco e as frases, o rodapé e o traço formam a sequência abaixo dele, com a mesma família, cor e ritmo. */
+.entrar-frase { display: grid; gap: 14px; justify-items: start; }
+.entrar-extra { margin: 0; max-width: 20ch; font-size: clamp(24px, 2.4vw, 34px); font-weight: 700; line-height: 1.12; letter-spacing: -.03em; text-wrap: balance; color: var(--menu-texto); text-shadow: 0 1px 10px rgba(0, 0, 0, .3); }
+.entrar-extra + .lema { padding-left: 14px; border-left: 2px solid var(--coral); }
+.entrar-marca .lema { font-size: 13px; font-weight: 600; letter-spacing: .28em; line-height: 1.85; color: color-mix(in srgb, var(--menu-texto) 92%, transparent); }
+.entrar-marca .lema .traco { margin-top: 10px; }
+.entrar-marca .entrar-frase > small { margin-top: 2px; font-size: 10px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--menu-suave); }
+.entrar-marca.previa .entrar-extra { font-size: 19px; }
+.entrar-extra + .lema .traco { display: none; }
