@@ -1221,3 +1221,18 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .dica-tela-painel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: max-content; max-width: min(340px, 80vw); padding: 10px 12px; border-radius: 12px; background: var(--card); color: var(--texto); border: 1px solid var(--linha); box-shadow: 0 10px 28px rgba(0, 0, 0, .22); font-size: 12.5px; line-height: 1.4; font-weight: 500; white-space: normal; }
 .faixa-espaco { flex: 1; min-width: 0; }
 @media (max-width: 860px) { .faixa-espaco { display: none; } }
+
+/* Início: aniversariantes do mês e novos colaboradores (cadastro do RH em Publicar) */
+.pessoas-mes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px 28px; }
+.pm-col { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.pm-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 232px; overflow-y: auto; padding-right: 4px; }
+.pm-lista li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; border: 1px solid var(--linha-suave); }
+.pm-lista li.pm-hoje { border-color: var(--coral); background: color-mix(in srgb, var(--coral) 10%, transparent); }
+.pm-lista li > div { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.pm-lista b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-lista small { color: var(--suave); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-lista em { color: var(--suave); font-size: 11.5px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-data { flex: none; font-size: 12px; font-weight: 700; color: var(--vinho-texto); }
+.pm-hoje .pm-data { color: var(--coral); text-transform: uppercase; letter-spacing: .06em; }
+.pm-avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: color-mix(in srgb, var(--vinho) 22%, var(--card)); color: var(--vinho-texto); font-weight: 800; font-size: 13px; }
+.pm-avatar img { width: 100%; height: 100%; object-fit: cover; }

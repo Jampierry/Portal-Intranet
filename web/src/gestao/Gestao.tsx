@@ -13,6 +13,7 @@ import { CalendarioConfig } from './CalendarioConfig';
 import { EntradaConfig } from './EntradaConfig';
 import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
+import { Aniversariantes, NovosColaboradores } from './PessoasMes';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -224,9 +225,9 @@ function Aplicativos({ busca, limparBusca, favoritos, alternarFavorito }: { busc
   );
 }
 
-type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'contatos' | 'aplicacoes';
+type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'aniversariantes' | 'novos' | 'contatos' | 'aplicacoes';
 const ABAS_PUBLICAR: [AbaPub, string][] = [
-  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
+  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['aniversariantes', 'Aniversariantes'], ['novos', 'Novos colaboradores'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
@@ -238,7 +239,7 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
   const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, contatos e aplicativos." />
+      <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, aniversariantes, novos colaboradores, contatos e aplicativos." />
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
@@ -248,6 +249,8 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
       {aba === 'institucional' && <Institucional />}
       {aba === 'documentos' && <Documentos />}
       {aba === 'destaques' && <Destaques />}
+      {aba === 'aniversariantes' && <Aniversariantes />}
+      {aba === 'novos' && <NovosColaboradores />}
       {aba === 'contatos' && <Contatos />}
       {aba === 'aplicacoes' && <Aplicativos busca={busca} limparBusca={limparBusca} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
       </PermissoesCtx.Provider>

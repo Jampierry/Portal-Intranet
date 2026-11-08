@@ -5,6 +5,7 @@ import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
 import { Novidades } from './Novidades';
 import { MissaoVisaoValores } from './MissaoVisaoValores';
+import { PessoasDoMes } from './PessoasDoMes';
 import { ListaComunicados } from '../comunicados/Comunicados';
 import { dataCurta, useLista, type Banner, type Comunicado, type Documento } from '../dados';
 import type { Tela } from '../Menu';
@@ -43,6 +44,7 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
             <MissaoVisaoValores />
             <Destaques compacto />
           </div>
+          <PessoasDoMes />
           {veComunicados && <section className="cartao-sec" aria-labelledby="com-rec">
             <div className="sec-topo">
               <h2 id="com-rec"><Icone nome="comunicados" tamanho={24} /> Comunicados</h2>
