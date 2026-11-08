@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone, IconeSistema } from '../icones';
 import { Capa, Lema } from '../Capa';
+import { MarcaEntrada, useEntrada } from '../MarcaEntrada';
 import { definirEmpresa, LogoNome, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
 
 async function enviarIcone(arq: File): Promise<string> {
@@ -19,6 +20,7 @@ const limpas = (l: string[]) => l.map((x) => x.trim()).filter(Boolean);
 /** Configurações › Empresa: nome, textos e ícone que aparecem no menu, rodapé, login e painéis; feriados municipais. Com prévia ao lado. */
 export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
   const edita = permissoes.includes('cfg.empresa.editar');
+  const entrada = useEntrada();
   const [cfg, setCfg] = useState<ConfigEmpresa | null>(null);
   const [salvo, setSalvo] = useState('');
   const [aviso, setAviso] = useState('');
@@ -142,6 +144,21 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
 
         <aside className="empcfg-previa" aria-label="Prévia">
           <small className="suave">Como vai aparecer</small>
+          <span className="prev-rotulo">Tela de entrada (login)</span>
+          <div className="prev-login" aria-label="Prévia da tela de entrada">
+            <main className="entrar">
+              <MarcaEntrada cfg={entrada} empresa={cfg} />
+              <section className="entrar-form">
+                <div className="entrar-card">
+                  <small className="entrar-eyebrow">{cfg.nome_portal}</small>
+                  <h1>Entrar no portal</h1>
+                  <p className="suave">Use o login e a senha que o administrador criou para você.</p>
+                  <div className="entrar-campos"><span className="prev-campo">seu.login</span><span className="prev-campo">Sua senha</span><span className="btn entrar-botao">Entrar</span></div>
+                </div>
+                <small className="suave entrar-rodape">{cfg.nome}</small>
+              </section>
+            </main>
+          </div>
           <span className="prev-rotulo">Menu lateral</span>
           <div className="menu prev-menu-real">
             <div className="sbtop">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Lema } from './Capa';
-import { LogoEmpresa, LogoNome, useEmpresa } from './empresa';
+import { IconeSistema } from './icones';
+import { LogoEmpresa, LogoNome, useEmpresa, type ConfigEmpresa } from './empresa';
 
 /** Configuração da lateral da tela de entrada (vem de /api/entrada; editada em Configurações › Tela de entrada). */
 export interface ConfigEntrada {
@@ -29,9 +30,10 @@ export function useEntrada() {
 }
 
 /** Lateral colorida da entrada: cor sólida, imagem fixa ou carrossel, com ícone, título, frase e textos. Usada também na prévia da configuração. */
-export function MarcaEntrada({ cfg, previa = false }: { cfg: ConfigEntrada; previa?: boolean }) {
+export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: ConfigEntrada; previa?: boolean; empresa?: ConfigEmpresa }) {
   const [i, setI] = useState(0);
-  const empresa = useEmpresa();
+  const salva = useEmpresa();
+  const empresa = rascunho ?? salva;
   const imagens = cfg.fundo === 'cor' ? [] : cfg.fundo === 'imagem' ? cfg.imagens.slice(0, 1) : cfg.imagens;
   const reduzido = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   useEffect(() => {
@@ -46,8 +48,8 @@ export function MarcaEntrada({ cfg, previa = false }: { cfg: ConfigEntrada; prev
       {imagens.map((u, k) => <div key={u} className={`entrar-fundo-img${k === i ? ' ativa' : ''}`} style={{ backgroundImage: `url(${u})` }} />)}
       {imagens.length > 0 && <div className="entrar-fundo-veu" style={{ background: `linear-gradient(180deg, rgba(0,0,0,${veu * 0.55}) 0%, rgba(0,0,0,${veu}) 100%)` }} />}
       <div className="entrar-logo">
-        <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />
-        {(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome classe="entrar-nome-img" /> : <span>{empresa.nome}</span>}
+        {rascunho ? (rascunho.logo ? <img className="entrar-logo-img" src={rascunho.logo} alt="" width={34} height={34} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={34} />) : <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />}
+        {(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome cfg={rascunho} classe="entrar-nome-img" /> : <span>{empresa.nome}</span>}
       </div>
       <div className="entrar-frase">
         {cfg.texto_extra && <p className="entrar-extra">{cfg.texto_extra}</p>}
