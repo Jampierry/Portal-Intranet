@@ -30,7 +30,7 @@ function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => voi
 
 /** Lista de aplicativos restritos de uma pessoa (marcados = ela vê). Usada na janela "Aplicativos" e dentro de "Editar usuário". */
 function AppsDaPessoa({ id, marcados, mudar }: { id: number; marcados: string[]; mudar: (m: string[]) => void }) {
-  const [info, setInfo] = useState<{ restritas: { slug: string; nome: string; categoria: string; ativo: number }[]; liberados: string[]; admin: boolean } | null>(null);
+  const [info, setInfo] = useState<{ restritas: { slug: string; nome: string; categoria: string; ativo: number }[]; liberados: string[]; doPerfil: string[]; perfilNome: string; admin: boolean } | null>(null);
   const [erro, setErro] = useState('');
   useEffect(() => { api<NonNullable<typeof info>>(`/api/usuarios/${id}/aplicativos`).then((r) => { setInfo(r); mudar(r.liberados); }).catch((e) => setErro((e as Error).message)); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   const alternar = (slug: string) => mudar(marcados.includes(slug) ? marcados.filter((x) => x !== slug) : [...marcados, slug]);
@@ -40,12 +40,12 @@ function AppsDaPessoa({ id, marcados, mudar }: { id: number; marcados: string[];
       {!info && !erro && <p className="suave">Carregando…</p>}
       {info && (
         <>
-          <p className="suave" style={{ marginTop: 0 }}>Os aplicativos <b>comuns</b> aparecem para todos. Marque abaixo quais aplicativos <b>restritos</b> esta pessoa vê.</p>
+          <p className="suave" style={{ marginTop: 0 }}>Os aplicativos <b>comuns</b> aparecem para todos. Os <b>restritos</b> que o perfil <b>{info.perfilNome}</b> libera já vêm marcados (e travados). Marque abaixo outros aplicativos restritos só para esta pessoa.</p>
           {info.admin && <p className="suave">Administradores veem todos os aplicativos, independente desta lista.</p>}
           {info.restritas.length === 0 ? <p className="vazio">Nenhum aplicativo restrito ainda. Para limitar um aplicativo a certas pessoas: Publicar › Aplicativos › Editar › marque “Restrita”.</p> : (
             <div className="lista-marcar" role="group" aria-label="Aplicativos restritos">
               {info.restritas.map((a) => (
-                <label key={a.slug} className="linha"><input type="checkbox" checked={marcados.includes(a.slug)} onChange={() => alternar(a.slug)} />{a.nome} <small className="suave">{a.categoria}{a.ativo ? '' : ' · inativo'}</small></label>
+                <label key={a.slug} className="linha"><input type="checkbox" checked={info.doPerfil.includes(a.slug) || marcados.includes(a.slug)} disabled={info.doPerfil.includes(a.slug)} onChange={() => alternar(a.slug)} />{a.nome} <small className="suave">{a.categoria}{a.ativo ? '' : ' · inativo'}{info.doPerfil.includes(a.slug) ? ` · pelo perfil ${info.perfilNome}` : marcados.includes(a.slug) ? ' · só esta pessoa' : ''}</small></label>
               ))}
             </div>
           )}
@@ -177,7 +177,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 }
 
 const ACAO: Record<string, string> = {
-  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
+  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',

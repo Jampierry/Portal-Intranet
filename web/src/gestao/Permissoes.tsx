@@ -69,6 +69,35 @@ function GradePermissoes({ catalogo, marcadas, mudar, travada, marca }: {
   );
 }
 
+/** Aplicativos restritos que o perfil libera (quem tem o perfil vê; cada pessoa ainda pode receber extras em Usuários). */
+function AppsDoPerfil({ codigo, marcados, mudar, travada }: { codigo: string | null; marcados: string[]; mudar: (m: string[]) => void; travada: boolean }) {
+  const [restritas, setRestritas] = useState<{ slug: string; nome: string; categoria: string; ativo: number }[] | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => {
+    api<{ slug: string; nome: string; categoria: string; ativo: number }[]>('/api/aplicativos-restritos').then(setRestritas).catch((e) => setErro((e as Error).message));
+    if (codigo) api<{ liberados: string[] }>(`/api/perfis/${codigo}/aplicativos`).then((r) => mudar(r.liberados)).catch((e) => setErro((e as Error).message));
+  }, [codigo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alternar = (slug: string) => mudar(marcados.includes(slug) ? marcados.filter((x) => x !== slug) : [...marcados, slug]);
+  return (
+    <fieldset className="perm-usuario-caixa">
+      <legend>Aplicativos restritos deste perfil</legend>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {!restritas && !erro && <p className="suave">Carregando…</p>}
+      {travada && <p className="suave" style={{ margin: 0 }}>O Administrador vê todos os aplicativos, sempre.</p>}
+      {restritas && !travada && (
+        <>
+          <p className="suave" style={{ marginTop: 0 }}>Os aplicativos <b>comuns</b> aparecem para todos. Marque os <b>restritos</b> que quem tem este perfil vê. Para dar um aplicativo a uma pessoa só, use <b>Usuários › Aplicativos</b>.</p>
+          {restritas.length === 0 ? <p className="vazio">Nenhum aplicativo restrito ainda. Para restringir um: Publicar › Aplicativos › Editar › marque “Restrita”.</p> : (
+            <div className="lista-marcar" role="group" aria-label="Aplicativos restritos do perfil">
+              {restritas.map((a) => <label key={a.slug} className="linha"><input type="checkbox" checked={marcados.includes(a.slug)} onChange={() => alternar(a.slug)} />{a.nome} <small className="suave">{a.categoria}{a.ativo ? '' : ' · inativo'}</small></label>)}
+            </div>
+          )}
+        </>
+      )}
+    </fieldset>
+  );
+}
+
 const resumo = (catalogo: GrupoPerm[], p: PerfilPerm) => catalogo.map((g) => {
   const chaves = g.areas.flatMap((a) => a.acoes.map((x) => x.chave));
   return `${g.grupo}: ${chaves.filter((c) => p.permissoes.includes(c)).length} de ${chaves.length}`;
@@ -80,14 +109,14 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
   const ord = useOrdenacao(dados?.perfis ?? null, { perfil: (p) => p.nome, codigo: (p) => p.codigo, usuarios: (p) => p.usuarios, tipo: (p) => (p.sistema ? 'Padrão do sistema' : 'Personalizado') });
   const [aviso, setAviso] = useState('');
   const [falha, setFalha] = useState('');
-  const [form, setForm] = useState<{ codigo: string | null; nome: string; marcadas: Set<string>; sistema: boolean; fixo: boolean } | null>(null);
+  const [form, setForm] = useState<{ codigo: string | null; nome: string; marcadas: Set<string>; sistema: boolean; fixo: boolean; apps: string[] } | null>(null);
   if (erro) return <p className="erro" role="alert">{erro}</p>;
   if (!dados) return <p className="vazio">Carregando…</p>;
   const pode = (c: string) => permissoes.includes(c);
 
   const abrir = (p?: PerfilPerm) => setForm(p
-    ? { codigo: p.codigo, nome: p.nome, marcadas: new Set(p.permissoes), sistema: p.sistema, fixo: p.fixo }
-    : { codigo: null, nome: '', marcadas: new Set(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.pessoas', 'ver.ajuda']), sistema: false, fixo: false });
+    ? { codigo: p.codigo, nome: p.nome, marcadas: new Set(p.permissoes), sistema: p.sistema, fixo: p.fixo, apps: [] }
+    : { codigo: null, nome: '', marcadas: new Set(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.pessoas', 'ver.ajuda']), sistema: false, fixo: false, apps: [] });
   const apagar = async (p: PerfilPerm) => {
     if (!window.confirm(`Apagar o perfil "${p.nome}"? Essa ação não pode ser desfeita.`)) return;
     setFalha(''); setAviso('');
@@ -131,7 +160,9 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
           aoEnviar={async () => {
             if (form.fixo) { setForm(null); return; }
             const corpo = { nome: form.nome, permissoes: [...form.marcadas] };
-            if (form.codigo) await api(`/api/perfis/${form.codigo}`, corpo, 'PUT'); else await api('/api/perfis', corpo);
+            let codigo = form.codigo;
+            if (codigo) await api(`/api/perfis/${codigo}`, corpo, 'PUT'); else codigo = (await api<PerfilPerm>('/api/perfis', corpo)).codigo;
+            if (permissoes.includes('cfg.perfis.editar') || souAdmin) await api(`/api/perfis/${codigo}/aplicativos`, { liberados: form.apps }, 'PUT');
             setAviso(form.codigo ? `Perfil "${form.nome}" salvo. Vale já para quem está usando o portal.` : `Perfil "${form.nome}" criado.`);
             setForm(null); recarregar();
           }}>
@@ -139,6 +170,7 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
             {form.sistema && <small className="suave">Perfis padrão do sistema mantêm o nome.</small>}</label>
           <p className="suave" style={{ margin: '4px 0' }}>{form.fixo ? 'O Administrador sempre pode tudo.' : 'Marque o que este perfil acessa e pode fazer. Em cada tela/aba, a primeira caixa libera o acesso e as outras dizem o que a pessoa pode fazer dentro dela.'}</p>
           <GradePermissoes catalogo={dados.catalogo} marcadas={form.marcadas} mudar={(marcadas) => setForm({ ...form, marcadas })} travada={form.fixo} />
+          <AppsDoPerfil codigo={form.codigo} marcados={form.apps} mudar={(apps) => setForm((f) => (f ? { ...f, apps } : f))} travada={form.fixo} />
           {!souAdmin && !form.fixo && <p className="suave">Você só consegue conceder permissões que você mesmo tem.</p>}
         </JanelaForm>
       )}

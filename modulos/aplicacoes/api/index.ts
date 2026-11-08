@@ -1,24 +1,25 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
+import { nomeDoPerfil, perfilExiste } from '../../acessos/api/permissoes.ts';
 import { buscarIcone } from './favicon.ts';
 import { ErroValidacao, corpoObjeto, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
 const CAMPOS = 'slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo, restrita';
-/** Aplicativo restrito só aparece para quem foi liberado (administrador vê todos). */
-const VISIVEL = '(restrita = 0 OR EXISTS (SELECT 1 FROM usuarios_aplicativos ua WHERE ua.usuario_id = ? AND ua.aplicacao_slug = aplicacoes.slug))';
+/** Aplicativo restrito aparece para quem foi liberado pessoalmente OU por ter um perfil que o libera (administrador vê todos). Parâmetros: id do usuário e perfil dele. */
+const VISIVEL = '(restrita = 0 OR EXISTS (SELECT 1 FROM usuarios_aplicativos ua WHERE ua.usuario_id = ? AND ua.aplicacao_slug = aplicacoes.slug) OR EXISTS (SELECT 1 FROM perfis_aplicativos pa WHERE pa.perfil = ? AND pa.aplicacao_slug = aplicacoes.slug))';
 
 export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/aplicacoes', async (req) => req.usuario!.perfil === 'admin'
     ? db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 ORDER BY nome`).all()
-    : db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 AND ${VISIVEL} ORDER BY nome`).all(req.usuario!.id));
+    : db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 AND ${VISIVEL} ORDER BY nome`).all(req.usuario!.id, req.usuario!.perfil));
 
   // ----- Favoritos de cada usuário (guardados no servidor) -----
   app.get('/api/favoritos', async (req) =>
-    (db.prepare(`SELECT f.aplicacao_slug FROM favoritos f JOIN aplicacoes ON aplicacoes.slug = f.aplicacao_slug WHERE f.usuario_id = ? AND (? = 'admin' OR ${VISIVEL}) ORDER BY f.criado_em`).all(req.usuario!.id, req.usuario!.perfil, req.usuario!.id) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
+    (db.prepare(`SELECT f.aplicacao_slug FROM favoritos f JOIN aplicacoes ON aplicacoes.slug = f.aplicacao_slug WHERE f.usuario_id = ? AND (? = 'admin' OR ${VISIVEL}) ORDER BY f.criado_em`).all(req.usuario!.id, req.usuario!.perfil, req.usuario!.id, req.usuario!.perfil) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
   );
   app.put<{ Params: { slug: string } }>('/api/favoritos/:slug', async (req, resp) => {
-    if (!db.prepare(`SELECT 1 FROM aplicacoes WHERE slug = ? AND ativo = 1 AND (? = 'admin' OR ${VISIVEL})`).get(req.params.slug, req.usuario!.perfil, req.usuario!.id)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
+    if (!db.prepare(`SELECT 1 FROM aplicacoes WHERE slug = ? AND ativo = 1 AND (? = 'admin' OR ${VISIVEL})`).get(req.params.slug, req.usuario!.perfil, req.usuario!.id, req.usuario!.perfil)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     db.prepare('INSERT OR IGNORE INTO favoritos (usuario_id, aplicacao_slug, criado_em) VALUES (?, ?, ?)').run(req.usuario!.id, req.params.slug, new Date().toISOString());
     return { ok: true };
   });
@@ -87,7 +88,8 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     const u = alvo(req.params.id); if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
     const restritas = db.prepare('SELECT slug, nome, categoria, ativo FROM aplicacoes WHERE restrita = 1 ORDER BY nome').all();
     const liberados = (db.prepare('SELECT aplicacao_slug FROM usuarios_aplicativos WHERE usuario_id = ?').all(u.id) as { aplicacao_slug: string }[]).map((r) => r.aplicacao_slug);
-    return { restritas, liberados, admin: u.perfil === 'admin' };
+    const doPerfil = (db.prepare('SELECT aplicacao_slug FROM perfis_aplicativos WHERE perfil = ?').all(u.perfil) as { aplicacao_slug: string }[]).map((r) => r.aplicacao_slug);
+    return { restritas, liberados, doPerfil, perfilNome: nomeDoPerfil(db, u.perfil), admin: u.perfil === 'admin' };
   });
   app.put<{ Params: { id: string } }>('/api/usuarios/:id/aplicativos', doUsuario, async (req, resp) => {
     const u = alvo(req.params.id); if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
@@ -99,8 +101,36 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     db.prepare('DELETE FROM usuarios_aplicativos WHERE usuario_id = ?').run(u.id);
     const ins = db.prepare('INSERT INTO usuarios_aplicativos (usuario_id, aplicacao_slug) VALUES (?, ?)');
     for (const slug of novos) ins.run(u.id, slug);
-    db.prepare('DELETE FROM favoritos WHERE usuario_id = ? AND aplicacao_slug IN (SELECT slug FROM aplicacoes WHERE restrita = 1) AND aplicacao_slug NOT IN (SELECT aplicacao_slug FROM usuarios_aplicativos WHERE usuario_id = ?)').run(u.id, u.id);
+    db.prepare('DELETE FROM favoritos WHERE usuario_id = ? AND aplicacao_slug IN (SELECT slug FROM aplicacoes WHERE restrita = 1) AND aplicacao_slug NOT IN (SELECT aplicacao_slug FROM usuarios_aplicativos WHERE usuario_id = ?) AND aplicacao_slug NOT IN (SELECT aplicacao_slug FROM perfis_aplicativos WHERE perfil = ?)').run(u.id, u.id, u.perfil);
     auditar(db, req.usuario!.id, 'usuario_aplicativos_alterados', { usuario: u.login, liberados: novos.length });
+    return { ok: true, liberados: novos };
+  });
+
+  // ----- Aplicativos de cada PERFIL (Configurações › Perfis): o que o perfil libera; cada pessoa ainda pode receber extras -----
+  const restritasLista = () => db.prepare('SELECT slug, nome, categoria, ativo FROM aplicacoes WHERE restrita = 1 ORDER BY nome').all();
+  app.get('/api/aplicativos-restritos', { preHandler: exigirPerm('cfg.perfis.ver', 'cfg.usuarios.aplicativos') }, async () => restritasLista());
+  app.get<{ Params: { codigo: string } }>('/api/perfis/:codigo/aplicativos', { preHandler: exigirPerm('cfg.perfis.ver') }, async (req, resp) => {
+    if (!perfilExiste(db, req.params.codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
+    const liberados = (db.prepare('SELECT aplicacao_slug FROM perfis_aplicativos WHERE perfil = ?').all(req.params.codigo) as { aplicacao_slug: string }[]).map((r) => r.aplicacao_slug);
+    return { restritas: restritasLista(), liberados, admin: req.params.codigo === 'admin' };
+  });
+  app.put<{ Params: { codigo: string } }>('/api/perfis/:codigo/aplicativos', { preHandler: exigirPerm('cfg.perfis.editar') }, async (req, resp) => {
+    const codigo = req.params.codigo;
+    if (!perfilExiste(db, codigo)) return resp.code(404).send({ erro: 'Perfil não encontrado.' });
+    if (codigo === 'admin') return resp.code(400).send({ erro: 'O administrador sempre vê todos os aplicativos.' });
+    const lista = corpoObjeto(req.body).liberados;
+    if (!Array.isArray(lista) || lista.some((x) => typeof x !== 'string')) throw new ErroValidacao('Aplicativos: envie a lista de aplicativos liberados.');
+    const validos = new Set((restritasLista() as { slug: string }[]).map((r) => r.slug));
+    const novos = [...new Set(lista as string[])].filter((x) => validos.has(x));
+    db.prepare('DELETE FROM perfis_aplicativos WHERE perfil = ?').run(codigo);
+    const ins = db.prepare('INSERT INTO perfis_aplicativos (perfil, aplicacao_slug) VALUES (?, ?)');
+    for (const slug of novos) ins.run(codigo, slug);
+    // Quem perdeu o acesso (nem pelo perfil, nem pessoalmente) deixa de ter o aplicativo nos favoritos.
+    db.prepare(`DELETE FROM favoritos WHERE usuario_id IN (SELECT id FROM usuarios WHERE perfil = ?)
+                AND aplicacao_slug IN (SELECT slug FROM aplicacoes WHERE restrita = 1)
+                AND aplicacao_slug NOT IN (SELECT aplicacao_slug FROM perfis_aplicativos WHERE perfil = ?)
+                AND NOT EXISTS (SELECT 1 FROM usuarios_aplicativos ua WHERE ua.usuario_id = favoritos.usuario_id AND ua.aplicacao_slug = favoritos.aplicacao_slug)`).run(codigo, codigo);
+    auditar(db, req.usuario!.id, 'perfil_aplicativos_alterados', { perfil: codigo, liberados: novos.length });
     return { ok: true, liberados: novos };
   });
 
