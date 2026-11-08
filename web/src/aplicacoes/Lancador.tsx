@@ -6,13 +6,13 @@ import { useLista, type Aplicacao } from '../dados';
 import { LinkApp } from './LinkApp';
 
 
-/** Barra lateral direita de aplicativos. Recolhida (desktop): só os ícones dos favoritos. Aberta: abas Favoritos / Todos os apps.
+/** Barra lateral direita de aplicativos. Recolhida (desktop): só os ícones dos favoritos. Aberta: abas Todos os apps / Favoritos.
  *  No celular some e vira uma gaveta sobre a página, aberta pelo botão de apps do topo. */
 export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito }: {
   aberto: boolean; alternar: () => void; fechar: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
-  const [aba, setAba] = useState<'favoritos' | 'todos'>('favoritos');
+  const [aba, setAba] = useState<'favoritos' | 'todos'>('todos');
   // Nome do app ao passar o mouse (ou focar) no ícone da barra recolhida. Fica fora da barra (portal) porque ela corta o que passa da borda.
   const [dica, setDica] = useState<{ nome: string; y: number; x: number } | null>(null);
   const mostrar = (nome: string) => (e: SyntheticEvent<HTMLElement>) => { const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect(); setDica({ nome, y: r.top + r.height / 2, x: innerWidth - r.left + 10 }); };
@@ -48,7 +48,7 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
         {aberto && (
           <div className="lancador-corpo">
             <div className="abas" role="tablist" aria-label="Aplicativos">
-              {(['favoritos', 'todos'] as const).map((id) => (
+              {(['todos', 'favoritos'] as const).map((id) => (
                 <button key={id} role="tab" aria-selected={aba === id} onClick={() => setAba(id)}>{id === 'favoritos' ? `Favoritos (${favs.length})` : 'Todos os apps'}</button>
               ))}
             </div>
