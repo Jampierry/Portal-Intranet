@@ -66,20 +66,6 @@ function DicaTela({ texto }: { texto: string }) {
   );
 }
 
-/** Faixa da barra superior: o comunicado urgente mais recente (com "+N" se houver mais). Sem urgente, não mostra nada. */
-function FaixaUrgente({ itens, abrir }: { itens: Comunicado[]; abrir: (slug?: string) => void }) {
-  if (itens.length === 0) return <span className="faixa-espaco" />;
-  const [c, ...resto] = itens;
-  return (
-    <p className="faixa-urgente" role="status">
-      <Icone nome="sino" tamanho={14} />
-      <b>Urgente</b>
-      <button type="button" onClick={() => abrir(c.slug)} title={c.titulo}>{c.titulo}</button>
-      {resto.length > 0 && <button type="button" className="faixa-mais" onClick={() => abrir()} title="Ver todos os comunicados">+{resto.length}</button>}
-    </p>
-  );
-}
-
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
 interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
 function Sino({ itens, ir, pedidos, irPedidos }: { itens: Comunicado[]; ir: () => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
@@ -181,7 +167,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <DicaTela texto={AVISOS[tela]} />
           <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
-          <FaixaUrgente itens={urgentes} abrir={(slug) => irPara('comunicados', slug)} />
+          <span className="faixa-espaco" aria-hidden="true" />
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
