@@ -1129,3 +1129,11 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .empcfg-icone { align-items: center; }
 .empcfg-icone-acoes { justify-items: center; text-align: center; }
 .empcfg-logonome { align-self: end; }
+
+/* Prévia "Como vai aparecer": painel em cor de destaque do tema, para se distinguir do formulário */
+.empcfg-previa { padding: 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--vinho) 50%, transparent); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); box-shadow: 0 8px 24px -14px color-mix(in srgb, var(--vinho) 70%, transparent); }
+.empcfg-previa > small.suave { color: var(--vinho-texto); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.empcfg-previa .prev-menu { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--vinho) 55%, transparent); }
+.empcfg-previa .prev-destaque { background: var(--card); border-color: color-mix(in srgb, var(--vinho) 40%, transparent); border-left: 4px solid var(--vinho); }
+.empcfg-previa .prev-rodape { padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px dashed color-mix(in srgb, var(--vinho) 45%, transparent); color: var(--texto); }
+.empcfg-previa .prev-rodape b { color: var(--vinho-texto); }
