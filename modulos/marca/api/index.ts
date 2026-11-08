@@ -1,0 +1,140 @@
+// Identidade do portal (reutilizável por qualquer empresa): nome, textos, ícone e feriados municipais (Configurações › Empresa)
+// e a lateral da tela de entrada (Configurações › Tela de entrada). A leitura e as imagens são públicas, porque o login
+// aparece antes de entrar; só quem tem a permissão cfg.empresa.editar / cfg.entrada.editar altera.
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import type { FastifyInstance } from 'fastify';
+import type { Banco } from '../../../servidor/src/db.ts';
+import { config } from '../../../servidor/src/config.ts';
+import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
+import { guardarImagem } from '../../imagens/api/index.ts';
+
+export interface FeriadoMunicipal { titulo: string; dia: number; mes: number }
+export interface ConfigEmpresa {
+  nome: string;
+  nome_portal: string;
+  slogan: string;
+  frase_rodape: string;
+  lema: string[];
+  rotulo_destaque: string;
+  lema_destaque: string[];
+  logo: string | null;
+  feriados_municipais: FeriadoMunicipal[];
+}
+export interface ConfigEntrada {
+  fundo: 'cor' | 'imagem' | 'carrossel';
+  imagens: string[];
+  intervalo: number;
+  escurecer: number;
+  linhas: string[];
+  rodape: string;
+  texto_extra: string;
+}
+/** Padrões neutros: uma instalação nova não carrega o nome de nenhuma empresa. */
+export const PADRAO_EMPRESA: ConfigEmpresa = {
+  nome: 'Sua Empresa', nome_portal: 'Portal Intranet', slogan: '', frase_rodape: 'Conectando pessoas, ideias e grandes movimentos.',
+  lema: ['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO'], rotulo_destaque: 'DESTAQUE', lema_destaque: ['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE'],
+  logo: null, feriados_municipais: [],
+};
+export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
+
+const URL_IMAGEM = /^\/api\/publico\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)$/;
+const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };
+
+function ler<T>(db: Banco, chave: string, padrao: T): T {
+  const r = db.prepare('SELECT valor FROM portal_config WHERE chave = ?').get(chave) as { valor: string } | undefined;
+  if (!r) return structuredClone(padrao);
+  try { return { ...structuredClone(padrao), ...(JSON.parse(r.valor) as Partial<T>) }; } catch { return structuredClone(padrao); }
+}
+function gravar(db: Banco, chave: string, valor: unknown) {
+  db.prepare('INSERT INTO portal_config (chave, valor, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em')
+    .run(chave, JSON.stringify(valor), new Date().toISOString());
+}
+export const lerEmpresa = (db: Banco) => ler(db, 'empresa', PADRAO_EMPRESA);
+export const lerEntrada = (db: Banco) => ler(db, 'entrada', PADRAO_ENTRADA);
+
+const curto = (v: unknown, rotulo: string, max: number, obrigatorio = false) => {
+  const s = String(v ?? '').trim();
+  if (obrigatorio && !s) throw new ErroValidacao(`${rotulo}: preencha.`);
+  if (s.length > max) throw new ErroValidacao(`${rotulo}: no máximo ${max} caracteres.`);
+  return s;
+};
+const listaDeLinhas = (v: unknown, rotulo: string) => {
+  const linhas = (Array.isArray(v) ? v : []).map((l) => String(l).trim()).filter(Boolean);
+  if (linhas.length > 5 || linhas.some((l) => l.length > 40)) throw new ErroValidacao(`${rotulo}: até 5 linhas de 40 caracteres.`);
+  return linhas;
+};
+const imagemPropria = (v: unknown, rotulo: string) => {
+  if (!v) return null;
+  const s = String(v);
+  if (!URL_IMAGEM.test(s)) throw new ErroValidacao(`${rotulo}: use só uma imagem enviada por esta tela.`);
+  return s;
+};
+
+function validarEmpresa(c: Record<string, unknown>): ConfigEmpresa {
+  const feriados = (Array.isArray(c.feriados_municipais) ? c.feriados_municipais : []).map((f) => {
+    const o = (f ?? {}) as Record<string, unknown>, dia = Number(o.dia), mes = Number(o.mes);
+    const ok = Number.isInteger(dia) && Number.isInteger(mes) && mes >= 1 && mes <= 12 && dia >= 1 && dia <= new Date(2024, mes, 0).getDate();
+    if (!ok) throw new ErroValidacao('Feriado municipal: informe um dia e um mês válidos.');
+    return { titulo: curto(o.titulo, 'Feriado municipal', 80, true), dia, mes };
+  });
+  if (feriados.length > 10) throw new ErroValidacao('Feriados municipais: no máximo 10.');
+  return {
+    nome: curto(c.nome, 'Nome da empresa', 40, true), nome_portal: curto(c.nome_portal, 'Nome do portal', 40, true),
+    slogan: curto(c.slogan, 'Slogan', 60), frase_rodape: curto(c.frase_rodape, 'Frase do rodapé', 120),
+    lema: listaDeLinhas(c.lema, 'Frase dos painéis'), rotulo_destaque: curto(c.rotulo_destaque, 'Rótulo do destaque', 20), lema_destaque: listaDeLinhas(c.lema_destaque, 'Frase do destaque'), logo: imagemPropria(c.logo, 'Ícone'), feriados_municipais: feriados,
+  };
+}
+function validarEntrada(c: Record<string, unknown>): ConfigEntrada {
+  const fundo = String(c.fundo ?? 'cor');
+  if (!['cor', 'imagem', 'carrossel'].includes(fundo)) throw new ErroValidacao('Fundo: escolha cor, imagem ou carrossel.');
+  const imagens = Array.isArray(c.imagens) ? c.imagens.map(String) : [];
+  if (imagens.length > 8) throw new ErroValidacao('Imagens: no máximo 8.');
+  if (imagens.some((u) => !URL_IMAGEM.test(u))) throw new ErroValidacao('Imagens: use só imagens enviadas por esta tela.');
+  if (fundo !== 'cor' && imagens.length === 0) throw new ErroValidacao('Envie ao menos uma imagem ou escolha o fundo em cor.');
+  const intervalo = Number(c.intervalo ?? 6), escurecer = Number(c.escurecer ?? 35);
+  if (!Number.isInteger(intervalo) || intervalo < 3 || intervalo > 30) throw new ErroValidacao('Tempo de troca: entre 3 e 30 segundos.');
+  if (!Number.isInteger(escurecer) || escurecer < 0 || escurecer > 80) throw new ErroValidacao('Escurecer a imagem: entre 0 e 80.');
+  return { fundo: fundo as ConfigEntrada['fundo'], imagens, intervalo, escurecer, linhas: listaDeLinhas(c.linhas, 'Frase'), rodape: curto(c.rodape, 'Texto pequeno', 60), texto_extra: curto(c.texto_extra, 'Texto extra', 200) };
+}
+
+export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
+  app.get('/api/empresa', async (_req, resp) => resp.header('Cache-Control', 'no-cache').send(lerEmpresa(db)));
+  app.get('/api/entrada', async (_req, resp) => resp.header('Cache-Control', 'no-cache').send(lerEntrada(db)));
+
+  // Só entrega imagens que alguma configuração usa (o resto da pasta de imagens continua exigindo login).
+  app.get<{ Params: { nome: string } }>('/api/publico/imagens/:nome', async (req, resp) => {
+    const m = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico)$/.exec(req.params.nome);
+    const url = `/api/publico/imagens/${req.params.nome}`;
+    const usada = lerEntrada(db).imagens.includes(url) || lerEmpresa(db).logo === url;
+    const pasta = resolve(process.env.PASTA_IMAGENS ?? join(config.raiz, 'dados-privados', 'imagens'));
+    const arq = m ? join(pasta, req.params.nome) : '';
+    if (!m || !usada || !existsSync(arq)) return resp.code(404).send({ erro: 'Imagem não encontrada.' });
+    return resp.header('Content-Type', MIME[m[1]]).header('X-Content-Type-Options', 'nosniff').header('Cache-Control', 'public, max-age=3600').send(readFileSync(arq));
+  });
+
+  const envio = (perm: string, acao: string) => app.post('/api/gestao/' + acao + '/imagens', { preHandler: exigirPerm(perm), bodyLimit: 5 * 1024 * 1024 }, async (req, resp) => {
+    const corpo = req.body;
+    if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha uma imagem PNG, JPG, WebP ou GIF.' });
+    const salvo = guardarImagem(corpo);
+    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como imagem PNG, JPG, WebP ou GIF.' });
+    auditar(db, req.usuario!.id, `${acao}_imagem_enviada`, { nome: salvo.nome, bytes: corpo.length });
+    return resp.code(201).send({ url: `/api/publico/imagens/${salvo.nome}` });
+  });
+  envio('cfg.empresa.editar', 'empresa');
+  envio('cfg.entrada.editar', 'entrada');
+
+  app.put('/api/gestao/empresa', { preHandler: exigirPerm('cfg.empresa.editar') }, async (req) => {
+    const nova = validarEmpresa(corpoObjeto(req.body));
+    gravar(db, 'empresa', nova);
+    auditar(db, req.usuario!.id, 'empresa_alterada', { nome: nova.nome });
+    return nova;
+  });
+  app.put('/api/gestao/entrada', { preHandler: exigirPerm('cfg.entrada.editar') }, async (req) => {
+    const nova = validarEntrada(corpoObjeto(req.body));
+    gravar(db, 'entrada', nova);
+    auditar(db, req.usuario!.id, 'entrada_alterada', { fundo: nova.fundo, imagens: nova.imagens.length });
+    return nova;
+  });
+}

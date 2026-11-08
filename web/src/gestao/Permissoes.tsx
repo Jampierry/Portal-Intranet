@@ -53,10 +53,10 @@ function GradePermissoes({ catalogo, marcadas, mudar, travada, marca }: {
                 {a.acoes.map((x, i) => {
                   const nota = marca?.(x.chave);
                   return (
-                    <label key={x.chave} className={`perm-check${i === 0 ? ' portao' : ''}`}>
+                    <label key={x.chave} className={`perm-check${i === 0 ? ' portao' : ''}`} title={nota ?? undefined}>
                       <input type="checkbox" checked={travada || marcadas.has(x.chave)} disabled={travada} onChange={() => mudar(alternarAcao(marcadas, a, x.chave))} />
                       <span>{x.rotulo}</span>
-                      {nota && <small className="perm-ajuste">{nota}</small>}
+                      {nota && <small className="perm-ajuste" aria-label={nota}>{nota.startsWith('liberado') ? '+ só ela' : '− só ela'}</small>}
                     </label>
                   );
                 })}
@@ -166,10 +166,12 @@ export function AjustesUsuario({ perfil, ajustes, mudar }: { perfil: string; aju
   return (
     <fieldset className="perm-usuario-caixa">
       <legend>Permissões desta pessoa</legend>
-      <p className="suave" style={{ margin: '0 0 8px' }}>
-        Vem marcado o que o perfil <b>{info?.nome}</b> permite. Marque ou desmarque para ajustar só esta pessoa: o que você mudar aqui vale por cima do perfil.
-        {qtd > 0 && <> <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar({})}>Voltar ao padrão do perfil ({qtd} ajuste{qtd > 1 ? 's' : ''})</button></>}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', margin: '0 0 8px' }}>
+        <p className="suave" style={{ margin: 0, flex: '1 1 260px' }}>
+          Vem marcado o que o perfil <b>{info?.nome}</b> permite. Marque ou desmarque para ajustar só esta pessoa: o que você mudar aqui vale por cima do perfil. Itens diferentes do perfil ganham a marca <b>+ só ela</b> (liberado) ou <b>− só ela</b> (bloqueado).
+        </p>
+        {qtd > 0 && <button type="button" className="btn btn-sec btn-pequeno" style={{ flex: '0 0 auto', whiteSpace: 'nowrap' }} onClick={() => mudar({})}>Voltar ao padrão do perfil ({qtd} ajuste{qtd > 1 ? 's' : ''})</button>}
+      </div>
       <GradePermissoes catalogo={dados.catalogo} marcadas={efetivas} mudar={aplicar}
         marca={(c) => (c in ajustes ? (ajustes[c] ? 'liberado só para esta pessoa' : 'bloqueado só para esta pessoa') : null)} />
     </fieldset>

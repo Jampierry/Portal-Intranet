@@ -12,6 +12,7 @@ import { rotasInstitucional } from '../../modulos/institucional/api/index.ts';
 import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
+import { rotasMarca } from '../../modulos/marca/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
 export const MODULOS = [
@@ -25,6 +26,7 @@ export const MODULOS = [
   { nome: 'inicio', rotas: rotasInicio },
   { nome: 'integracoes', rotas: rotasIntegracoes },
   { nome: 'institucional', rotas: rotasInstitucional },
+  { nome: 'marca', rotas: rotasMarca },
   { nome: 'pessoas', rotas: rotasPessoas },
 ];
 

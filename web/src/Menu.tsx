@@ -1,11 +1,12 @@
-import { Icone, IconeSistema } from './icones';
+import { Icone } from './icones';
+import { LogoEmpresa, useEmpresa } from './empresa';
 import { Calendario } from './Calendario';
 
-export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'pessoas' | 'ajuda';
+export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pessoas' | 'ajuda';
 
 // Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];
-const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['pessoas', 'Pessoas'], ['ajuda', 'Ajuda']];
+const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pessoas', 'Pessoas'], ['ajuda', 'Ajuda']];
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
@@ -16,15 +17,16 @@ interface Props {
 
 /** Menu lateral esquerdo: marca e navegação. Os aplicativos ficam na barra da direita; o cadastro deles, em Publicar › Aplicativos. */
 export function Menu(p: Props) {
+  const empresa = useEmpresa();
   const mini = p.recolhido;
-  const itens: Item[] = [...ITENS.slice(0, 3).filter(([id]) => id === 'inicio' || p.telasLiberadas.includes(id)), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(3).filter(([id]) => p.telasLiberadas.includes(id)), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
+  const itens: Item[] = [...ITENS.slice(0, 4).filter(([id]) => id === 'inicio' || p.telasLiberadas.includes(id)), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(4).filter(([id]) => p.telasLiberadas.includes(id)), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
   return (
     <aside className={`menu${mini ? ' mini' : ''}${p.gavetaAberta ? ' aberto' : ''}`} aria-label="Menu">
       <div className="sbtop">
         <button className="appbtn" onClick={p.alternar} aria-expanded={!mini} aria-label={mini ? 'Expandir menu' : 'Recolher menu'} title={mini ? 'Expandir menu' : 'Recolher menu'}>
-          <IconeSistema tamanho={30} />
+          <LogoEmpresa tamanho={30} />
         </button>
-        <div className="brandtxt"><span className="empnome">Di Paula</span><span>MODA EM MOVIMENTO</span></div>
+        <div className="brandtxt"><span className="empnome">{empresa.nome}</span>{empresa.slogan && <span>{empresa.slogan}</span>}</div>
       </div>
 
       <nav aria-label="Seções do portal">
@@ -37,7 +39,7 @@ export function Menu(p: Props) {
         ))}
       </nav>
 
-      {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} podeExcluir={p.podeExcluirData} />}
+      {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} podeExcluir={p.podeExcluirData} abrirCalendario={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
 
       {!mini && <div className="sbfoot"><span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span></div>}
     </aside>

@@ -23,6 +23,19 @@ export function conexaoZimbra(db: Banco): ConexaoZimbra | null {
   return null;
 }
 
+/** Agendas do Zimbra que o calendário exibe (lista guardada em Configurações › Calendário). Sem lista: só a agenda da empresa. */
+export function agendasExibir(db: Banco): string[] {
+  try {
+    const v = JSON.parse(ler(db, 'zimbra.agendas_exibir') || 'null');
+    if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim().slice(0, 80)).slice(0, 12);
+  } catch { /* lista inválida: usa o padrão */ }
+  const unica = conexaoZimbra(db)?.agenda; // agenda da empresa (banco ou ZIMBRA_AGENDA)
+  return unica ? [unica] : [];
+}
+export function gravarAgendasExibir(db: Banco, lista: string[]) {
+  db.prepare('INSERT INTO integracoes (chave, valor, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em')
+    .run('zimbra.agendas_exibir', JSON.stringify(lista), new Date().toISOString());
+}
 export const agendaSalva = (db: Banco) => ler(db, CHAVES.agenda);
 export const urlSalva = (db: Banco) => ler(db, CHAVES.url);
 export const temTokenSalvo = (db: Banco) => ler(db, CHAVES.token) !== '';

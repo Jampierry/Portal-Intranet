@@ -15,7 +15,10 @@ import { dataCurta, useLista, type Comunicado } from './dados';
 import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
 import { Documentos } from './documentos/Documentos';
+import { CalendarioPagina } from './CalendarioPagina';
+import { podeAbaCalendario } from './calendarioTipos';
 import { Lancador } from './aplicacoes/Lancador';
+import { useEmpresa } from './empresa';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
 
@@ -25,13 +28,16 @@ const ABAS: [Tela | 'menu' | 'apps', string, string][] = [['inicio', 'Início', 
 const AVISOS: Record<Tela, string> = {
   inicio: 'Aplicativos: use a barra da direita. No computador abrem em nova aba; no celular, use Voltar do navegador.',
   comunicados: 'Avisos publicados pelas áreas responsáveis.',
+  calendario: 'Feriados, datas importantes e as agendas da empresa. Use os filtros para escolher o que mostrar.',
   documentos: 'Os arquivos ficam nos sistemas de origem: abra pelo link oficial de cada documento.',
   publicar: 'O que for publicado aparece no portal conforme a situação e a janela de exibição.',
   configuracoes: 'Usuários, perfis e auditoria do portal. Só o administrador acessa.',
   pessoas: 'Contatos por área: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
 };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
+// Nome de cada tela, mostrado na barra superior universal (não aparece dentro da janela).
+const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Pessoas', ajuda: 'Ajuda' };
+const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
@@ -41,8 +47,10 @@ const rotaDoEndereco = (): Rota => {
   return TELAS.includes(t as Tela) ? { tela: t as Tela, slug: slug ? decodeURIComponent(slug) : undefined } : { tela: 'inicio' };
 };
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
-function Sino({ itens, ir }: { itens: Comunicado[]; ir: () => void }) {
+interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
+function Sino({ itens, ir, pedidos, irPedidos }: { itens: Comunicado[]; ir: () => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
   const [aberto, setAberto] = useState(false);
+  const total = itens.length + pedidos.length;
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -53,13 +61,18 @@ function Sino({ itens, ir }: { itens: Comunicado[]; ir: () => void }) {
   }, [aberto]);
   return (
     <div className="tema-raiz" ref={raiz}>
-      <button className="icone-btn sino" aria-label={`Avisos${itens.length ? `: ${itens.length} urgente(s)` : ''}`} aria-expanded={aberto} aria-haspopup="dialog" onClick={() => setAberto(!aberto)}>
-        <Icone nome="sino" />{itens.length > 0 && <i className="ponto-aviso" aria-hidden="true" />}
+      <button className="icone-btn sino" aria-label={`Avisos${total ? `: ${total} pendente(s)` : ''}`} aria-expanded={aberto} aria-haspopup="dialog" onClick={() => setAberto(!aberto)}>
+        <Icone nome="sino" />{total > 0 && <i className="ponto-aviso" aria-hidden="true" />}
       </button>
       {aberto && (
         <div className="tema-painel painel-avisos" role="dialog" aria-label="Avisos">
           <h3>Avisos</h3>
-          {itens.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
+          {pedidos.length > 0 && <small className="aviso-grupo">Pedidos de nova senha</small>}
+          {pedidos.map((p) => (
+            <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{p.nome} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
+          ))}
+          {pedidos.length > 0 && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
+          {itens.length === 0 && pedidos.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
             <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
           ))}
         </div>
@@ -69,6 +82,8 @@ function Sino({ itens, ir }: { itens: Comunicado[]; ir: () => void }) {
 }
 
 function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void> }) {
+  const empresa = useEmpresa();
+  useEffect(() => { document.title = `${empresa.nome_portal} | ${empresa.nome}`; }, [empresa.nome_portal, empresa.nome]);
   const [saude, setSaude] = useState<Saude | null>(null);
   const [rota, setRota] = useState<Rota>(rotaDoEndereco);
   const tela = rota.tela;
@@ -82,11 +97,21 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const { perfil, mudarAvatar } = usePerfil(usuario.login, usuario.nome);
   const gere = podeGerir(usuario);
   const admin = usuario.perfil === 'admin';
-  const podeConfig = ['usuarios', 'perfis', 'integracoes', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`));
-  const telasLiberadas = (['comunicados', 'documentos', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
+  const podeConfig = ['usuarios', 'perfis', 'empresa', 'entrada', 'integracoes', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`)) || podeAbaCalendario(usuario.permissoes);
+  const telasLiberadas = (['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
   const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
   const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente');
+  // Quem pode redefinir senhas recebe no sino os pedidos de "Esqueci minha senha" (atualiza a cada minuto e ao trocar de tela).
+  const veSenha = pode(usuario, 'cfg.usuarios.senha');
+  const [pedidos, setPedidos] = useState<PedidoSenha[]>([]);
+  useEffect(() => {
+    if (!veSenha) { setPedidos([]); return; }
+    let vivo = true;
+    const ler = () => api<PedidoSenha[]>('/api/gestao/pedidos-senha').then((r) => { if (vivo) setPedidos(r); }).catch(() => { /* sem aviso */ });
+    void ler(); const t = setInterval(() => void ler(), 60_000);
+    return () => { vivo = false; clearInterval(t); };
+  }, [veSenha, tela]);
 
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
   useEffect(() => {
@@ -119,13 +144,14 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 
       <div className="corpo">
         <header className="topo">
+          <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
           <p className="aviso-universal" role="status"><Icone nome="info" tamanho={14} /><span>{AVISOS[tela]}</span></p>
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
-          <Sino itens={urgentes} ir={() => irPara('comunicados')} />
+          <Sino itens={urgentes} ir={() => irPara('comunicados')} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} />
           <button className="avbtn" onClick={() => setPerfilAberto(true)} aria-label="Minha conta" title={`${perfil.nome} — minha conta`}><Avatar nome={perfil.nome} avatar={perfil.avatar} tamanho={28} /></button>
         </header>
 
@@ -133,8 +159,9 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
             {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} veComunicados={libera('comunicados')} veDocumentos={libera('documentos')} />}
-            {['comunicados', 'documentos', 'pessoas', 'ajuda'].includes(tela) && !libera(tela) && <p className="erro">Você não tem acesso a esta tela. Fale com o administrador do portal.</p>}
+            {['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'].includes(tela) && !libera(tela) && <p className="erro">Você não tem acesso a esta tela. Fale com o administrador do portal.</p>}
             {tela === 'comunicados' && libera(tela) && <Comunicados slug={rota.slug} busca={busca} limparBusca={() => setBusca('')} />}
+            {tela === 'calendario' && libera(tela) && <CalendarioPagina dia={rota.slug} podeConfigurar={podeAbaCalendario(usuario.permissoes)} irConfig={() => irPara('configuracoes', 'calendario')} />}
             {tela === 'documentos' && libera(tela) && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
@@ -142,7 +169,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}
-            <footer className="rodape-portal"><span><b>Di Paula</b> | Intranet | Conectando pessoas, ideias e grandes movimentos.</span><span>Portal Intranet</span></footer>
+            <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
           </main>
           <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />
         </div>
@@ -161,10 +188,12 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 /** Porta de entrada: carrega a sessão e mostra login, troca obrigatória de senha ou o portal. */
 export function App() {
   const { usuario, offline, entrar, sair, recarregar } = useSessao();
+  const empresa = useEmpresa();
+  useEffect(() => { document.title = `${empresa.nome_portal} | ${empresa.nome}`; }, [empresa.nome_portal, empresa.nome]);
   if (offline) {
     return (
       <main className="conteudo">
-        <h1>Portal Intranet</h1>
+        <h1>{empresa.nome_portal}</h1>
         <p className="erro">A API não respondeu. Rode <code>npm run dev</code> na pasta do projeto e recarregue a página.</p>
       </main>
     );

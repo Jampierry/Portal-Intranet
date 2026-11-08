@@ -6,7 +6,7 @@ import { confereSenha, hashSenha } from './senha.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, HORAS_SESSAO, usuarioDaSessao } from './guard.ts';
 import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 
-const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login']);
+const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
 const MAX_FALHAS = 5;
 const JANELA_MIN = 15;
@@ -61,7 +61,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       if (origem && !mesmoSite && !config.origensPermitidas.includes(origem)) return resp.code(403).send({ erro: 'Origem não permitida.' });
     }
     req.usuario = usuarioDaSessao(db, req.cookies[COOKIE_SESSAO]);
-    if (ROTAS_PUBLICAS.has(caminho)) return;
+    if (ROTAS_PUBLICAS.has(caminho) || caminho === '/api/entrada' || caminho === '/api/empresa' || caminho.startsWith('/api/publico/imagens/')) return; // identidade e tela de entrada: aparecem antes do login
     if (!req.usuario) return resp.code(401).send({ erro: 'Faça login para continuar.' });
     if (req.usuario.trocar_senha && !ROTAS_COM_SENHA_PENDENTE.has(caminho)) {
       return resp.code(403).send({ erro: 'Troque a senha provisória para continuar.', codigo: 'trocar_senha' });
@@ -186,7 +186,37 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     db.prepare('UPDATE usuarios SET senha_hash = ?, trocar_senha = 1 WHERE id = ?').run(hashSenha(senha), id);
     db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
     db.prepare('DELETE FROM tentativas_login WHERE chave = ?').run(u.login);
+    db.prepare('UPDATE pedidos_senha SET resolvido_em = ?, resolvido_por = ? WHERE usuario_id = ? AND resolvido_em IS NULL').run(new Date().toISOString(), req.usuario!.id, id);
     auditar(db, req.usuario!.id, 'senha_redefinida', { id });
+    return { ok: true };
+  });
+
+  // ----- "Esqueci a senha": a pessoa avisa o administrador; quem pode redefinir senhas vê o pedido no sino e em Usuários -----
+  const porIp = new Map<string, number[]>();
+  app.post('/api/esqueci-senha', async (req, resp) => {
+    const login = String(corpoObjeto(req.body).login ?? '').trim().toLowerCase().slice(0, 64);
+    if (!login) return resp.code(400).send({ erro: 'Informe o seu login.' });
+    const agora = Date.now(), recentes = (porIp.get(req.ip) ?? []).filter((t) => agora - t < JANELA_MIN * 60_000);
+    if (recentes.length >= 5) return resp.code(429).send({ erro: `Muitos pedidos. Aguarde ${JANELA_MIN} minutos e tente de novo.` });
+    porIp.set(req.ip, [...recentes, agora]);
+    const u = db.prepare('SELECT id FROM usuarios WHERE login = ? AND ativo = 1').get(login) as { id: number } | undefined;
+    if (u && !db.prepare('SELECT 1 FROM pedidos_senha WHERE usuario_id = ? AND resolvido_em IS NULL').get(u.id)) {
+      db.prepare('INSERT INTO pedidos_senha (usuario_id, criado_em) VALUES (?, ?)').run(u.id, new Date().toISOString());
+      auditar(db, u.id, 'senha_pedido', { login });
+    }
+    // Mesma resposta exista o login ou não: a tela não revela quais logins existem.
+    return { ok: true };
+  });
+  app.get('/api/gestao/pedidos-senha', senhaUsuario, async (req) =>
+    db.prepare(`SELECT p.id, p.usuario_id, p.criado_em, u.login, u.nome FROM pedidos_senha p JOIN usuarios u ON u.id = p.usuario_id
+                 WHERE p.resolvido_em IS NULL ${ehAdmin(req) ? '' : "AND u.perfil <> 'admin'"} ORDER BY p.criado_em`).all());
+  app.post<{ Params: { id: string } }>('/api/gestao/pedidos-senha/:id/dispensar', senhaUsuario, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Pedido');
+    const p = db.prepare('SELECT p.id, u.perfil FROM pedidos_senha p JOIN usuarios u ON u.id = p.usuario_id WHERE p.id = ? AND p.resolvido_em IS NULL').get(id) as { id: number; perfil: string } | undefined;
+    if (!p) return resp.code(404).send({ erro: 'Pedido não encontrado.' });
+    if (!ehAdmin(req) && p.perfil === 'admin') return resp.code(403).send(NEGADO);
+    db.prepare('UPDATE pedidos_senha SET resolvido_em = ?, resolvido_por = ? WHERE id = ?').run(new Date().toISOString(), req.usuario!.id, id);
+    auditar(db, req.usuario!.id, 'senha_pedido_dispensado', { id });
     return { ok: true };
   });
 

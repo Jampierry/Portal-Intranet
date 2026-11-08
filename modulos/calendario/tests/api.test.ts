@@ -20,7 +20,7 @@ test('exige login e valida o mês', async () => {
 test('sem ZIMBRA_API_URL/TOKEN: responde "não conectado", sem erro', async () => {
   const { app } = await criarAppTeste();
   const r = (await app.inject({ url: '/api/calendario', headers: await entrar(app, 'le') })).json<{ conectado: boolean; eventos: unknown[] }>();
-  assert.deepEqual(r, { conectado: false, eventos: [] });
+  assert.deepEqual(r, { conectado: false, eventos: [], datas: [] });
 });
 
 test('conectado: manda o token ao Zimbra, devolve só campos públicos, filtra o mês e usa cache', async () => {
@@ -39,7 +39,7 @@ test('conectado: manda o token ao Zimbra, devolve só campos públicos, filtra o
   const r = (await app.inject({ url: `/api/calendario?mes=${mes}`, headers: h })).json<{ conectado: boolean; eventos: Record<string, unknown>[] }>();
   assert.equal(r.conectado, true);
   assert.equal(r.eventos.length, 1);
-  assert.deepEqual(Object.keys(r.eventos[0]).sort(), ['dia_inteiro', 'fim', 'id', 'inicio', 'local', 'titulo']);
+  assert.deepEqual(Object.keys(r.eventos[0]).sort(), ['agenda', 'dia_inteiro', 'fim', 'id', 'inicio', 'local', 'titulo']);
   assert.equal(chamadas[0].auth, 'Bearer token-secreto');
   assert.ok(chamadas[0].url.startsWith('http://zimbra.interno:8765/api/eventos?'));
   await app.inject({ url: `/api/calendario?mes=${mes}`, headers: h });

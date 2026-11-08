@@ -1,6 +1,19 @@
 # Estado e ponto de parada
 
+## Portal genérico (08/11/2026)
+- Nada de nome de empresa fixo: Configurações › **Empresa** (`cfg.empresa.*`, tabela `portal_config`, módulo `modulos/marca`) guarda nome, nome do portal, slogan, ícone, frases, rótulo/frase do destaque e feriados municipais; Configurações › **Tela de entrada** (`cfg.entrada.*`) guarda o fundo do login (cor, imagem, carrossel) e textos.
+- Leitura pública (`/api/empresa`, `/api/entrada`, `/api/publico/imagens/:nome`); instalações com usuários ganham os textos da Di Paula pela migração 017, instalações novas nascem neutras ("Sua Empresa").
+- O id interno do estilo de cor `dipaula` foi mantido (só o nome exibido virou "Padrão"), para não perder a escolha salva dos usuários.
+
+
 **Atualizado em:** 2026-11-07 (tudo enviado ao GitHub; `main` = `357ac4b`)
+
+## Calendário completo, aplicativos por usuário e título na barra superior (2026-11-07, não commitado)
+- **Título da tela na barra superior universal**, antes do "Bem-vindo(a)" (`TITULOS` em `App.tsx`); o corpo da página não repete o nome (`Cabecalho` só leva as ações; `interno` mantém o título em páginas de detalhe/erro).
+- **Calendário** (migração `015`): tela cheia `web/src/CalendarioPagina.tsx` (menu Calendário, `ver.calendario`), feriados/facultativos/eventos locais (`calendario_datas`) + várias agendas do Zimbra (`zimbra.agendas_exibir`, cada uma com cor), filtros por camada (guardados no navegador), lista do dia e próximas datas. **Por que o Zimbra não aparecia:** só lia UMA agenda e só se a agenda estivesse escolhida; sem Zimbra conectado, nada aparecia. Agora datas locais valem sempre e as agendas são escolhidas em Configurações › Calendário. O mini-calendário do menu também mostra as datas locais.
+- **Configurações › Calendário** (permissões `calendario.criar/excluir/agendas` (bloco Calendário em Telas; a aba aparece para quem tem qualquer uma)): CRUD de datas (anual ou única), botão *Gerar feriados do ano* (nacionais, Goiânia, facultativos; `modulos/calendario/api/feriados.ts`) e escolha das agendas do Zimbra. API: `/api/gestao/calendario/{datas,feriados,agendas}`; `GET /api/calendario` agora devolve `datas` e `eventos[].agenda`.
+- **Aplicativos por usuário:** `aplicacoes.restrita` (checkbox em Publicar › Aplicativos) + `usuarios_aplicativos`; Configurações › Usuários › **Aplicativos** (permissão `cfg.usuarios.aplicativos`) libera cada pessoa. `/api/aplicacoes` e favoritos só devolvem o que a pessoa vê (admin vê tudo); tirar a liberação remove o favorito.
+- `docs/comparativo-mercado.md` (pesquisa e ideias). Testes: `npm test` com 84 (1 falha antiga e não relacionada: "leitor vê só banners ativos…", depende da data de hoje). Typecheck e build ok. **Falta:** conferir por screenshot as telas novas (Calendário, Configurações › Calendário, janela Aplicativos) e testar com o serviço Zimbra real; revisar o teste de banners; commit/push (gatilho *enviar*).
 
 ## Onde estamos
 - Portal Intranet Di Paula na stack do PREMIA: `web/` (Vite + React), `servidor/` (Fastify + SQLite), `infra/migracoes` (001 base, 002 portal, 003 acessos), `modulos/<nome>/{api,tests,data}`.

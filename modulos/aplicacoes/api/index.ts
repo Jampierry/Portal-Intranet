@@ -4,17 +4,21 @@ import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { buscarIcone } from './favicon.ts';
 import { ErroValidacao, corpoObjeto, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
-const CAMPOS = 'slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo';
+const CAMPOS = 'slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo, restrita';
+/** Aplicativo restrito só aparece para quem foi liberado (administrador vê todos). */
+const VISIVEL = '(restrita = 0 OR EXISTS (SELECT 1 FROM usuarios_aplicativos ua WHERE ua.usuario_id = ? AND ua.aplicacao_slug = aplicacoes.slug))';
 
 export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
-  app.get('/api/aplicacoes', async () => db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 ORDER BY nome`).all());
+  app.get('/api/aplicacoes', async (req) => req.usuario!.perfil === 'admin'
+    ? db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 ORDER BY nome`).all()
+    : db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE ativo = 1 AND ${VISIVEL} ORDER BY nome`).all(req.usuario!.id));
 
   // ----- Favoritos de cada usuário (guardados no servidor) -----
   app.get('/api/favoritos', async (req) =>
-    (db.prepare('SELECT aplicacao_slug FROM favoritos WHERE usuario_id = ? ORDER BY criado_em').all(req.usuario!.id) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
+    (db.prepare(`SELECT f.aplicacao_slug FROM favoritos f JOIN aplicacoes ON aplicacoes.slug = f.aplicacao_slug WHERE f.usuario_id = ? AND (? = 'admin' OR ${VISIVEL}) ORDER BY f.criado_em`).all(req.usuario!.id, req.usuario!.perfil, req.usuario!.id) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
   );
   app.put<{ Params: { slug: string } }>('/api/favoritos/:slug', async (req, resp) => {
-    if (!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ? AND ativo = 1').get(req.params.slug)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
+    if (!db.prepare(`SELECT 1 FROM aplicacoes WHERE slug = ? AND ativo = 1 AND (? = 'admin' OR ${VISIVEL})`).get(req.params.slug, req.usuario!.perfil, req.usuario!.id)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     db.prepare('INSERT OR IGNORE INTO favoritos (usuario_id, aplicacao_slug, criado_em) VALUES (?, ?, ?)').run(req.usuario!.id, req.params.slug, new Date().toISOString());
     return { ok: true };
   });
@@ -43,6 +47,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
       logo: logo(c),
       responsavel: texto(c, 'responsavel', 'Responsável', { max: 80, opcional: true }),
       ativo: c.ativo === undefined ? 1 : c.ativo ? 1 : 0,
+      restrita: c.restrita ? 1 : 0,
     };
   }
 
@@ -60,8 +65,8 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   app.post('/api/gestao/aplicacoes', { preHandler: exigirPerm('pub.aplicativos.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(s), d.nome);
-    db.prepare('INSERT INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(slug, d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo);
+    db.prepare('INSERT INTO aplicacoes (slug, nome, descricao, categoria, url, acesso, icone, logo, responsavel, ativo, restrita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(slug, d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo, d.restrita);
     auditar(db, req.usuario!.id, 'aplicacao_criada', { slug, nome: d.nome });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(slug));
   });
@@ -69,10 +74,34 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   app.put<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', { preHandler: exigirPerm('pub.aplicativos.editar') }, async (req, resp) => {
     if (!db.prepare('SELECT 1 FROM aplicacoes WHERE slug = ?').get(req.params.slug)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
     const d = ler(corpoObjeto(req.body));
-    db.prepare('UPDATE aplicacoes SET nome = ?, descricao = ?, categoria = ?, url = ?, acesso = ?, icone = ?, logo = ?, responsavel = ?, ativo = ? WHERE slug = ?')
-      .run(d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo, req.params.slug);
-    auditar(db, req.usuario!.id, 'aplicacao_alterada', { slug: req.params.slug, ativo: d.ativo });
+    db.prepare('UPDATE aplicacoes SET nome = ?, descricao = ?, categoria = ?, url = ?, acesso = ?, icone = ?, logo = ?, responsavel = ?, ativo = ?, restrita = ? WHERE slug = ?')
+      .run(d.nome, d.descricao, d.categoria, d.url, d.acesso, d.icone, d.logo, d.responsavel, d.ativo, d.restrita, req.params.slug);
+    auditar(db, req.usuario!.id, 'aplicacao_alterada', { slug: req.params.slug, ativo: d.ativo, restrita: d.restrita });
     return db.prepare(`SELECT ${CAMPOS} FROM aplicacoes WHERE slug = ?`).get(req.params.slug);
+  });
+
+  // ----- Aplicativos de cada pessoa (Configurações › Usuários › Aplicativos) -----
+  const doUsuario = { preHandler: exigirPerm('cfg.usuarios.aplicativos') };
+  const alvo = (id: string) => { const n = Number(id); return Number.isInteger(n) ? db.prepare('SELECT id, login, perfil FROM usuarios WHERE id = ?').get(n) as { id: number; login: string; perfil: string } | undefined : undefined; };
+  app.get<{ Params: { id: string } }>('/api/usuarios/:id/aplicativos', doUsuario, async (req, resp) => {
+    const u = alvo(req.params.id); if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
+    const restritas = db.prepare('SELECT slug, nome, categoria, ativo FROM aplicacoes WHERE restrita = 1 ORDER BY nome').all();
+    const liberados = (db.prepare('SELECT aplicacao_slug FROM usuarios_aplicativos WHERE usuario_id = ?').all(u.id) as { aplicacao_slug: string }[]).map((r) => r.aplicacao_slug);
+    return { restritas, liberados, admin: u.perfil === 'admin' };
+  });
+  app.put<{ Params: { id: string } }>('/api/usuarios/:id/aplicativos', doUsuario, async (req, resp) => {
+    const u = alvo(req.params.id); if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
+    if (u.perfil === 'admin' && req.usuario!.perfil !== 'admin') return resp.code(403).send({ erro: 'Você não pode alterar administradores.' });
+    const lista = corpoObjeto(req.body).liberados;
+    if (!Array.isArray(lista) || lista.some((x) => typeof x !== 'string')) throw new ErroValidacao('Aplicativos: envie a lista de aplicativos liberados.');
+    const validos = new Set((db.prepare('SELECT slug FROM aplicacoes WHERE restrita = 1').all() as { slug: string }[]).map((r) => r.slug));
+    const novos = [...new Set(lista as string[])].filter((x) => validos.has(x));
+    db.prepare('DELETE FROM usuarios_aplicativos WHERE usuario_id = ?').run(u.id);
+    const ins = db.prepare('INSERT INTO usuarios_aplicativos (usuario_id, aplicacao_slug) VALUES (?, ?)');
+    for (const slug of novos) ins.run(u.id, slug);
+    db.prepare('DELETE FROM favoritos WHERE usuario_id = ? AND aplicacao_slug IN (SELECT slug FROM aplicacoes WHERE restrita = 1) AND aplicacao_slug NOT IN (SELECT aplicacao_slug FROM usuarios_aplicativos WHERE usuario_id = ?)').run(u.id, u.id);
+    auditar(db, req.usuario!.id, 'usuario_aplicativos_alterados', { usuario: u.login, liberados: novos.length });
+    return { ok: true, liberados: novos };
   });
 
   app.delete<{ Params: { slug: string } }>('/api/gestao/aplicacoes/:slug', { preHandler: exigirPerm('pub.aplicativos.excluir') }, async (req, resp) => {

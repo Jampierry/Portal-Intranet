@@ -9,6 +9,10 @@ import { Cabecalho } from '../Cabecalho';
 import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import { ListaPerfis } from './Permissoes';
 import { Integracoes } from './Integracoes';
+import { CalendarioConfig } from './CalendarioConfig';
+import { EntradaConfig } from './EntradaConfig';
+import { EmpresaConfig } from './EmpresaConfig';
+import { podeAbaCalendario } from '../calendarioTipos';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -174,7 +178,7 @@ function Contatos() {
   );
 }
 
-interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; logo: string | null; responsavel: string | null; ativo: number }
+interface App { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; logo: string | null; responsavel: string | null; ativo: number; restrita: number }
 function CadastroAplicacoes() {
   return (
     <Crud<App> base="/api/gestao/aplicacoes" rotuloItem="aplicação" idDe={(r) => r.slug}
@@ -189,15 +193,16 @@ function CadastroAplicacoes() {
         { chave: 'logo', rotulo: 'Ícone do aplicativo', tipo: 'imagem', auto: { endpoint: '/api/gestao/aplicacoes/icone', origem: 'url', rotulo: 'Buscar do aplicativo' }, dica: 'Ao informar o endereço, o portal tenta trazer o ícone do próprio aplicativo. Se não achar (ex.: sistema que exige login), use "Escolher imagem". Sem imagem, vale o ícone abaixo (automático = pela categoria e nome).' },
         { chave: 'icone', rotulo: 'Ícone (quando não há imagem)', tipo: 'select', opcoes: ICONES_ESCOLHA, metade: true },
         { chave: 'ativo', rotulo: 'Ativa (aparece no portal)', tipo: 'check' },
+        { chave: 'restrita', rotulo: 'Restrita: só aparece para quem for liberado', tipo: 'check', dica: 'Marque para apps que não são para todos. Depois libere cada pessoa em Configurações › Usuários › Aplicativos. O administrador sempre vê.' },
       ]}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
         { titulo: 'Categoria', ver: (r) => r.categoria },
         { titulo: 'Endereço', ver: (r) => <span className="trunca" title={r.url}>{r.url}</span> },
-        { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativa' : 'Inativa'} tom={r.ativo ? 'ok' : 'neutro'} /> },
+        { titulo: 'Situação', ver: (r) => <><Selo texto={r.ativo ? 'Ativa' : 'Inativa'} tom={r.ativo ? 'ok' : 'neutro'} />{r.restrita ? <> <Selo texto="Restrita" tom="aviso" /></> : null}</> },
       ]}
-      valoresNovos={{ nome: '', categoria: '', descricao: '', url: 'https://', acesso: '', responsavel: '', icone: 'auto', logo: '', ativo: true }}
-      paraForm={(r) => ({ nome: r.nome, categoria: r.categoria, descricao: r.descricao, url: r.url, acesso: r.acesso, responsavel: s(r.responsavel), icone: r.icone === 'users' ? 'pessoas' : r.icone === 'apps' ? 'auto' : r.icone, logo: s(r.logo), ativo: !!r.ativo })}
+      valoresNovos={{ nome: '', categoria: '', descricao: '', url: 'https://', acesso: '', responsavel: '', icone: 'auto', logo: '', ativo: true, restrita: false }}
+      paraForm={(r) => ({ nome: r.nome, categoria: r.categoria, descricao: r.descricao, url: r.url, acesso: r.acesso, responsavel: s(r.responsavel), icone: r.icone === 'users' ? 'pessoas' : r.icone === 'apps' ? 'auto' : r.icone, logo: s(r.logo), ativo: !!r.ativo, restrita: !!r.restrita })}
     />
   );
 }
@@ -250,21 +255,24 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
   );
 }
 
-type AbaCfg = 'usuarios' | 'perfis' | 'integracoes' | 'auditoria';
-const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['integracoes', 'Integrações'], ['auditoria', 'Auditoria']];
+type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'calendario' | 'entrada' | 'integracoes' | 'auditoria';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['calendario', 'Calendário'], ['entrada', 'Tela de entrada'], ['integracoes', 'Integrações'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
-  const abas = ABAS_CONFIG.filter(([id]) => permissoes.includes(`cfg.${id}.ver`));
+  const abas = ABAS_CONFIG.filter(([id]) => (id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id}.ver`)));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, integrações e auditoria do portal." />
+      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, calendário, tela de entrada, integrações e auditoria do portal." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
       </div>
       {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
         : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
+        : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
+        : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />
+        : aba === 'empresa' ? <EmpresaConfig permissoes={permissoes} />
         : <Administracao parte={aba} souAdmin={souAdmin} permissoes={permissoes} />}
     </>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { dataCurta, useLista } from '../dados';
@@ -28,6 +28,44 @@ function CampoSenha({ valor, mudar }: { valor: string; mudar: (v: string) => voi
   );
 }
 
+/** Lista de aplicativos restritos de uma pessoa (marcados = ela vê). Usada na janela "Aplicativos" e dentro de "Editar usuário". */
+function AppsDaPessoa({ id, marcados, mudar }: { id: number; marcados: string[]; mudar: (m: string[]) => void }) {
+  const [info, setInfo] = useState<{ restritas: { slug: string; nome: string; categoria: string; ativo: number }[]; liberados: string[]; admin: boolean } | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => { api<NonNullable<typeof info>>(`/api/usuarios/${id}/aplicativos`).then((r) => { setInfo(r); mudar(r.liberados); }).catch((e) => setErro((e as Error).message)); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alternar = (slug: string) => mudar(marcados.includes(slug) ? marcados.filter((x) => x !== slug) : [...marcados, slug]);
+  return (
+    <>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {!info && !erro && <p className="suave">Carregando…</p>}
+      {info && (
+        <>
+          <p className="suave" style={{ marginTop: 0 }}>Os aplicativos <b>comuns</b> aparecem para todos. Marque abaixo quais aplicativos <b>restritos</b> esta pessoa vê.</p>
+          {info.admin && <p className="suave">Administradores veem todos os aplicativos, independente desta lista.</p>}
+          {info.restritas.length === 0 ? <p className="vazio">Nenhum aplicativo restrito ainda. Para limitar um aplicativo a certas pessoas: Publicar › Aplicativos › Editar › marque “Restrita”.</p> : (
+            <div className="lista-marcar" role="group" aria-label="Aplicativos restritos">
+              {info.restritas.map((a) => (
+                <label key={a.slug} className="linha"><input type="checkbox" checked={marcados.includes(a.slug)} onChange={() => alternar(a.slug)} />{a.nome} <small className="suave">{a.categoria}{a.ativo ? '' : ' · inativo'}</small></label>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+/** Janela "Aplicativos" de uma pessoa (atalho na linha da tabela). */
+function AplicativosUsuario({ u, aoFechar }: { u: Usr; aoFechar: (msg?: string) => void }) {
+  const [marcados, setMarcados] = useState<string[]>([]);
+  return (
+    <JanelaForm titulo={`Aplicativos de ${u.nome}`} aoFechar={() => aoFechar()}
+      aoEnviar={async () => { await api(`/api/usuarios/${u.id}/aplicativos`, { liberados: marcados }, 'PUT'); aoFechar(`Aplicativos de "${u.login}" atualizados.`); }}>
+      <AppsDaPessoa id={u.id} marcados={marcados} mudar={setMarcados} />
+    </JanelaForm>
+  );
+}
+
 function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: string[] }) {
   const libera = (acao: string) => permissoes.includes(`cfg.usuarios.${acao}`);
   // Quem não é administrador não cria nem promove administradores (o servidor também recusa).
@@ -42,6 +80,11 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const [novo, setNovo] = useState<{ login: string; nome: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
+  const [apps, setApps] = useState<Usr | null>(null);
+  const [pedidos, setPedidos] = useState<{ id: number; usuario_id: number; criado_em: string; login: string; nome: string }[]>([]);
+  const lerPedidos = () => { if (libera('senha')) api<typeof pedidos>('/api/gestao/pedidos-senha').then(setPedidos).catch(() => { /* sem pedidos */ }); };
+  useEffect(lerPedidos, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const dispensar = async (id: number) => { try { await api(`/api/gestao/pedidos-senha/${id}/dispensar`, {}); lerPedidos(); } catch (e) { setAviso((e as Error).message); } };
 
   return (
     <section className="crud">
@@ -53,6 +96,23 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
+      {pedidos.length > 0 && (
+        <div className="pedidos-senha" role="region" aria-label="Pedidos de nova senha">
+          <b>Pedidos de nova senha ({pedidos.length})</b>
+          {pedidos.map((p) => {
+            const u = (dados ?? []).find((x) => x.id === p.usuario_id);
+            return (
+              <div key={p.id} className="pedido-senha">
+                <span><b>{p.nome}</b> <small className="suave">({p.login}) · pediu em {dataCurta(p.criado_em)}</small></span>
+                <span className="pedido-acoes">
+                  {u && <button className="btn btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
+                  <button className="btn btn-sec btn-pequeno" onClick={() => void dispensar(p.id)}>Dispensar</button>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {dados && (
         <div className="rolagem">
           <table className="dados">
@@ -65,6 +125,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
                   <td data-rotulo="Último acesso">{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
                   <td className="col-acoes">
                     {libera('editar') && <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>}
+                    {libera('aplicativos') && <button className="btn btn-sec btn-pequeno" onClick={() => setApps(u)}><Icone nome="apps" tamanho={13} /> Aplicativos</button>}
                     {libera('senha') && <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
                   </td>
                 </tr>
@@ -102,9 +163,11 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         </JanelaForm>
       )}
 
+      {apps && <AplicativosUsuario u={apps} aoFechar={(msg) => { setApps(null); if (msg) setAviso(msg); }} />}
+
       {reset && (
         <JanelaForm titulo={`Redefinir senha de ${reset.u.login}`} rotuloEnviar="Redefinir" aoFechar={() => setReset(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${reset.u.id}/senha`, { senha: reset.senha }); setAviso(`Senha de "${reset.u.login}" redefinida. Nova senha provisória: ${reset.senha}`); setReset(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${reset.u.id}/senha`, { senha: reset.senha }); setAviso(`Senha de "${reset.u.login}" redefinida. Nova senha provisória: ${reset.senha}`); setReset(null); recarregar(); lerPedidos(); }}>
           <p className="suave" style={{ marginTop: 0 }}>A pessoa será desconectada e precisará criar uma senha nova no próximo acesso.</p>
           <CampoSenha valor={reset.senha} mudar={(senha) => setReset({ ...reset, senha })} />
         </JanelaForm>
@@ -114,6 +177,8 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 }
 
 const ACAO: Record<string, string> = {
+  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
+  calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',
   comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',

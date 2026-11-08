@@ -24,10 +24,11 @@ export const CATALOGO: GrupoPermissao[] = [
       { chave: 'documentos.abrir', rotulo: 'Abrir o link do documento' },
       { chave: 'documentos.restritos', rotulo: 'Ver documentos restritos' },
     ] },
-    { id: 'calendario', rotulo: 'Calendário (menu)', acoes: [
+    { id: 'calendario', rotulo: 'Calendário (menu e tela)', acoes: [
       { chave: 'ver.calendario', rotulo: 'Ver o calendário' },
-      { chave: 'calendario.criar', rotulo: 'Cadastrar datas importantes' },
-      { chave: 'calendario.excluir', rotulo: 'Excluir datas importantes' },
+      { chave: 'calendario.criar', rotulo: 'Cadastrar e editar datas importantes e feriados' },
+      { chave: 'calendario.excluir', rotulo: 'Excluir datas importantes e feriados' },
+      { chave: 'calendario.agendas', rotulo: 'Escolher as agendas do Zimbra exibidas' },
     ] },
     { id: 'pessoas', rotulo: 'Pessoas (contatos)', acoes: [{ chave: 'ver.pessoas', rotulo: 'Acessar a tela' }] },
     { id: 'ajuda', rotulo: 'Ajuda', acoes: [{ chave: 'ver.ajuda', rotulo: 'Acessar a tela' }] },
@@ -41,12 +42,15 @@ export const CATALOGO: GrupoPermissao[] = [
     { id: 'usuarios', rotulo: 'Usuários', acoes: [
       { chave: 'cfg.usuarios.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.usuarios.criar', rotulo: 'Criar' },
       { chave: 'cfg.usuarios.editar', rotulo: 'Editar' }, { chave: 'cfg.usuarios.senha', rotulo: 'Redefinir senha' },
+      { chave: 'cfg.usuarios.aplicativos', rotulo: 'Definir os aplicativos de cada pessoa' },
     ] },
     { id: 'perfis', rotulo: 'Perfis', acoes: [
       { chave: 'cfg.perfis.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.perfis.criar', rotulo: 'Criar' },
       { chave: 'cfg.perfis.editar', rotulo: 'Editar' }, { chave: 'cfg.perfis.excluir', rotulo: 'Excluir' },
     ] },
     { id: 'integracoes', rotulo: 'Integrações (Zimbra)', acoes: [{ chave: 'cfg.integracoes.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.integracoes.editar', rotulo: 'Editar e testar' }] },
+    { id: 'empresa', rotulo: 'Empresa (nome, textos e ícone)', acoes: [{ chave: 'cfg.empresa.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.empresa.editar', rotulo: 'Editar' }] },
+    { id: 'entrada', rotulo: 'Tela de entrada (login)', acoes: [{ chave: 'cfg.entrada.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.entrada.editar', rotulo: 'Editar e enviar imagens' }] },
     { id: 'auditoria', rotulo: 'Auditoria', acoes: [{ chave: 'cfg.auditoria.ver', rotulo: 'Ver a aba' }] },
   ] },
 ];
@@ -66,7 +70,7 @@ export function normalizar(chaves: Iterable<string>): string[] {
 export interface PerfilInfo { codigo: string; nome: string; sistema: boolean; fixo: boolean; permissoes: string[]; usuarios: number }
 
 export const PADRAO_PERFIL: Record<string, string[]> = {
-  editor: normalizar(TODAS.filter((c) => !c.startsWith('cfg.') && !c.startsWith('pub.aplicativos'))),
+  editor: normalizar(TODAS.filter((c) => !c.startsWith('cfg.') && !c.startsWith('pub.aplicativos') && c !== 'calendario.agendas')),
   consulta: normalizar(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.calendario', 'ver.pessoas', 'ver.ajuda']),
 };
 

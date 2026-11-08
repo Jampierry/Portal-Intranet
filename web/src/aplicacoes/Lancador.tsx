@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Icone } from '../icones';
 import { IconeApp } from './IconeApp';
 import { useLista, type Aplicacao } from '../dados';
@@ -12,6 +13,9 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
 }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
   const [aba, setAba] = useState<'favoritos' | 'todos'>('favoritos');
+  // Nome do app ao passar o mouse (ou focar) no ícone da barra recolhida. Fica fora da barra (portal) porque ela corta o que passa da borda.
+  const [dica, setDica] = useState<{ nome: string; y: number; x: number } | null>(null);
+  const mostrar = (nome: string) => (e: SyntheticEvent<HTMLElement>) => { const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect(); setDica({ nome, y: r.top + r.height / 2, x: innerWidth - r.left + 10 }); };
   const todos = dados ?? [];
   const favs = todos.filter((a) => favoritos.includes(a.slug));
   const lista = aba === 'favoritos' ? favs : todos;
@@ -29,9 +33,15 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
         {!aberto && (
           <div className="lancador-mini">
             {favs.map((a) => (
-              <LinkApp key={a.slug} url={a.url} className="lancador-ico"><IconeApp app={a} tamanho={20} /><span className="sr-only">{a.nome}</span><span className="dica" aria-hidden="true">{a.nome}</span></LinkApp>
+              <span key={a.slug} className="lancador-caixa" onMouseEnter={mostrar(a.nome)} onMouseLeave={() => setDica(null)} onFocus={mostrar(a.nome)} onBlur={() => setDica(null)}>
+                <LinkApp url={a.url} className="lancador-ico"><IconeApp app={a} tamanho={20} /><span className="sr-only">{a.nome}</span></LinkApp>
+              </span>
             ))}
-            {favs.length === 0 && <button className="lancador-ico vazio-ico" onClick={alternar} aria-label="Adicionar favoritos"><Icone nome="estrela" tamanho={20} /><span className="dica" aria-hidden="true">Favoritar apps</span></button>}
+            {favs.length === 0 && (
+              <span className="lancador-caixa" onMouseEnter={mostrar('Favoritar apps')} onMouseLeave={() => setDica(null)} onFocus={mostrar('Favoritar apps')} onBlur={() => setDica(null)}>
+                <button className="lancador-ico vazio-ico" onClick={alternar} aria-label="Adicionar favoritos"><Icone nome="estrela" tamanho={20} /></button>
+              </span>
+            )}
           </div>
         )}
 
@@ -64,6 +74,7 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
           </div>
         )}
       </aside>
+      {!aberto && dica && createPortal(<div className="lancador-dica" role="tooltip" style={{ top: dica.y, right: dica.x }}>{dica.nome}</div>, document.body)}
     </>
   );
 }

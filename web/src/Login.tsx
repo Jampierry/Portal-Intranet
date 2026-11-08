@@ -1,20 +1,23 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Icone, IconeSistema } from './icones';
-import { Lema } from './Capa';
+import { Icone } from './icones';
+import { MarcaEntrada, useEntrada } from './MarcaEntrada';
+import { useEmpresa } from './empresa';
 import { FormTrocarSenha } from './Conta';
 
 function Moldura({ titulo, sub, children }: { titulo: string; sub: string; children: ReactNode }) {
+  const entrada = useEntrada();
+  const empresa = useEmpresa();
   return (
     <main className="entrar">
-      <section className="entrar-marca" aria-hidden="true">
-        <div className="entrar-logo"><IconeSistema tamanho={34} /><span>Di Paula</span></div>
-        <div><Lema linhas={['PESSOAS', 'PROCESSOS', 'RESULTADOS']} /><small>MODA EM MOVIMENTO</small></div>
-      </section>
+      <MarcaEntrada cfg={entrada} />
       <section className="entrar-form">
-        <h1>{titulo}</h1>
-        <p className="suave">{sub}</p>
-        {children}
-        <small className="suave entrar-rodape">Intranet Di Paula · Conteúdo de demonstração</small>
+        <div className="entrar-card">
+          <small className="entrar-eyebrow">{empresa.nome_portal}</small>
+          <h1>{titulo}</h1>
+          <p className="suave">{sub}</p>
+          {children}
+        </div>
+        <small className="suave entrar-rodape">{empresa.nome}</small>
       </section>
     </main>
   );
@@ -26,6 +29,8 @@ export function Login({ entrar }: { entrar: (login: string, senha: string) => Pr
   const [ver, setVer] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [pedido, setPedido] = useState<'' | 'enviando' | 'enviado'>('');
+  const [erroPedido, setErroPedido] = useState('');
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
@@ -35,19 +40,43 @@ export function Login({ entrar }: { entrar: (login: string, senha: string) => Pr
     finally { setEnviando(false); }
   };
 
+  const pedirSenha = async () => {
+    setErroPedido('');
+    if (!login.trim()) { setErroPedido('Digite o seu login no campo acima e clique de novo em “Esqueci minha senha”.'); return; }
+    setPedido('enviando');
+    try {
+      const r = await fetch('/api/esqueci-senha', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: login.trim() }), credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({})) as { erro?: string };
+      if (!r.ok) throw new Error(j.erro ?? `Erro ${r.status}`);
+      setPedido('enviado');
+    } catch (x) { setErroPedido((x as Error).message); setPedido(''); }
+  };
+
   return (
     <Moldura titulo="Entrar no portal" sub="Use o login e a senha que o administrador criou para você.">
       <form onSubmit={enviar} className="entrar-campos">
-        <label>Login<input value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus /></label>
+        <label>Login
+          <span className="campo-ico">
+            <Icone nome="perfil" tamanho={16} />
+            <input value={login} onChange={(e) => setLogin(e.target.value)} placeholder="seu.login" autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus />
+          </span>
+        </label>
         <label>Senha
-          <span className="campo-senha">
-            <input type={ver ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="current-password" required />
-            <button type="button" className="icone-btn" aria-label={ver ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={ver} onClick={() => setVer(!ver)}><Icone nome={ver ? 'olho-off' : 'olho'} tamanho={15} /></button>
+          <span className="campo-ico">
+            <Icone nome="chave" tamanho={16} />
+            <input type={ver ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Sua senha" autoComplete="current-password" required />
+            <button type="button" className="icone-btn" aria-label={ver ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={ver} onClick={() => setVer(!ver)}><Icone nome={ver ? 'olho-off' : 'olho'} tamanho={16} /></button>
           </span>
         </label>
         {erro && <p className="erro" role="alert">{erro}</p>}
         <button className="btn btn-pri entrar-botao" disabled={enviando || !login || !senha}>{enviando ? 'Entrando…' : 'Entrar'}</button>
-        <small className="suave">Esqueceu a senha? Peça ao administrador para redefinir.</small>
+        <div className="entrar-esqueci">
+          {pedido === 'enviado'
+            ? <p className="ok" role="status">Pedido enviado. O administrador foi avisado e vai passar uma senha provisória para você.</p>
+            : <><button type="button" className="entrar-link" disabled={pedido === 'enviando'} onClick={() => void pedirSenha()}>{pedido === 'enviando' ? 'Enviando…' : 'Esqueci minha senha'}</button>
+              <small className="suave">O administrador recebe um aviso para redefinir.</small></>}
+          {erroPedido && <p className="erro" role="alert">{erroPedido}</p>}
+        </div>
       </form>
     </Moldura>
   );

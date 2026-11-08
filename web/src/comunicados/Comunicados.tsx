@@ -4,6 +4,7 @@ import { Icone } from '../icones';
 import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Cabecalho, Estado } from '../Cabecalho';
+import { useEmpresa } from '../empresa';
 import { dataCurta, useLista, type Comunicado } from '../dados';
 
 const iconeDe = (c: { categoria: string; titulo: string }) => iconePorTexto(`${c.categoria} ${c.titulo}`, 'comunicados');
@@ -35,7 +36,7 @@ function ComunicadoDetalhe({ slug }: { slug: string }) {
   const { dados } = useLista<Comunicado>('/api/comunicados');
   useEffect(() => { setC(null); api<Comunicado & { corpo: string | null }>(`/api/comunicados/${encodeURIComponent(slug)}`).then(setC).catch(() => setC('erro')); }, [slug]);
   const voltar = <a className="link-ver voltar" href="#comunicados"><Icone nome="esq" tamanho={15} /> Voltar aos comunicados</a>;
-  if (c === 'erro') return <><Cabecalho titulo="Comunicado não encontrado" sub="Ele pode ter sido arquivado ou o endereço está incorreto." />{voltar}</>;
+  if (c === 'erro') return <><Cabecalho interno titulo="Comunicado não encontrado" sub="Ele pode ter sido arquivado ou o endereço está incorreto." />{voltar}</>;
   if (c === null) return <p className="vazio">Carregando…</p>;
   const paragrafos = (c.corpo ?? c.resumo).split(/\n{2,}/).filter(Boolean);
   const outros = (dados ?? []).filter((x) => x.categoria === c.categoria && x.slug !== c.slug).slice(0, 3);
@@ -62,6 +63,7 @@ export function Comunicados({ slug, busca, limparBusca }: { slug?: string; busca
 }
 
 function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca: () => void }) {
+  const empresa = useEmpresa();
   const { dados, erro } = useLista<Comunicado>('/api/comunicados');
   const [categoria, setCategoria] = useState('Todas');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
@@ -78,7 +80,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
 
   return (
     <>
-      <Cabecalho titulo="Comunicados" sub="Fique por dentro do que acontece na Di Paula.">
+      <Cabecalho titulo="Comunicados" sub={`Fique por dentro do que acontece na ${empresa.nome}.`}>
         <label className="linha ordem">Ordenar
           <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar comunicados">
             <option value="recentes">Mais recentes</option><option value="antigos">Mais antigos</option>
@@ -91,12 +93,12 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
           {destaque && (
             <section className="destaque-com" aria-label="Comunicado em destaque">
               <div className="destaque-com-texto">
-                <span className="etiqueta">DESTAQUE</span>
+                {empresa.rotulo_destaque && <span className="etiqueta">{empresa.rotulo_destaque}</span>}
                 <h2>{destaque.titulo}</h2>
                 <p>{destaque.resumo}</p>
                 <a className="btn btn-pri" href={`#comunicados/${encodeURIComponent(destaque.slug)}`}>Saiba mais <Icone nome="seta" tamanho={16} /></a>
               </div>
-              <Capa semente={destaque.slug} icone={iconeDe(destaque)} foto={destaque.imagem} classe="capa-grande"><Lema linhas={['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE']} classe="lema-capa" /></Capa>
+              <Capa semente={destaque.slug} icone={iconeDe(destaque)} foto={destaque.imagem} classe="capa-grande">{empresa.lema_destaque.length > 0 && <Lema linhas={empresa.lema_destaque} classe="lema-capa" />}</Capa>
             </section>
           )}
           {resto.length > 0 && (
@@ -115,7 +117,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
               ))}
             </ul>
           </section>
-          <section className="painel-marca" aria-hidden="true"><Lema linhas={['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO']} /><b>Di Paula</b><small>MODA EM MOVIMENTO</small></section>
+          <section className="painel-marca" aria-hidden="true">{empresa.lema.length > 0 && <Lema linhas={empresa.lema} />}<b>{empresa.nome}</b>{empresa.slogan && <small>{empresa.slogan}</small>}</section>
         </aside>
       </div>
     </>

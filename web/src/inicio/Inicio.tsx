@@ -1,4 +1,5 @@
 import { Icone } from '../icones';
+import { useEmpresa } from '../empresa';
 import { iconePorTexto } from '../iconesAuto';
 import { Capa, Lema } from '../Capa';
 import { Destaques } from './Destaques';
@@ -12,6 +13,7 @@ import type { Tela } from '../Menu';
 export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos = true }: {
   irPara: (t: Tela, slug?: string) => void; comunicados: Comunicado[] | null; veComunicados?: boolean; veDocumentos?: boolean;
 }) {
+  const empresa = useEmpresa();
   const { dados: docs } = useLista<Documento>(veDocumentos ? '/api/documentos' : null);
   const { dados: banners } = useLista<Banner>('/api/banners');
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente').slice(0, 3);
@@ -20,9 +22,9 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
   const heroPadrao = (
       <section className="hero" aria-label="Novidades da semana">
         <div className="hero-texto">
-          <small className="eyebrow">DI PAULA</small>
+          <small className="eyebrow">{empresa.nome.toUpperCase()}</small>
           <h2>Novidades<br />da <em>semana</em></h2>
-          <p>Coleção Movimento Real já está em produção e chega em breve às nossas lojas.</p>
+          <p>Acompanhe os comunicados e as novidades mais recentes da {empresa.nome}.</p>
           <button className="btn btn-coral" onClick={() => irPara('comunicados', comunicados?.[0]?.slug)}>Saiba mais <Icone nome="seta" tamanho={16} /></button>
         </div>
         <Capa semente="hero" icone="colecoes" classe="hero-arte"><Lema linhas={['MODA', 'QUE ACOMPANHA', 'A SUA HISTÓRIA']} /></Capa>

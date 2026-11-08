@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 
-/** Título grande + subtítulo, como nas telas de referência (ex.: "Comunicados — Fique por dentro do que acontece na Di Paula."). */
-export function Cabecalho({ titulo, sub, children }: { titulo: string; sub?: string; children?: ReactNode }) {
+/** O nome da tela fica na barra superior universal (App.tsx, TITULOS). Aqui só entram as ações da tela;
+ *  `interno` mantém o título grande no corpo para páginas de detalhe ou erro (ex.: "Comunicado não encontrado"). */
+export function Cabecalho({ titulo, sub, interno, children }: { titulo: string; sub?: string; interno?: boolean; children?: ReactNode }) {
+  if (!interno && !children) return null;
   return (
-    <div className="cabeca">
-      <div><h1>{titulo}</h1>{sub && <p>{sub}</p>}</div>
+    <div className={interno ? 'cabeca' : 'cabeca cabeca-acoes'}>
+      {interno && <div><h1>{titulo}</h1>{sub && <p>{sub}</p>}</div>}
       {children}
     </div>
   );
