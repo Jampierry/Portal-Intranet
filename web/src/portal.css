@@ -1138,3 +1138,13 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .prev-escala { zoom: .55; border-radius: var(--raio); overflow: hidden; }
 .prev-escala .destaque-com { grid-template-columns: 1fr 1fr; min-height: 230px; }
 .prev-rodape-real { margin-top: 0; padding-top: 8px; }
+
+/* Logo por tema: mostra a versão do tema em uso; a caixa de escolha usa um fundo de cada tema */
+:root[data-tema=escuro] .logo-tema-claro, :root[data-tema=claro] .logo-tema-escuro { display: none; }
+.empcfg-logo-img.claro { background: #f6f3f4; border-color: #cfc8cb; }
+.empcfg-logo-img.escuro { background: #1f1b1f; border-color: #4a4348; }
+.empcfg-logo-img.claro small { color: #5f565b; }
+.empcfg-logo-img.escuro small { color: #b9aeb3; }
+.empcfg-rot { font-size: 10.5px; color: var(--suave); margin-top: -2px; }
+.empcfg-linha.ident { grid-template-columns: auto minmax(0, 1fr) auto auto minmax(0, 1fr); }
+@media (max-width: 1400px) and (min-width: 961px) { .empcfg-linha.ident { grid-template-columns: auto minmax(0, 1fr) auto auto; } .empcfg-linha.ident > .empcfg-campo:last-child { grid-column: 1 / -1; } }

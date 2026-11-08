@@ -75,4 +75,13 @@ test('tela de entrada: só quem tem permissão altera; imagem só é pública se
   assert.equal(salvo.statusCode, 200);
   assert.equal((await app.inject({ url: '/api/empresa' })).json<{ logo_nome: string }>().logo_nome, logoNome);
   assert.equal((await app.inject({ url: logoNome })).statusCode, 200);
+
+  // versão da logo para o tema escuro: mesma regra (só imagem do portal; só é entregue quando em uso)
+  const up4 = await app.inject({ method: 'POST', url: '/api/gestao/empresa/imagens', headers: { ...adm, 'content-type': 'image/png' }, payload: PNG });
+  const logoEscuro = up4.json<{ url: string }>().url;
+  assert.equal((await app.inject({ url: logoEscuro })).statusCode, 404);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: logoNome, logo_nome_escuro: 'https://externo/x.png' } })).statusCode, 400);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'X', nome_portal: 'P', logo_nome: logoNome, logo_nome_escuro: logoEscuro } })).statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/empresa' })).json<{ logo_nome_escuro: string }>().logo_nome_escuro, logoEscuro);
+  assert.equal((await app.inject({ url: logoEscuro })).statusCode, 200);
 });

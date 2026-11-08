@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone, IconeSistema } from '../icones';
 import { Capa, Lema } from '../Capa';
-import { definirEmpresa, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
+import { definirEmpresa, LogoNome, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
 
 async function enviarIcone(arq: File): Promise<string> {
   if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem PNG, JPG, WebP ou GIF.');
@@ -23,7 +23,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
   const [salvo, setSalvo] = useState('');
   const [aviso, setAviso] = useState('');
   const [erro, setErro] = useState('');
-  const [enviando, setEnviando] = useState<'' | 'logo' | 'logo_nome'>('');
+  const [enviando, setEnviando] = useState<'' | 'logo' | 'logo_nome' | 'logo_nome_escuro'>('');
   useEffect(() => { api<ConfigEmpresa>('/api/empresa').then((c) => { const v = { ...PADRAO_EMPRESA, ...c }; setCfg(v); setSalvo(JSON.stringify(v)); }).catch((e: Error) => setErro(e.message)); }, []);
   if (!cfg) return erro ? <p className="erro" role="alert">{erro}</p> : <p className="vazio">Carregando…</p>;
   const mudou = JSON.stringify(cfg) !== salvo;
@@ -33,7 +33,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
     try { const r = await api<ConfigEmpresa>('/api/gestao/empresa', cfg, 'PUT'); const v = { ...PADRAO_EMPRESA, ...r }; setCfg(v); setSalvo(JSON.stringify(v)); definirEmpresa(v); setAviso('Dados da empresa salvos. Já valem em todas as telas.'); }
     catch (e) { setErro((e as Error).message); }
   };
-  const trocarImagem = async (campo: 'logo' | 'logo_nome', arq?: File) => { if (!arq) return; setErro(''); setEnviando(campo); try { set({ [campo]: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(''); } };
+  const trocarImagem = async (campo: 'logo' | 'logo_nome' | 'logo_nome_escuro', arq?: File) => { if (!arq) return; setErro(''); setEnviando(campo); try { set({ [campo]: await enviarIcone(arq) }); } catch (e) { setErro((e as Error).message); } finally { setEnviando(''); } };
   const feriado = (k: number, p: Partial<ConfigEmpresa['feriados_municipais'][number]>) => set({ feriados_municipais: cfg.feriados_municipais.map((f, i) => (i === k ? { ...f, ...p } : f)) });
 
   return (
@@ -61,13 +61,26 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 <input value={cfg.nome} maxLength={40} disabled={!edita} onChange={(e) => set({ nome: e.target.value })} />
               </label>
               <div className="empcfg-icone empcfg-logonome">
-                <span className="empcfg-logo-img">{cfg.logo_nome ? <img src={cfg.logo_nome} alt="Logo atual" /> : <small>Sem logo: aparece o nome escrito</small>}</span>
+                <span className="empcfg-logo-img claro">{cfg.logo_nome ? <img src={cfg.logo_nome} alt="Logo para o tema claro" /> : <small>Sem logo</small>}</span>
+                <small className="empcfg-rot">Tema claro</small>
                 {edita && (
                   <span className="empcfg-icone-acoes">
                     <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome' ? 'Enviando…' : 'Trocar logo'}
                       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome', e.target.files?.[0]); e.target.value = ''; }} />
                     </label>
-                    {cfg.logo_nome && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome: null })}>Usar o nome escrito</button>}
+                    {cfg.logo_nome && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome: null })}>Remover</button>}
+                  </span>
+                )}
+              </div>
+              <div className="empcfg-icone empcfg-logonome">
+                <span className="empcfg-logo-img escuro">{cfg.logo_nome_escuro ? <img src={cfg.logo_nome_escuro} alt="Logo para o tema escuro" /> : <small>Sem logo</small>}</span>
+                <small className="empcfg-rot">Tema escuro</small>
+                {edita && (
+                  <span className="empcfg-icone-acoes">
+                    <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>{enviando === 'logo_nome_escuro' ? 'Enviando…' : 'Trocar logo'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" disabled={!!enviando} onChange={(e) => { void trocarImagem('logo_nome_escuro', e.target.files?.[0]); e.target.value = ''; }} />
+                    </label>
+                    {cfg.logo_nome_escuro && <button type="button" className="empcfg-link" onClick={() => set({ logo_nome_escuro: null })}>Remover</button>}
                   </span>
                 )}
               </div>
@@ -75,7 +88,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                 <input value={cfg.nome_portal} maxLength={40} disabled={!edita} onChange={(e) => set({ nome_portal: e.target.value })} />
               </label>
             </div>
-            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Até 5 MB cada.</small>
+            <small className="suave">O nome aparece no menu, login, Início, comunicados e rodapé; o nome do portal, na aba do navegador e no login. O ícone é quadrado; a logo é a imagem do nome da empresa (de preferência com fundo transparente) e substitui o nome escrito no menu e no login. Envie uma versão para o tema claro e outra para o tema escuro: o portal troca sozinho conforme o tema. Com só uma, ela vale para os dois. Até 5 MB cada.</small>
           </fieldset>
 
           <fieldset className="empcfg-bloco">
@@ -133,7 +146,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           <div className="menu prev-menu-real">
             <div className="sbtop">
               <span className="appbtn">{cfg.logo ? <img src={cfg.logo} alt="" width={30} height={30} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={30} />}</span>
-              <div className="brandtxt">{cfg.logo_nome ? <img className="empnome-img" src={cfg.logo_nome} alt={cfg.nome} /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
+              <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
             </div>
           </div>
           <span className="prev-rotulo">Comunicado em destaque (Comunicados)</span>

@@ -13,12 +13,13 @@ export interface ConfigEmpresa {
   lema_destaque: string[];
   logo: string | null;
   logo_nome: string | null;
+  logo_nome_escuro: string | null;
   feriados_municipais: FeriadoMunicipal[];
 }
 export const PADRAO_EMPRESA: ConfigEmpresa = {
   nome: 'Sua Empresa', nome_portal: 'Portal Intranet', slogan: '', frase_rodape: 'Conectando pessoas, ideias e grandes movimentos.',
   lema: ['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO'], rotulo_destaque: 'DESTAQUE', lema_destaque: ['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE'],
-  logo: null, logo_nome: null, feriados_municipais: [],
+  logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [],
 };
 
 let atual: ConfigEmpresa = { ...PADRAO_EMPRESA, lema: [...PADRAO_EMPRESA.lema] };
@@ -44,4 +45,14 @@ export function useEmpresa(): ConfigEmpresa {
 export function LogoEmpresa({ tamanho = 32, classe }: { tamanho?: number; classe?: string }) {
   const { logo } = useEmpresa();
   return logo ? <img className={classe} src={logo} alt="" width={tamanho} height={tamanho} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={tamanho} />;
+}
+
+/** Logo da empresa no lugar do nome escrito. Com as duas versões, o CSS mostra a do tema em uso (data-tema); com só uma, ela vale para os dois temas. Sem logo, devolve nada. */
+export function LogoNome({ cfg, classe }: { cfg?: Pick<ConfigEmpresa, 'nome' | 'logo_nome' | 'logo_nome_escuro'>; classe: string }) {
+  const emp = useEmpresa();
+  const c = cfg ?? emp;
+  const { logo_nome: claro, logo_nome_escuro: escuro } = c;
+  if (!claro && !escuro) return null;
+  if (!claro || !escuro) return <img className={classe} src={(claro || escuro)!} alt={c.nome} />;
+  return <><img className={`${classe} logo-tema-claro`} src={claro} alt={c.nome} /><img className={`${classe} logo-tema-escuro`} src={escuro} alt="" aria-hidden="true" /></>;
 }
