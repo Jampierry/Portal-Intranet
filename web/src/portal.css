@@ -1125,3 +1125,7 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .empcfg-logo-img small { font-size: 10.5px; line-height: 1.2; color: var(--menu-suave); }
 .empcfg-logo-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
 @media (max-width: 960px) { .empcfg-linha.ident { grid-template-columns: minmax(0, 1fr); } }
+/* ícone e logo centralizados sobre os respectivos botões */
+.empcfg-icone { align-items: center; }
+.empcfg-icone-acoes { justify-items: center; text-align: center; }
+.empcfg-logonome { align-self: end; }
