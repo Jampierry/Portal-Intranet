@@ -35,3 +35,17 @@ test('validação, edição, exclusão e auditoria', async () => {
   const acoes = (await app.inject({ url: '/api/auditoria', headers: adm })).json<{ acao: string }[]>().map((l) => l.acao);
   assert.ok(acoes.includes('contato_criado') && acoes.includes('contato_apagado'));
 });
+
+test('ramal e celular: validação, canal opcional quando há outro meio, e aparecem na lista pública', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita');
+  const post = (p: object) => app.inject({ method: 'POST', url: '/api/gestao/contatos', headers: ed, payload: novo(p) });
+  assert.equal((await post({ ramal: 'abc' })).statusCode, 400);
+  assert.equal((await post({ celular: '123' })).statusCode, 400);
+  assert.equal((await post({ canal: '', ramal: '', celular: '' })).statusCode, 400); // nenhum meio de contato
+  const ok = await post({ nome: 'Plantão da manutenção', canal: '', ramal: '2400', celular: '(62) 99999-0000' });
+  assert.equal(ok.statusCode, 201);
+  const pub = (await app.inject({ url: '/api/contatos', headers: await entrar(app, 'le') })).json<{ nome: string; ramal: string | null; celular: string | null; canal: string }[]>();
+  const c = pub.find((x) => x.nome === 'Plantão da manutenção')!;
+  assert.deepEqual([c.ramal, c.celular, c.canal], ['2400', '(62) 99999-0000', '']);
+});

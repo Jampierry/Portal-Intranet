@@ -145,27 +145,31 @@ function Destaques() {
   );
 }
 
-interface Cont { id: number; departamento: string; nome: string; canal: string; publicavel: number }
+interface Cont { id: number; departamento: string; nome: string; canal: string; ramal: string | null; celular: string | null; publicavel: number }
 function Contatos() {
   const { dados } = useLista<Cont>('/api/gestao/contatos');
   const areas = [...new Set((dados ?? []).map((c) => c.departamento))];
   return (
     <Crud<Cont> base="/api/gestao/contatos" rotuloItem="contato" idDe={(r) => r.id}
-      introducao="Canais das áreas (e-mail, ramal, ferramenta). Não cadastre dados pessoais de funcionários. A área nova é criada ao salvar."
+      introducao="Canais das áreas (e-mail, ramal, celular corporativo, ferramenta). Não cadastre dados pessoais de funcionários. A área nova é criada ao salvar."
       campos={[
         { chave: 'departamento', rotulo: 'Área', obrigatorio: true, max: 60, sugestoes: areas, metade: true },
         { chave: 'nome', rotulo: 'Assunto / contato', obrigatorio: true, max: 80, dica: 'Ex.: Folha de pagamento', metade: true },
-        { chave: 'canal', rotulo: 'Canal', obrigatorio: true, max: 120, dica: 'E-mail, ramal ou endereço http(s) de chamados' },
+        { chave: 'canal', rotulo: 'Canal (e-mail ou link)', max: 120, dica: 'E-mail ou endereço http(s) de chamados', metade: true },
+        { chave: 'ramal', rotulo: 'Ramal', max: 20, dica: 'Ex.: 2400', metade: true },
+        { chave: 'celular', rotulo: 'Celular corporativo', max: 20, dica: 'Com DDD. Ex.: (62) 99999-0000 — informe ao menos canal, ramal ou celular', metade: true },
         { chave: 'publicavel', rotulo: 'Aparece no portal', tipo: 'check' },
       ]}
       colunas={[
         { titulo: 'Área', ver: (r) => r.departamento },
         { titulo: 'Assunto', ver: (r) => r.nome },
         { titulo: 'Canal', ver: (r) => r.canal },
+        { titulo: 'Ramal', ver: (r) => r.ramal ?? '' },
+        { titulo: 'Celular', ver: (r) => r.celular ?? '' },
         { titulo: 'Situação', ver: (r) => <Selo texto={r.publicavel ? 'Publicado' : 'Oculto'} tom={r.publicavel ? 'ok' : 'neutro'} /> },
       ]}
-      valoresNovos={{ departamento: '', nome: '', canal: '', publicavel: true }}
-      paraForm={(r) => ({ departamento: r.departamento, nome: r.nome, canal: r.canal, publicavel: !!r.publicavel })}
+      valoresNovos={{ departamento: '', nome: '', canal: '', ramal: '', celular: '', publicavel: true }}
+      paraForm={(r) => ({ departamento: r.departamento, nome: r.nome, canal: r.canal, ramal: s(r.ramal), celular: s(r.celular), publicavel: !!r.publicavel })}
     />
   );
 }

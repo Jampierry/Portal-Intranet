@@ -4,7 +4,7 @@ Leia este arquivo antes de procurar código. Ele resume **o que existe, onde est
 
 ## 1. Visão geral
 - Portal interno em português do Brasil: Início, Comunicados, Documentos, Pessoas, Ajuda, Publicar (conteúdo) e Configurações (acessos e integrações).
-- Pilha: React 19 + Vite (`web/`), Fastify + SQLite `node:sqlite` (`servidor/`), módulos em `modulos/<nome>/{api,tests}`, migrações SQL em `infra/migracoes/` (rodam sozinhas ao subir o servidor), testes `node:test` (`npm test`, 78 testes).
+- Pilha: React 19 + Vite (`web/`), Fastify + SQLite `node:sqlite` (`servidor/`), módulos em `modulos/<nome>/{api,tests}`, migrações SQL em `infra/migracoes/` (rodam sozinhas ao subir o servidor), testes `node:test` (`npm test`, 79 testes).
 - Rodar: `npm run dev` (site http://localhost:5174, API :3100). Logins de exemplo: admin/admin123, editor/editor123, leitor/leitor123. `npm run demo` popula dados fictícios (idempotente).
 - Serviço Zimbra (separado): `MCP/zimbra-mcp` (fora do Git, tem credenciais) → `.venv\Scripts\python zimbra_web.py` (porta 8765, só local).
 
@@ -39,8 +39,8 @@ Componentes-chave: `Crud.tsx` (lista+formulário genérico, ordenação por cabe
 - **integracoes**: `/api/integracoes/zimbra` (situação, conexão, testar, config do serviço, agendas).
 - Proteções globais: sessão por cookie httpOnly, CSRF por origem, bloqueio por tentativas de login, auditoria só-inclusão.
 
-## 4. Banco (migrações 001–013)
-Tabelas: `usuarios` (perfil, permissões JSON de ajustes), `sessoes`, `tentativas_login`, `auditoria`, `perfis_permissoes` (nome, sistema, lista), `departamentos`, `contatos`, `aplicacoes`, `favoritos`, `comunicados`, `documentos`, `periodos_destaque`, `destaques` (mes, ano, foto), `banners`, `institucional`, `integracoes` (chave/valor: conexão com o Zimbra).
+## 4. Banco (migrações 001–014)
+Migrações 001–014. Tabelas: `usuarios` (perfil, permissões JSON de ajustes), `sessoes`, `tentativas_login`, `auditoria`, `perfis_permissoes` (nome, sistema, lista), `departamentos`, `contatos` (canal, ramal, celular), `aplicacoes`, `favoritos`, `comunicados`, `documentos`, `periodos_destaque`, `destaques` (mes, ano, foto), `banners`, `institucional`, `integracoes` (chave/valor: conexão com o Zimbra).
 
 ## 5. Permissões (modelo)
 - Perfis: Administrador (sempre tudo), Editor, Consulta (do sistema, não apagam nem renomeiam) + perfis personalizados criados em Configurações › Perfis.

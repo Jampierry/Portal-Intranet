@@ -148,3 +148,7 @@
 - Busca global no topo (`BuscaGlobal.tsx`). Ícones no lugar de nomes no alternador Catálogo/Lista.
 - Serviço Zimbra iniciado e conectado ao portal; serviço Agenda ligado. **Pendente do usuário:** escolher a agenda da empresa em Configurações › Integrações.
 - Mapa completo: `mapa-do-sistema.md`. 78 testes passam.
+
+## Contatos com ramal e celular (07/11/2026)
+- Migração 014: `contatos.ramal` e `contatos.celular` (opcionais, corporativos). Canal (e-mail/link) deixou de ser obrigatório: basta informar canal, ramal ou celular.
+- Publicar › Contatos ganhou os campos e as colunas Ramal e Celular; a tela Pessoas mostra "Ramal 2400" e o celular como link `tel:`. Validação no servidor (ramal só números; celular com DDD). 79 testes passam.
