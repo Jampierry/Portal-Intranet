@@ -17,6 +17,7 @@ import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 import { rotasPropriedade } from '../../modulos/propriedade/api/index.ts';
 import { rotasMarca } from '../../modulos/marca/api/index.ts';
+import { rotasDemonstracao } from '../../modulos/demonstracao/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
 export const MODULOS = [
@@ -36,6 +37,7 @@ export const MODULOS = [
   { nome: 'pessoasmes', rotas: rotasPessoasMes },
   { nome: 'avisos', rotas: rotasAvisos },
   { nome: 'pulso', rotas: rotasPulso },
+  { nome: 'demonstracao', rotas: rotasDemonstracao },
 ];
 
 export async function criarApp(db: Banco, producao = false) {

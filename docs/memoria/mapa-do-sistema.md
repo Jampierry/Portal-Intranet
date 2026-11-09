@@ -5,7 +5,7 @@ Leia este arquivo antes de procurar código. Ele resume **o que existe, onde est
 ## 1. Visão geral
 - Portal interno em português do Brasil: Início, Comunicados, Documentos, Pessoas, Ajuda, Publicar (conteúdo) e Configurações (acessos e integrações).
 - Pilha: React 19 + Vite (`web/`), Fastify + SQLite `node:sqlite` (`servidor/`), módulos em `modulos/<nome>/{api,tests}`, migrações SQL em `infra/migracoes/` (rodam sozinhas ao subir o servidor), testes `node:test` (`npm test`, 79 testes).
-- Rodar: `npm run dev` (site http://localhost:5174, API :3100). Logins de exemplo: admin/admin123, editor/editor123, leitor/leitor123. `npm run demo` popula dados fictícios (idempotente).
+- Rodar: `npm run dev` (site http://localhost:5174, API :3100). Logins de exemplo: admin/admin123, editor/editor123, leitor/leitor123. `npm run demo` liga os dados de exemplo da empresa fictícia Aurora Esportes (idempotente; no banco, imagens inclusive; desligar em Configurações › Dados de exemplo).
 - Serviço Zimbra (separado): `MCP/zimbra-mcp` (fora do Git, tem credenciais) → `.venv\Scripts\python zimbra_web.py` (porta 8765, só local).
 
 ## 2. Telas (frontend `web/src`)

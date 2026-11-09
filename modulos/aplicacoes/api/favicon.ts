@@ -1,6 +1,7 @@
 // Busca o ícone do próprio aplicativo (favicon) a partir do endereço cadastrado e guarda no portal.
 // Só o administrador chama (cadastro de aplicativos). Endereços internos são permitidos de propósito: os sistemas ficam na rede da empresa.
 import { guardarImagem } from '../../imagens/api/index.ts';
+import type { Banco } from '../../../servidor/src/db.ts';
 
 const AGENTE = 'PortalIntranet/0.1 (+icone-do-aplicativo)';
 
@@ -41,12 +42,12 @@ export function candidatos(html: string, base: string): string[] {
 }
 
 /** Devolve o endereço da imagem guardada (ex.: /api/imagens/nome.png) ou null se não achou um ícone válido. */
-export async function buscarIcone(urlApp: string): Promise<string | null> {
+export async function buscarIcone(db: Banco, urlApp: string): Promise<string | null> {
   const pagina = await baixar(urlApp, 1_000_000);
   const html = pagina ? pagina.toString('utf8') : '';
   for (const u of candidatos(html, urlApp)) {
     const img = await baixar(u, 512 * 1024);
-    const salvo = img && guardarImagem(img);
+    const salvo = img && guardarImagem(db, img);
     if (salvo) return salvo.url;
   }
   return null;

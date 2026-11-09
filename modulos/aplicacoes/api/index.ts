@@ -55,7 +55,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   // Traz o ícone do próprio aplicativo (favicon do endereço informado) e guarda no portal.
   app.post('/api/gestao/aplicacoes/icone', { preHandler: exigirPerm('pub.aplicativos.criar', 'pub.aplicativos.editar') }, async (req, resp) => {
     const url = String(urlHttp(corpoObjeto(req.body), 'url', 'Endereço (URL)', false));
-    const logo = await buscarIcone(url);
+    const logo = await buscarIcone(db, url);
     if (!logo) return resp.code(404).send({ erro: 'Não encontramos o ícone deste aplicativo. Envie uma imagem pelo botão "Escolher imagem".' });
     auditar(db, req.usuario!.id, 'aplicacao_icone_buscado', { url });
     return { logo };

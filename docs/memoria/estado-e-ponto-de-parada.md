@@ -1,5 +1,15 @@
 # Estado e ponto de parada
 
+## Sessão de 09/11/2026 — dados de exemplo no banco e ícone do sistema
+**Feito:**
+- **Imagens no banco** (migração 027, tabela `imagens_arquivo`): uploads, logos e capas ficam no SQLite e valem em qualquer máquina/celular. Arquivos antigos de `dados-privados/imagens` são importados sozinhos na primeira subida. `guardarImagem(db, ...)` agora recebe o banco.
+- **Pacote de exemplo** (`modulos/demonstracao`): empresa fictícia **Aurora Esportes** (portal "Aurora Conecta"), com 14 comunicados, 8 documentos, 6 apps (1 restrito), 7 banners, destaques, aniversariantes, novos colaboradores, contatos, calendário, pulso, missão/visão/valores, usuários e todas as imagens (SVG gerados em código). Cada linha criada é anotada em `dados_exemplo`; ligar de novo não duplica; desligar apaga só o anotado e devolve a empresa/entrada de antes (se ninguém editou depois).
+- **Ligar/desligar:** Configurações › **Dados de exemplo** (só administrador). `npm run banco:seed` (admin + exemplo) e `npm run demo` ligam; `npm run demo -- desligar` desliga. Em produção os usuários de exemplo ficam sem senha utilizável. Logins: editor/editor123, leitor/leitor123, ana.demo/bruno.demo/carla.demo (demo12345). Substitui o antigo `web/public/demo`, `scripts/gerar-imagens-demo.mjs` e os módulos `*/data`.
+- **Ícone do sistema:** arco de portal com rede de pontos (`web/public/icone.svg`; PNG 192/512 por `scripts/gerar-icones.ps1`).
+- Testes: 115 passam (`modulos/demonstracao/tests`).
+
+**Pendências:** conferir no navegador (Início, Comunicados, tela de entrada com o carrossel e a logo Aurora, aba Dados de exemplo); no celular o service worker pode guardar o ícone antigo até reinstalar o app.
+
 ## Sessão de 08/11/2026 (tarde) — propriedade do conteúdo e layout fixo (enviado; `main` = `1ecb3cb`)
 **Feito:**
 - **Propriedade do conteúdo** (migração 026, `modulos/propriedade`): só o administrador apaga o que outra pessoa publicou; editar exige pedido autorizado pelo dono **ou** pelo administrador (vale 24 h; chega no sino de ambos: `/api/pedidos-edicao`, `/caixa`, `/:id/decidir`). Conteúdo sem dono registrado (anterior à regra) só o administrador mexe. Conteúdo novo com editar/apagar: acrescentar em `RECURSOS`. Testes em `modulos/propriedade/tests`.
