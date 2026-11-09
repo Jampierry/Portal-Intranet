@@ -22,6 +22,16 @@ function foto(c: Record<string, unknown>): string | null {
   return f;
 }
 
+/** Anos de casa que entram no mural (ex.: 1, 5, 10, 15). Lista vazia/ausente = todos a partir de 1 ano. Guardado em portal_config. */
+const CHAVE_CASA = 'tempo_de_casa_anos';
+const lerAnosCasa = (db: Banco): number[] => {
+  try {
+    const r = db.prepare('SELECT valor FROM portal_config WHERE chave = ?').get(CHAVE_CASA) as { valor: string } | undefined;
+    const v = r ? JSON.parse(r.valor) : [];
+    return Array.isArray(v) ? v.filter((n): n is number => Number.isInteger(n) && n >= 1 && n <= 80) : [];
+  } catch { return []; }
+};
+
 export async function rotasPessoasMes(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   // ----- Público (qualquer pessoa logada): só autorizados; aniversariantes do mês atual; novos dos últimos 30 dias -----
   app.get('/api/pessoas-do-mes', async (_req, resp) => {
@@ -30,12 +40,27 @@ export async function rotasPessoasMes(app: FastifyInstance, { db }: { db: Banco;
       .map((a) => ({ ...a, iniciais: iniciais(a.nome), hoje: a.dia === h.dia }));
     // Tempo de casa: quem faz aniversário de admissão neste mês (a partir de 1 ano)
     const ano = Number(h.iso.slice(0, 4));
+    const anosCasa = lerAnosCasa(db);
     const casa = (db.prepare("SELECT nome, area, foto, admissao FROM aniversariantes WHERE autorizado = 1 AND admissao IS NOT NULL AND CAST(substr(admissao, 6, 2) AS INTEGER) = ? ORDER BY substr(admissao, 9, 2), nome").all(h.mes) as { nome: string; area: string; foto: string | null; admissao: string }[])
       .map((a) => ({ nome: a.nome, area: a.area, foto: a.foto, iniciais: iniciais(a.nome), dia: Number(a.admissao.slice(8, 10)), anos: ano - Number(a.admissao.slice(0, 4)), hoje: Number(a.admissao.slice(8, 10)) === h.dia }))
-      .filter((a) => a.anos >= 1);
+      .filter((a) => a.anos >= 1 && (anosCasa.length === 0 || anosCasa.includes(a.anos)))
+      .sort((x, y) => x.anos - y.anos || x.dia - y.dia || x.nome.localeCompare(y.nome, 'pt-BR')); // menos tempo primeiro; no mesmo tempo, pela data e nome
     const novos = (db.prepare('SELECT nome, area, funcao, entrada, mensagem, foto FROM novos_colaboradores WHERE autorizado = 1 AND entrada <= ? AND entrada >= ? ORDER BY entrada DESC, nome').all(h.iso, somarDias(h.iso, -JANELA_NOVOS_DIAS)) as { nome: string }[])
       .map((n) => ({ ...n, iniciais: iniciais(n.nome) }));
     return resp.header('Cache-Control', 'no-cache').send({ mes: h.mes, aniversariantes: aniv, casa, novos });
+  });
+
+  // ----- Gestão: quais anos de casa aparecem no mural (quem pode ver/editar Aniversariantes) -----
+  app.get('/api/gestao/tempo-de-casa', { preHandler: exigirPerm('pub.aniversariantes.ver') }, async () => ({ anos: lerAnosCasa(db) }));
+  app.put('/api/gestao/tempo-de-casa', { preHandler: exigirPerm('pub.aniversariantes.editar') }, async (req) => {
+    const bruto = corpoObjeto(req.body).anos;
+    if (!Array.isArray(bruto) || bruto.length > 40) throw new ErroValidacao('Anos de casa: envie uma lista de até 40 anos.');
+    const anos = [...new Set(bruto.map(Number))];
+    if (anos.some((n) => !Number.isInteger(n) || n < 1 || n > 80)) throw new ErroValidacao('Anos de casa: use números inteiros de 1 a 80.');
+    anos.sort((a, b) => a - b);
+    db.prepare('INSERT INTO portal_config (chave, valor, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em').run(CHAVE_CASA, JSON.stringify(anos), new Date().toISOString());
+    auditar(db, req.usuario!.id, 'tempo_de_casa_anos_alterado', { anos });
+    return { anos };
   });
 
   // ----- Gestão: aniversariantes -----

@@ -190,7 +190,7 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
   });
 
   app.delete<{ Params: { id: string } }>('/api/calendario/:id', { preHandler: exigirPerm('calendario.excluir') }, async (req, resp) => {
-    if (!/^[\w.:-]{1,60}$/.test(req.params.id)) throw new ErroValidacao('Identificador inválido.');
+    if (!/^[\w.:~@=+-]{1,400}$/.test(req.params.id)) throw new ErroValidacao('Identificador inválido.');
     const conexao = conexaoZimbra(db);
     if (!conexao) return resp.code(400).send({ erro: 'A agenda ainda não está conectada ao Zimbra.' });
     try {

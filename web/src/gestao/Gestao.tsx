@@ -17,7 +17,6 @@ import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
 import { Aniversariantes, NovosColaboradores } from './PessoasMes';
 import { PesquisaPulso } from './Pulso';
-import { AvisosEmail } from './AvisosEmail';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -274,9 +273,15 @@ const ABAS_PUBLICAR: [AbaPub, string][] = [
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
+/** Em telas estreitas as abas rolam na horizontal: mantém a aba aberta visível. */
+function useAbaVisivel(aba?: string) {
+  useEffect(() => { document.querySelector('.abas-gestao [aria-selected=true]')?.scrollIntoView({ inline: 'nearest', block: 'nearest' }); }, [aba]);
+}
+
 export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
   permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
+  useAbaVisivel(pedida);
   // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
   const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}.ver`));
   const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
@@ -307,6 +312,7 @@ type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'c
 const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['exemplo', 'Dados de exemplo'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
+  useAbaVisivel(pedida);
   const abas = ABAS_CONFIG.filter(([id]) => (id === 'exemplo' ? souAdmin : id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
@@ -318,7 +324,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
         <span id="slot-dica-aba" className="slot-dica" />
       </div>
       {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
-        : aba === 'integracoes' ? <><Integracoes permissoes={permissoes} /><AvisosEmail permissoes={permissoes} /></>
+        : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
         : aba === 'exemplo' ? <DadosExemplo />
         : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
         : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />

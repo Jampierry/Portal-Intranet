@@ -6,7 +6,6 @@ import { Destaques } from './Destaques';
 import { Novidades } from './Novidades';
 import { MissaoVisaoValores } from './MissaoVisaoValores';
 import { PessoasDoMes } from './PessoasDoMes';
-import { PulsoCard } from './PulsoCard';
 import { ListaComunicados } from '../comunicados/Comunicados';
 import { dataCurta, useLista, type Banner, type Comunicado, type Documento } from '../dados';
 import type { Tela } from '../Menu';
@@ -47,7 +46,6 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
             <MissaoVisaoValores />
             <Destaques compacto />
           </div>
-          <PulsoCard />
           <PessoasDoMes />
           {veComunicados && <section className="cartao-sec" aria-labelledby="com-rec">
             <div className="sec-topo">

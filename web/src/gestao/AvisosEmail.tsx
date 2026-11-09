@@ -23,9 +23,8 @@ export function AvisosEmail({ permissoes }: { permissoes: string[] }) {
     catch (e) { setErro((e as Error).message); } finally { setOcupado(false); }
   };
   return (
-    <section className="crud integracoes" style={{ marginTop: 16 }}>
-      <div className="int-bloco">
-        <h3>Aviso de comunicados por e-mail</h3>
+    <div className="cartao-sec int-bloco">
+        <h3>4. Aviso de comunicados por e-mail</h3>
         <p className="suave" style={{ marginTop: 0 }}>Quando um comunicado é publicado pela primeira vez, quem tem e-mail cadastrado (Usuários › Editar), pode ver comunicados e não desligou os avisos em “Minha conta” recebe um e-mail padronizado pelo serviço Zimbra. Cada comunicado avisa uma vez só, mesmo que seja editado depois.</p>
         {!cfg.conectado && <p className="erro" role="status">O serviço Zimbra ainda não está conectado (bloco 1 acima). Sem isso, nenhum e-mail sai.</p>}
         {aviso && <p className="ok" role="status">{aviso}</p>}
@@ -41,7 +40,6 @@ export function AvisosEmail({ permissoes }: { permissoes: string[] }) {
           <button className="btn" disabled={ocupado} onClick={() => void salvar()}>Salvar</button>
           <button className="btn btn-sec" disabled={ocupado || !cfg.conectado} onClick={() => void testar()}>Enviar e-mail de teste para mim</button>
         </div>}
-      </div>
-    </section>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import { Documentos } from './documentos/Documentos';
 import { CalendarioPagina } from './CalendarioPagina';
 import { podeAbaCalendario } from './calendarioTipos';
 import { Lancador } from './aplicacoes/Lancador';
+import { PulsoCard } from './inicio/PulsoCard';
 import { useEmpresa } from './empresa';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
@@ -214,6 +215,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">
+        <PulsoCard />
         <header className="topo">
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <DicaTela texto={AVISOS[tela]} />

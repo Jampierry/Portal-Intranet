@@ -12,6 +12,6 @@ export const ESTILOS: { id: Estilo; nome: string; menu: string; fundo: string; a
   { id: 'grafite', nome: 'Grafite', menu: '#27272a', fundo: '#f4f4f5', acento: '#a4d4be' },
   { id: 'oceano', nome: 'Oceano', menu: '#0f2f3d', fundo: '#edf4f6', acento: '#9acfdb' },
   // Menu claro no tema claro e escuro no tema escuro, nas paletas públicas mais usadas (GitHub Primer e Notion).
-  { id: 'github', nome: 'GitHub', menu: '#f6f8fa', fundo: '#ffffff', acento: '#0969da', menuClaro: true },
-  { id: 'notion', nome: 'Notion', menu: '#f7f6f3', fundo: '#ffffff', acento: '#1a6fc4', menuClaro: true },
+  { id: 'github', nome: 'Névoa', menu: '#f6f8fa', fundo: '#ffffff', acento: '#0969da', menuClaro: true },
+  { id: 'notion', nome: 'Areia', menu: '#f7f6f3', fundo: '#ffffff', acento: '#1a6fc4', menuClaro: true },
 ];

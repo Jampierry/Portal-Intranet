@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { MESES_LONGOS, dataCurta } from '../dados';
@@ -64,6 +64,35 @@ function ImportarAniversariantes({ aoFechar, aoConcluir }: { aoFechar: () => voi
   );
 }
 
+/** Quais anos de casa aparecem no cartão "Tempo de casa" do Início (ex.: 1, 5, 10, 15). Vazio = todos. */
+function ConfigTempoDeCasa({ edita }: { edita: boolean }) {
+  const [texto, setTexto] = useState('');
+  const [msg, setMsg] = useState('');
+  const [erro, setErro] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(() => { api<{ anos: number[] }>('/api/gestao/tempo-de-casa').then((r) => setTexto(r.anos.join(', '))).catch((e: Error) => setErro(e.message)); }, []);
+  const salvar = async () => {
+    setErro(''); setMsg(''); setOcupado(true);
+    try {
+      const anos = texto.split(/[\s,;]+/).filter(Boolean).map(Number);
+      const r = await api<{ anos: number[] }>('/api/gestao/tempo-de-casa', { anos }, 'PUT');
+      setTexto(r.anos.join(', ')); setMsg(r.anos.length ? `Aparecem no Início quem completa ${r.anos.join(', ')} ano(s) de casa.` : 'Aparecem todos que completam 1 ano ou mais de casa.');
+    } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); }
+  };
+  return (
+    <div className="cartao-sec" style={{ marginBottom: 10, display: 'grid', gap: 8 }}>
+      <b>Tempo de casa: quais anos aparecem no Início</b>
+      <label style={{ margin: 0 }}>Anos de casa (separe por vírgula)
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} disabled={!edita} placeholder="ex.: 1, 5, 10, 15, 20 — vazio mostra todos" />
+        <small className="suave">Só aparece quem faz aniversário de admissão no mês E completa um desses anos. Deixe vazio para mostrar todos a partir de 1 ano.</small>
+      </label>
+      {msg && <p className="ok" role="status" style={{ margin: 0 }}>{msg}</p>}
+      {erro && <p className="erro" role="alert" style={{ margin: 0 }}>{erro}</p>}
+      {edita && <div className="barra"><button type="button" className="btn" disabled={ocupado} onClick={() => void salvar()}>{ocupado ? 'Salvando…' : 'Salvar anos'}</button></div>}
+    </div>
+  );
+}
+
 /** Publicar › Aniversariantes (RH): aparecem no Início, no mês do aniversário. */
 export function Aniversariantes() {
   const perms = useContext(PermissoesCtx);
@@ -79,6 +108,7 @@ export function Aniversariantes() {
           <button className="btn btn-sec" onClick={() => setImportar(true)}><Icone nome="mais" tamanho={15} /> Importar planilha</button>
         </div>
       )}
+      <ConfigTempoDeCasa edita={perms === null || perms.includes('pub.aniversariantes.editar')} />
       {aviso && <p className="ok" role="status">{aviso}</p>}
       <Crud<Aniv> key={versao} base="/api/gestao/aniversariantes" rotuloItem="aniversariante" idDe={(r) => r.id}
         introducao={`Aparecem no Início, no mês do aniversário (só dia e mês, sem a idade). ${AVISO_LGPD}`}

@@ -73,3 +73,25 @@ test('tempo de casa: quem faz aniversário de admissão no mês, a partir de 1 a
   assert.equal((await app.inject({ url: '/api/empresa' })).json<{ fundacao: string }>().fundacao, '1999-03-12');
   assert.equal((await put({})).json<{ fundacao: string | null }>().fundacao, null);
 });
+
+test('tempo de casa: só os anos escolhidos aparecem no mural; vazio mostra todos; só quem edita configura; valida os números', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita'), le = await entrar(app, 'le');
+  const mes = hoje.getMonth() + 1;
+  const a = (nome: string, anos: number) => app.inject({ method: 'POST', url: '/api/gestao/aniversariantes', headers: ed, payload: { nome, area: 'Costura', dia: 2, mes: outroMes, autorizado: true, admissao: `${hoje.getFullYear() - anos}-${dois(mes)}-15` } });
+  for (const [n, anos] of [['Um Ano', 1], ['Tres Anos', 3], ['Cinco Anos', 5], ['Dez Anos', 10]] as const) assert.equal((await a(n, anos)).statusCode, 201);
+  const casa = async () => (await app.inject({ url: '/api/pessoas-do-mes', headers: le })).json<{ casa: { nome: string }[] }>().casa.map((x) => x.nome).sort();
+  const ordenado = async () => (await app.inject({ url: '/api/pessoas-do-mes', headers: le })).json<{ casa: { nome: string }[] }>().casa.map((x) => x.nome);
+  assert.deepEqual(await ordenado(), ['Um Ano', 'Tres Anos', 'Cinco Anos', 'Dez Anos']); // menos tempo de casa primeiro
+  assert.deepEqual(await casa(), ['Cinco Anos', 'Dez Anos', 'Tres Anos', 'Um Ano']); // sem configuração: todos
+  const put = (anos: unknown, h = ed) => app.inject({ method: 'PUT', url: '/api/gestao/tempo-de-casa', headers: h, payload: { anos } });
+  assert.equal((await put([1, 5, 10, 5])).statusCode, 200);
+  assert.deepEqual((await app.inject({ url: '/api/gestao/tempo-de-casa', headers: ed })).json(), { anos: [1, 5, 10] });
+  assert.deepEqual(await casa(), ['Cinco Anos', 'Dez Anos', 'Um Ano']);
+  assert.equal((await put([0])).statusCode, 400);
+  assert.equal((await put([1.5])).statusCode, 400);
+  assert.equal((await put('x')).statusCode, 400);
+  assert.equal((await put([5], le)).statusCode, 403);
+  assert.equal((await put([])).statusCode, 200);
+  assert.equal((await casa()).length, 4); // vazio volta a mostrar todos
+});

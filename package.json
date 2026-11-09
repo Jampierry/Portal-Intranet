@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w servidor\" \"npm run dev -w web\"",
+    "dev:rede": "concurrently -k -n api,web -c blue,green \"npm run dev -w servidor\" \"npm run dev -w web -- --host\"",
     "banco:migrar": "npm run migrar -w servidor",
     "banco:seed": "npm run seed -w servidor",
     "admin:criar": "npm run admin -w servidor --",

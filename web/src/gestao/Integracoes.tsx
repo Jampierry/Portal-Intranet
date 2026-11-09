@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { Selo } from './Crud';
 import { DicaAba } from '../Dica';
+import { ContasEmail } from './ContasEmail';
+import { AvisosEmail } from './AvisosEmail';
 
 interface EstadoServico {
   host: string; user: string; smtp_host: string; smtp_port: number; senha_salva: boolean; servico_user: string; servico_senha_salva: boolean;
   remetente_nome: string; dominios_permitidos: string[]; limite_hora: number; api_usa: string; servicos: Record<string, boolean>;
+  provedor: string; permitir_outros_dominios: boolean; provedores: Record<string, string>;
 }
 interface Situacao {
   url: string; token_salvo: boolean; origem: 'banco' | 'ambiente' | null; agenda_destino: string;
@@ -32,6 +35,7 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
   const [aviso, setAviso] = useState('');
   const [conexao, setConexao] = useState({ url: '', token: '', agenda: '' });
   const [conta, setConta] = useState({ host: '', user: '', senha: '', smtp_host: '', smtp_port: '465' });
+  const [outros, setOutros] = useState(false);
   const [servicos, setServicos] = useState<Record<string, boolean>>({});
   const [agendas, setAgendas] = useState<Agenda[] | null>(null);
   const [escolhidas, setEscolhidas] = useState<Set<string>>(new Set());
@@ -46,7 +50,7 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
       const cfg = s.servico.config;
       if (cfg) {
         setConta((c) => ({ ...c, host: cfg.host, user: cfg.user, senha: '', smtp_host: cfg.smtp_host, smtp_port: String(cfg.smtp_port || 465) }));
-        setServicos(cfg.servicos);
+        setServicos(cfg.servicos); setOutros(!!cfg.permitir_outros_dominios);
         if (cfg.servicos.agenda) {
           api<Agenda[]>('/api/integracoes/zimbra/agendas').then((a) => { setAgendas(a); setEscolhidas(new Set(a.filter((x) => x.selecionada).map((x) => x.id))); }).catch(() => setAgendas(null));
         } else setAgendas(null);
@@ -68,7 +72,7 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
     await api('/api/integracoes/zimbra', { desconectar: true }, 'PUT'); setAviso('Desconectado.'); await carregar();
   }); };
   const salvarServico = (e: FormEvent) => { e.preventDefault(); void executar('servico', async () => {
-    const corpo: Record<string, unknown> = { host: conta.host, user: conta.user, smtp_host: conta.smtp_host, smtp_port: Number(conta.smtp_port) || 465, servicos };
+    const corpo: Record<string, unknown> = { provedor: 'zimbra', permitir_outros_dominios: outros, host: conta.host, user: conta.user, smtp_host: conta.smtp_host, smtp_port: Number(conta.smtp_port) || undefined, servicos };
     if (conta.senha) corpo.senha = conta.senha;
     if (agendas) corpo.agendas = [...escolhidas];
     await api('/api/integracoes/zimbra/config', corpo, 'PUT');
@@ -127,8 +131,9 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
       </form>
 
       {online && cfg && (
-        <form className="cartao-sec int-bloco" onSubmit={salvarServico}>
-          <h3>2. Conta do Zimbra e serviços liberados</h3>
+        <form className="int-form" onSubmit={salvarServico}>
+          <div className="cartao-sec int-bloco">
+          <h3>2. Conta Zimbra principal</h3>
           <div className="grade2">
             <label>Servidor (host)<input value={conta.host} onChange={(e) => setConta({ ...conta, host: e.target.value })} required disabled={!edita} placeholder="webmail.suaempresa.com.br" /></label>
             <label>E-mail da conta<input type="email" value={conta.user} onChange={(e) => setConta({ ...conta, user: e.target.value })} required disabled={!edita} /></label>
@@ -140,19 +145,23 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
               <span className="linha-smtp"><input value={conta.smtp_host} onChange={(e) => setConta({ ...conta, smtp_host: e.target.value })} placeholder="igual ao servidor" disabled={!edita} />
                 <input className="curto" value={conta.smtp_port} onChange={(e) => setConta({ ...conta, smtp_port: e.target.value.replace(/\D/g, '') })} disabled={!edita} aria-label="Porta SMTP" /></span></label>
           </div>
-          <fieldset className="int-servicos">
+          </div>
+          <div className="cartao-sec int-bloco int-funcoes">
+          <h3>Funções da conta Zimbra principal</h3>
+          <div className="int-duas">
+          <fieldset className="int-servicos int-cols2">
             <legend>O que o portal e o assistente podem usar</legend>
             {SERVICOS.map(([chave, nome, desc]) => (
-              <label key={chave} className="perm-check int-servico">
+              <label key={chave} className="perm-check int-servico" title={desc}>
                 <input type="checkbox" checked={!!servicos[chave]} disabled={!edita}
                   onChange={(e) => setServicos({ ...servicos, [chave]: e.target.checked, ...(chave === 'agenda' && !e.target.checked ? { agenda_escrita: false } : {}), ...(chave === 'agenda_escrita' && e.target.checked ? { agenda: true } : {}) })} />
-                <span><b>{nome}</b><small className="suave">{desc}</small></span>
+                <span><b>{nome}</b></span>
               </label>
             ))}
           </fieldset>
           {servicos.agenda && (
-            <fieldset className="int-servicos">
-              <legend>Agendas usadas no calendário</legend>
+            <fieldset className="int-servicos int-cols2">
+              <legend>Agendas do Zimbra usadas no calendário</legend>
               {agendas === null ? <p className="suave">Salve com “Agenda” ligada para listar as agendas.</p>
                 : agendas.length === 0 ? <p className="suave">Nenhuma agenda encontrada.</p>
                 : agendas.map((a) => (
@@ -165,9 +174,17 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
               <small className="suave">Sem nenhuma marcada, o serviço usa todas as agendas da conta.</small>
             </fieldset>
           )}
-          {edita && <div className="barra"><button className="btn" disabled={ocupado !== ''}>{ocupado === 'servico' ? 'Salvando…' : 'Salvar configuração do serviço'}</button></div>}
+          </div>
+          <label className="perm-check int-servico int-outros">
+            <input type="checkbox" checked={outros} disabled={!edita} onChange={(e) => setOutros(e.target.checked)} />
+            <span><b>Permitir avisos para outros domínios (vale para todas as contas)</b><small className="suave">Desligado: só e-mails do domínio da empresa recebem avisos. Ligado: qualquer endereço válido (ex.: gmail.com) pode receber.</small></span>
+          </label>
+          {edita && <div className="barra"><button className="btn" disabled={ocupado !== ''}>{ocupado === 'servico' ? 'Salvando…' : 'Salvar conta Zimbra e funções'}</button></div>}
+          </div>
         </form>
       )}
+      {online && cfg && <ContasEmail edita={edita} />}
+      <AvisosEmail permissoes={permissoes} />
       {!online && sit?.origem && (
         <p className="suave">Para ligar o serviço: abra a pasta <code>MCP/zimbra-mcp</code> e rode <code>.venv\Scripts\python zimbra_web.py</code>. Depois volte aqui e clique em “Salvar conexão”.</p>
       )}
