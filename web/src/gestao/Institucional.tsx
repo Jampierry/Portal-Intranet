@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { usePermissoes } from './Crud';
+import { DicaAba } from '../Dica';
 
 interface Inst { missao: string; visao: string; valores: string[] }
 
@@ -26,7 +27,7 @@ export function Institucional() {
 
   return (
     <section className="cartao-sec">
-      <p className="suave">Aparecem no Início, ao lado do colaborador destaque. Deixe tudo em branco para esconder a seção.</p>
+      <DicaAba>Aparecem no Início, ao lado do colaborador destaque. Deixe tudo em branco para esconder a seção.</DicaAba>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
       {pronto && (

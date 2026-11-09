@@ -4,6 +4,7 @@ import { Icone } from '../icones';
 import { useLista } from '../dados';
 import { useOrdenacao, valorOrdenavel } from './Ordenar';
 import { CampoLink } from './CampoLink';
+import { Dica, DicaAba } from '../Dica';
 
 /** Permissões do usuário logado dentro de Publicar. Sem provedor (null) = tudo liberado; o servidor confere de qualquer forma. */
 export const PermissoesCtx = createContext<string[] | null>(null);
@@ -175,10 +176,11 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
 
   return (
     <section className="crud">
-      <div className="barra">
-        <p className="suave" style={{ margin: 0 }}>{introducao}</p>
-        {libera('criar') && <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>}
-      </div>
+      {introducao && !libera('criar') && <DicaAba>{introducao}</DicaAba>}
+      {libera('criar') && <div className="barra barra-fim">
+        {introducao && <Dica lado="dir">{introducao}</Dica>}
+        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>
+      </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {(erro || falha) && <p className="erro" role="alert">{erro || falha}</p>}
       {dados === null && !erro && <p className="vazio">Carregando…</p>}

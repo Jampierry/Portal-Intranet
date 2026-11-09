@@ -1085,7 +1085,6 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 @media (min-width: 861px) and (min-height: 560px) {
   .meio.meio-fixo { overflow: hidden; scrollbar-gutter: auto; }
   .meio-fixo .conteudo { overflow: hidden; padding-bottom: 14px; }
-  .meio-fixo .rodape-portal { display: none; }
   .meio-fixo .calp-barra { flex: none; margin: 4px 0 8px; }
   .meio-fixo .calp { flex: 1 1 0; min-height: 0; margin-top: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
   .meio-fixo .calp-mes { min-height: 0; grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; }
@@ -1297,3 +1296,220 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .entrar-marca .entrar-fundo-img { inset: -16px; background-size: cover; background-position: center; background-repeat: no-repeat; }
 .entrar-marca.previa { min-height: 320px; }
 @media (max-width: 860px) { .entrar-marca { min-height: 260px; } }
+
+/* Comunicados (computador): cards menores numa área própria com rolagem fina; filtros e painel da marca ficam fixos ao lado, terminando na mesma linha de baixo. */
+@media (min-width: 1181px) {
+  /* ocupa o que sobra da janela, como o Início: o rodapé fica no fim com o mesmo espaçamento */
+  .conteudo > .com-layout { flex: 1 1 0; height: auto; min-height: 380px; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .com-principal { overflow: hidden; min-height: 0; }
+  .com-lateral { min-height: 0; }
+  .com-lateral .painel-marca { flex: none; min-height: 120px; }
+  .com-lateral .painel-lateral { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+}
+.grade-com:not(.linha) { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 9px; }
+.grade-com:not(.linha) .capa-card { height: 56px; }
+.grade-com:not(.linha) .cartao-com-corpo { padding: 7px 9px 6px; gap: 2px; }
+.grade-com:not(.linha) .cartao-com h3 { font-size: 12px; line-height: 1.2; }
+.grade-com:not(.linha) .cartao-com p { font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.grade-com:not(.linha) .cartao-com .cat { font-size: 9.5px; }
+.grade-com:not(.linha) .cartao-com footer { font-size: 10.5px; padding-top: 4px; }
+
+/* Limite inferior padrão de todas as telas (computador): o rodapé fica sempre colado no fim da janela, com o mesmo respiro embaixo,
+   e as telas que rolam terminam nele depois do conteúdo. O calendário também mostra o rodapé. */
+@media (min-width: 861px) {
+  .conteudo { padding-bottom: 14px; }
+  .conteudo > .rodape-portal { flex: none; margin-top: auto; padding: 8px 0 0; font-size: 11px; line-height: 1.3; }
+}
+
+/* Painel de Temas: o título fica fixo e só a lista de temas rola (barra fina) */
+@media (min-width: 1181px) {
+  .com-lateral .painel-lateral { display: flex; flex-direction: column; overflow: hidden; }
+  .com-lateral .painel-lateral h2 { flex: none; }
+  .com-lateral .painel-lateral .temas { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .com-lateral .painel-lateral .temas::-webkit-scrollbar { width: 6px; }
+  .com-lateral .painel-lateral .temas::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+}
+
+/* Telas com abas e tabela (Publicar e Configurações), computador: cabeçalho, abas e barra de ações ficam fixos; só a tabela rola (barra fina, títulos das colunas fixos).
+   O limite inferior e o rodapé seguem o padrão das outras telas. */
+@media (min-width: 861px) and (min-height: 560px) {
+  .meio:has(.conteudo > .crud:not(.integracoes) .rolagem) { overflow: hidden; scrollbar-gutter: auto; }
+  .conteudo:has(> .crud:not(.integracoes) .rolagem) { overflow: hidden; }
+  .conteudo > .crud:not(.integracoes):has(.rolagem) { flex: 1 1 0; min-height: 0; }
+  .conteudo > .crud:not(.integracoes) .rolagem { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .crud .rolagem::-webkit-scrollbar { width: 6px; height: 6px; }
+  .crud .rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .crud .rolagem::-webkit-scrollbar-track { background: transparent; }
+  .crud .dados th { position: sticky; top: 0; z-index: 2; }
+}
+
+/* Abas de Publicar e Configurações com cara de aba: a aberta se junta ao conteúdo; as outras ficam mais apagadas. */
+.abas-gestao { gap: 3px; padding: 0 2px; border-bottom: 1px solid var(--linha); align-items: flex-end; }
+.abas-gestao button {
+  margin-bottom: -1px; padding: 9px 16px 8px; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0;
+  background: color-mix(in srgb, var(--afundado) 70%, transparent); color: var(--suave); font: 600 13px var(--fonte); cursor: pointer; transition: background .15s, color .15s;
+}
+.abas-gestao button:hover { background: var(--hover); color: var(--texto); }
+.abas-gestao button[aria-selected=true] {
+  background: var(--card); color: var(--vinho-texto); font-weight: 700; border-color: var(--linha); border-top: 3px solid var(--vinho);
+  padding-top: 7px; position: relative; box-shadow: 0 1px 0 var(--card);
+}
+.abas-gestao button:focus-visible { outline: 2px solid var(--vinho); outline-offset: -2px; }
+
+/* Comunicados (computador): o destaque e o título "Mais comunicados" ficam fixos; só a lista de cards rola (barra fina). */
+@media (min-width: 1181px) {
+  .com-principal .com-mais { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .com-principal .com-mais .barra { flex: none; }
+  .com-rolagem { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 8px 6px 2px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .com-rolagem::-webkit-scrollbar { width: 6px; }
+  .com-rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .com-rolagem::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+}
+.com-principal > .destaque-com { flex: none; }
+
+/* Todas as telas (computador): a janela não rola. Topo, abas e rodapé ficam sempre visíveis; a barra de rolagem fica dentro da tela (área de conteúdo). */
+.coluna-tela { display: contents; }
+@media (min-width: 861px) {
+  .corpo .meio { overflow: hidden; scrollbar-gutter: auto; }
+  .meio .coluna-tela { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+  .meio .coluna-tela > .conteudo { flex: 1 1 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-bottom: 14px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .coluna-tela > .conteudo::-webkit-scrollbar { width: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+  .coluna-tela > .rodape-portal { flex: none; margin: 0 20px; padding: 8px 0 10px; font-size: 11px; line-height: 1.3; }
+  /* abas fixas no alto da área rolável */
+  .conteudo > .abas-gestao { position: sticky; top: 0; z-index: 5; background: var(--fundo); padding-top: 4px; }
+}
+
+/* Comunicados (computador): grade de 6 colunas e 3 linhas visíveis; cada card tem 1/3 da altura da área, o resto rola. */
+@media (min-width: 1181px) {
+  .com-rolagem { container-type: size; }
+  .com-rolagem .grade-com:not(.linha) { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: max(128px, calc((100cqh - 8px - 18px) / 3)); gap: 9px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com { min-height: 0; }
+  .com-rolagem .grade-com:not(.linha) .capa-card { flex: 1 1 0; height: auto; min-height: 30px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com-corpo { flex: none; padding: 6px 9px 5px; gap: 1px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com p { -webkit-line-clamp: 1; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com footer { padding-top: 2px; }
+}
+
+/* Abas fixas: nada do conteúdo aparece acima ou atrás delas (sem folga de padding no alto da área rolável; a faixa das abas tem fundo próprio). */
+@media (min-width: 861px) {
+  .meio .coluna-tela > .conteudo { padding-top: 0; }
+  .conteudo > .abas-gestao { padding-top: 8px; margin-bottom: 4px; background: var(--fundo); box-shadow: 0 -8px 0 var(--fundo); }
+  .conteudo > :first-child:not(.abas-gestao) { margin-top: 8px; }
+}
+
+/* Configurações › Calendário: as agendas ficam fixas no alto (compactas, em colunas iguais); só a tabela de datas rola, com os títulos das colunas fixos. */
+.calcfg-agendas { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 8px; }
+.calcfg-agendas label.calcfg-op { min-width: 0; border-radius: 10px; }
+.calcfg-agendas label.calcfg-op span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 861px) and (min-height: 560px) {
+  .conteudo > .calcfg { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+  .calcfg > .calcfg-card { flex: none; }
+  .calcfg-agendas { max-height: 92px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .calcfg > .calcfg-card:has(.rolagem) { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .calcfg-card .rolagem { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .calcfg-card .rolagem::-webkit-scrollbar { width: 6px; height: 6px; }
+  .calcfg-card .rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .calcfg-card .dados th { position: sticky; top: 0; z-index: 2; }
+}
+
+/* Ícone "!" de ajuda (explicações curtas que antes ocupavam uma linha da tela). Fica no canto direito da barra de abas. */
+.dica-ajuda { position: relative; display: inline-flex; }
+.dica-ajuda-btn { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--suave); background: transparent; color: var(--suave); font: 800 13px/1 var(--fonte); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.dica-ajuda-btn:hover, .dica-ajuda-btn[aria-expanded=true] { color: var(--vinho-texto); border-color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 14%, transparent); }
+.dica-ajuda-btn:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }
+.dica-ajuda-painel { position: absolute; top: calc(100% + 8px); z-index: 60; width: max-content; max-width: min(380px, 85vw); padding: 11px 14px; border-radius: 12px; background: var(--card); color: var(--texto); border: 1px solid var(--linha); box-shadow: 0 10px 28px rgba(0, 0, 0, .28); font: 500 12.5px/1.45 var(--fonte); white-space: normal; text-align: left; }
+.dica-ajuda-painel.esq { left: 0; } .dica-ajuda-painel.dir { right: 0; }
+.slot-dica { margin-left: auto; align-self: center; display: inline-flex; padding: 0 4px 4px 0; }
+.slot-dica:empty { display: none; }
+.barra-fim { justify-content: flex-end; }
+.crud > .barra-fim { margin-bottom: 0; }
+
+/* Tabelas (todas): a barra de rolagem começa ABAIXO do cabeçalho das colunas. A barra nativa fica só ao lado das linhas
+   (a trilha começa depois da altura do cabeçalho, medida por App.tsx em --cab-h). */
+.rolagem { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+.rolagem::-webkit-scrollbar { width: 8px; height: 8px; }
+.rolagem::-webkit-scrollbar-track { background: transparent; margin-top: var(--cab-h, 38px); }
+.rolagem::-webkit-scrollbar-corner { background: transparent; }
+.rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+.rolagem::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+
+/* Ícone "!" de ajuda: pequeno e discreto, no tamanho do "i" do título da tela */
+.dica-ajuda-btn { width: 18px; height: 18px; border-width: 1.2px; font-size: 11px; font-weight: 700; }
+.slot-dica { padding: 0 6px 6px 0; }
+.dica-ajuda-painel { top: calc(100% + 6px); }
+
+/* Cabeçalho da tabela: célula "Ações" volta a ser célula de tabela (com display:flex quebrava a linha de títulos e o cabeçalho fixo ao rolar). */
+.dados th.col-acoes { display: table-cell; text-align: right; }
+.dados thead th { position: sticky; top: 0; z-index: 3; background: var(--afundado); background-clip: padding-box; box-shadow: 0 -2px 0 var(--afundado), 0 1px 0 var(--linha); }
+.rolagem { border-radius: 10px; }
+.rolagem > .dados { border-collapse: separate; border-spacing: 0; width: 100%; }
+
+/* "!" de ajuda: ícone vetorial pequeno (16px), sem caixa; fica ao lado do botão de ação da tela (ou no fim da barra de abas) */
+.dica-ajuda-btn { width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: var(--suave); padding: 0; display: grid; place-items: center; font-size: 0; }
+.dica-ajuda-btn svg { display: block; width: 16px; height: 16px; }
+.dica-ajuda-btn:hover, .dica-ajuda-btn[aria-expanded=true] { color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 14%, transparent); border: 0; }
+.barra-fim { align-items: center; gap: 8px; }
+
+/* Computador: a janela nunca rola (a rolagem é só dentro de cada tela). Evita a barra de rolagem da página inteira à direita da barra de atalhos
+   (o zoom do tema deixava a altura alguns pixels acima da janela). */
+@media (min-width: 861px) {
+  html, body { height: 100%; overflow: hidden; }
+}
+
+/* O "!" dentro da barra de abas não herda o visual de aba (fundo, borda e preenchimento): é só o ícone. */
+.abas-gestao .dica-ajuda-btn { margin: 0; padding: 0; width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; transition: none; }
+.abas-gestao .dica-ajuda-btn:hover, .abas-gestao .dica-ajuda-btn[aria-expanded=true] { background: color-mix(in srgb, var(--vinho) 14%, transparent); color: var(--vinho-texto); }
+.abas-gestao .slot-dica { align-self: center; padding: 0 4px 0 0; margin-bottom: 2px; }
+
+/* Telas com abas (computador): a barra de rolagem da tela começa abaixo das abas (--abas-h é medida em App.tsx). */
+@media (min-width: 861px) {
+  .meio .coluna-tela > .conteudo { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+  .coluna-tela > .conteudo::-webkit-scrollbar { width: 8px; height: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-track { background: transparent; margin-top: var(--abas-h, 0px); }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+}
+
+/* Cabeçalho da tabela até a borda direita: a faixa da barra de rolagem ao lado dos títulos recebe a mesma cor do cabeçalho. */
+.rolagem { background-image: linear-gradient(var(--afundado), var(--afundado)); background-repeat: no-repeat; background-position: right top; background-size: 8px var(--cab-h, 38px); background-origin: border-box; background-clip: border-box; }
+.rolagem::-webkit-scrollbar-track { border-radius: 0; }
+.rolagem { background-image: linear-gradient(var(--linha), var(--linha)), linear-gradient(var(--afundado), var(--afundado)); background-position: right calc(var(--cab-h, 38px) - 1px), right top; background-size: 8px 1px, 8px var(--cab-h, 38px); }
+
+/* Tela de entrada (Configurações): em tela larga, Fundo e Frase/textos ficam lado a lado para tudo caber sem rolagem. */
+@media (min-width: 1181px) {
+  .entcfg-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
+  .entcfg-form > .entcfg-rodape { grid-column: 1 / -1; }
+  .entcfg-form .calcfg-card { padding-top: 10px; gap: 8px; }
+  .entcfg-form .entcfg-campo textarea { min-height: 0; }
+}
+
+/* Barras de rolagem de TODAS as telas: finas (6px) e discretas (translucidas; aparecem mais ao passar o mouse). */
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-corner { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 38%, transparent); border-radius: 6px; }
+  *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--suave) 70%, transparent); }
+  .rolagem::-webkit-scrollbar, .coluna-tela > .conteudo::-webkit-scrollbar { width: 6px; height: 6px; }
+  .rolagem::-webkit-scrollbar-track { margin-top: var(--cab-h, 38px); }
+  .coluna-tela > .conteudo::-webkit-scrollbar-track { margin-top: var(--abas-h, 0px); }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 38%, transparent) transparent; }
+}
+.rolagem { background-size: 6px 1px, 6px var(--cab-h, 38px); }
+
+/* Faixa do cabeçalho ao lado da barra de rolagem: a regra ".crud .rolagem" (com "background:" abreviado) apagava a imagem de fundo, então reforço aqui para todas as tabelas. */
+@media (min-width: 861px) {
+.rolagem, .conteudo .rolagem, .crud .rolagem, .calcfg-card .rolagem {
+  background-image: linear-gradient(var(--linha), var(--linha)), linear-gradient(var(--afundado), var(--afundado)) !important;
+  background-repeat: no-repeat !important;
+  background-position: right calc(var(--cab-h, 38px) - 1px), right top !important;
+  background-size: 6px 1px, 6px var(--cab-h, 38px) !important;
+  background-origin: border-box !important;
+  background-clip: border-box !important;
+}
+}

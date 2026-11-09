@@ -3,6 +3,7 @@ import { api } from '../api';
 import { Icone, IconeSistema } from '../icones';
 import { Capa, Lema } from '../Capa';
 import { definirEmpresa, LogoNome, PADRAO_EMPRESA, type ConfigEmpresa } from '../empresa';
+import { DicaAba } from '../Dica';
 
 async function enviarIcone(arq: File): Promise<string> {
   const ehSvg = /\.svg$/i.test(arq.name) || arq.type === 'image/svg+xml';
@@ -122,7 +123,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
             </div>
           </fieldset>
 
-          <p className="suave empcfg-onde">Procurando outra coisa? Frases e rótulo dos comunicados: aba <b>Comunicados</b>. A tela de login, com a prévia dela: aba <b>Tela de entrada</b> (ela usa o nome e a logo daqui). Feriados: aba <b>Calendário</b>.</p>
+          <DicaAba>Procurando outra coisa? Frases e rótulo dos comunicados: aba <b>Comunicados</b>. A tela de login, com a prévia dela: aba <b>Tela de entrada</b> (ela usa o nome e a logo daqui). Feriados: aba <b>Calendário</b>.</DicaAba>
 
           {edita && (
             <div className="entcfg-rodape">

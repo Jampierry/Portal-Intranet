@@ -3,6 +3,7 @@ import { api } from '../api';
 import { Icone } from '../icones';
 import { JanelaForm, Selo } from './Crud';
 import { useOrdenacao } from './Ordenar';
+import { Dica } from '../Dica';
 
 export interface AcaoPerm { chave: string; rotulo: string }
 export interface AreaPerm { id: string; rotulo: string; acoes: AcaoPerm[] }
@@ -126,13 +127,13 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
 
   return (
     <section className="crud">
-      <div className="barra">
-        <p className="suave" style={{ margin: 0 }}>
+      {pode('cfg.perfis.criar') && <div className="barra barra-fim">
+        <Dica lado="dir">
           Cada usuário tem um perfil, que define o que ele acessa e o que pode fazer em cada tela e em cada aba. Crie perfis novos (ex.: RH, Chão de fábrica) e marque as permissões de cada um.
           Para dar algo a uma pessoa específica, use <b>Usuários › Editar</b>: o que for definido lá vale por cima do perfil.
-        </p>
-        {pode('cfg.perfis.criar') && <button className="btn" onClick={() => abrir()}><Icone nome="mais" tamanho={15} /> Novo perfil</button>}
-      </div>
+        </Dica>
+        <button className="btn" onClick={() => abrir()}><Icone nome="mais" tamanho={15} /> Novo perfil</button>
+      </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {falha && <p className="erro" role="alert">{falha}</p>}
       <div className="rolagem">

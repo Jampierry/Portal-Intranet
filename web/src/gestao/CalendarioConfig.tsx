@@ -4,6 +4,8 @@ import { Icone } from '../icones';
 import { useLista } from '../dados';
 import { JanelaForm, Selo } from './Crud';
 import { NOME_TIPO, TIPOS_DATA, type DataLocal, type TipoData } from '../calendarioTipos';
+import { DicaAba } from '../Dica';
+import { useOrdenacao } from './Ordenar';
 
 interface Agendas { conectado: boolean; exibir: string[]; disponiveis: string[]; erro?: string }
 const br = (iso: string) => `${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
@@ -28,6 +30,7 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
   const daqui = (dados ?? []).filter((d) => (d.anual ? true : d.data.slice(0, 4) === String(ano) || (d.data_fim ?? '').slice(0, 4) === String(ano)))
     .map((d) => ({ ...d, mostrada: d.anual ? `${ano}${d.data.slice(4)}` : d.data }))
     .sort((a, b) => a.mostrada.localeCompare(b.mostrada));
+  const ord = useOrdenacao(daqui, { data: (d) => d.mostrada, titulo: (d) => d.titulo, tipo: (d) => NOME_TIPO[d.tipo], repete: (d) => (d.anual ? 'Todo ano' : `Só em ${d.data.slice(0, 4)}`) });
 
   const gerar = async () => {
     setAviso('');
@@ -46,7 +49,7 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
 
   return (
     <section className="calcfg">
-      <p className="suave" style={{ margin: 0 }}>Tudo o que for cadastrado aqui aparece no <b>Calendário</b> de quem tem acesso à tela. Feriados fixos repetem todo ano; Carnaval, Sexta-feira Santa e Corpus Christi mudam de data, por isso o botão gera ano a ano.</p>
+      <DicaAba>Tudo o que for cadastrado aqui aparece no <b>Calendário</b> de quem tem acesso à tela. Feriados fixos repetem todo ano; Carnaval, Sexta-feira Santa e Corpus Christi mudam de data, por isso o botão gera ano a ano.</DicaAba>
       {aviso && <p className="ok" role="status" style={{ margin: 0 }}>{aviso}</p>}
 
       <div className="calcfg-card">
@@ -85,10 +88,10 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
         {dados && (
           <div className="rolagem">
             <table className="dados">
-              <thead><tr><th>Data</th><th>Título</th><th>Tipo</th><th>Repete</th>{(edita || exclui) && <th className="col-acoes">Ações</th>}</tr></thead>
+              <thead><tr>{ord.cab('data', 'Data')}{ord.cab('titulo', 'Título')}{ord.cab('tipo', 'Tipo')}{ord.cab('repete', 'Repete')}{(edita || exclui) && <th className="col-acoes">Ações</th>}</tr></thead>
               <tbody>
                 {daqui.length === 0 && <tr><td colSpan={5} className="vazio">Nada cadastrado em {ano}. {edita ? 'Use “Gerar feriados”.' : ''}</td></tr>}
-                {daqui.map((d) => (
+                {(ord.linhas ?? []).map((d) => (
                   <tr key={d.id}>
                     <td data-rotulo="Data" className="nowrap">{br(d.mostrada)}{d.data_fim && !d.anual ? ` a ${br(d.data_fim)}` : ''}</td>
                     <td data-rotulo="Título">{d.titulo}</td>

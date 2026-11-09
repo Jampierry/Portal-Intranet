@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { Selo } from './Crud';
+import { DicaAba } from '../Dica';
 
 interface EstadoServico {
   host: string; user: string; smtp_host: string; smtp_port: number; senha_salva: boolean; servico_user: string; servico_senha_salva: boolean;
@@ -88,10 +89,10 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
 
   return (
     <section className="crud integracoes">
-      <p className="suave" style={{ margin: 0 }}>
+      <DicaAba>
         O portal usa o serviço <b>Zimbra</b> (pasta <code>MCP/zimbra-mcp</code>) para o <b>calendário de datas importantes</b>. Aqui você liga o portal ao serviço e configura a conta do Zimbra, sem abrir outra página.
         Senhas e token ficam guardados no servidor e nunca voltam para o navegador.
-      </p>
+      </DicaAba>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {falha && <p className="erro" role="alert">{falha}</p>}
 

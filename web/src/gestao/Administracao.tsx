@@ -6,6 +6,7 @@ import { JanelaForm, Selo } from './Crud';
 import type { PerfilAcesso } from '../sessao';
 import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 import { useOrdenacao } from './Ordenar';
+import { Dica, DicaAba } from '../Dica';
 
 interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
@@ -88,12 +89,12 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
   return (
     <section className="crud">
-      <div className="barra">
-        <p className="suave" style={{ margin: 0 }}>
+      {libera('criar') && <div className="barra barra-fim">
+        <Dica lado="dir">
           O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
-        </p>
-        {libera('criar') && <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>}
-      </div>
+        </Dica>
+        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+      </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
       {pedidos.length > 0 && (
@@ -205,7 +206,7 @@ function Auditoria() {
   const ord = useOrdenacao(dados, { quando: (l) => l.quando, quem: (l) => l.usuario, acao: (l) => ACAO[l.acao] ?? l.acao, detalhe: (l) => resumo(l.detalhe) });
   return (
     <section className="crud">
-      <p className="suave" style={{ margin: 0 }}>Últimos 200 registros. A auditoria só aceita inclusão: ninguém consegue alterar ou apagar o histórico. Senhas nunca são gravadas.</p>
+      <DicaAba>Últimos 200 registros. A auditoria só aceita inclusão: ninguém consegue alterar ou apagar o histórico. Senhas nunca são gravadas.</DicaAba>
       {erro && <p className="erro" role="alert">{erro}</p>}
       {dados && (
         <div className="rolagem">

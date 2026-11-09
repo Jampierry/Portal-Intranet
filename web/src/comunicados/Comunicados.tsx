@@ -120,9 +120,9 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
             </section>
           )}
           {resto.length > 0 && (
-            <section aria-labelledby="mais-com">
+            <section className="com-mais" aria-labelledby="mais-com">
               <div className="barra"><h2 id="mais-com">{destaque ? 'Mais comunicados' : `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}`}</h2><span className="suave" aria-live="polite">{filtrando ? `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}` : ''}</span></div>
-              <ListaComunicados itens={resto} />
+              <div className="com-rolagem"><ListaComunicados itens={resto} /></div>
             </section>
           )}
         </div>

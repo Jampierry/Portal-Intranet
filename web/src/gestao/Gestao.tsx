@@ -284,6 +284,7 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
       <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, aniversariantes, novos colaboradores, contatos e aplicativos." />
       <div className="abas abas-gestao" role="tablist" aria-label="O que publicar">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+        <span id="slot-dica-aba" className="slot-dica" />
       </div>
       <PermissoesCtx.Provider value={permissoes}>
       {aba === 'comunicados' && <Comunicados />}
@@ -313,6 +314,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
       <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, tela de entrada, comunicados, calendário, integrações e auditoria do portal." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
+        <span id="slot-dica-aba" className="slot-dica" />
       </div>
       {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
         : aba === 'integracoes' ? <><Integracoes permissoes={permissoes} /><AvisosEmail permissoes={permissoes} /></>

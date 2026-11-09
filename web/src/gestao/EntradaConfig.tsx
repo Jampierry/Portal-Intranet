@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { MarcaEntrada, PADRAO_ENTRADA, type ConfigEntrada } from '../MarcaEntrada';
+import { DicaAba } from '../Dica';
 
 /** Envia uma imagem para a tela de entrada e devolve o endereço público dela. */
 async function enviar(arq: File): Promise<string> {
@@ -46,7 +47,7 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
 
   return (
     <section className="calcfg">
-      <p className="suave" style={{ margin: 0 }}>Personalize a lateral da tela de login: o fundo (cor, imagem ou carrossel) e os textos. O nome e o ícone da empresa que aparecem no topo vêm de Configurações › Empresa. A prévia ao lado mostra como vai ficar.</p>
+      <DicaAba>Personalize a lateral da tela de login: o fundo (cor, imagem ou carrossel) e os textos. O nome e o ícone da empresa que aparecem no topo vêm de Configurações › Empresa. A prévia ao lado mostra como vai ficar.</DicaAba>
       {aviso && <p className="ok" role="status" style={{ margin: 0 }}>{aviso}</p>}
       {erro && <p className="erro" role="alert" style={{ margin: 0 }}>{erro}</p>}
 

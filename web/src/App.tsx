@@ -164,6 +164,26 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
   const decidirEdicao = async (id: number, aprovar: boolean) => { try { await api(`/api/pedidos-edicao/${id}/decidir`, { aprovar }); } finally { void lerEdicoes(); } };
 
+  // Mede a altura do cabeçalho de cada tabela com rolagem (.rolagem) e das abas de cada tela para a barra de rolagem começar logo abaixo deles.
+  useEffect(() => {
+    const medir = () => document.querySelectorAll<HTMLElement>('.rolagem').forEach((el) => {
+      const cab = el.querySelector('thead');
+      const h = cab ? Math.round(cab.getBoundingClientRect().height) : 0;
+      if (h && el.style.getPropertyValue('--cab-h') !== `${h}px`) el.style.setProperty('--cab-h', `${h}px`);
+    });
+    // Telas com abas: a barra de rolagem da tela começa logo abaixo das abas.
+    document.querySelectorAll<HTMLElement>('.conteudo').forEach((el) => {
+      const abas = el.querySelector<HTMLElement>(':scope > .abas-gestao');
+      const h = abas ? Math.round(abas.getBoundingClientRect().height) + 4 : 0;
+      if (h) { if (el.style.getPropertyValue('--abas-h') !== `${h}px`) el.style.setProperty('--abas-h', `${h}px`); } else el.style.removeProperty('--abas-h');
+    });
+    medir();
+    const obs = new MutationObserver(() => medir());
+    obs.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', medir);
+    return () => { obs.disconnect(); window.removeEventListener('resize', medir); };
+  }, []);
+
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
   useEffect(() => {
     if (!lancador) return;
@@ -208,6 +228,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         </header>
 
         <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
+          <div className="coluna-tela">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
             {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} veComunicados={libera('comunicados')} veDocumentos={libera('documentos')} />}
@@ -221,8 +242,9 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}
-            <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
           </main>
+          <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
+          </div>
           <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />
         </div>
       </div>
