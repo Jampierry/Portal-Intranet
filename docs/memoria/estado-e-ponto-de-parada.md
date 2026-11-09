@@ -1,5 +1,13 @@
 # Estado e ponto de parada
 
+## Sessão de 08/11/2026 (tarde) — propriedade do conteúdo e layout fixo (enviado; `main` = `1ecb3cb`)
+**Feito:**
+- **Propriedade do conteúdo** (migração 026, `modulos/propriedade`): só o administrador apaga o que outra pessoa publicou; editar exige pedido autorizado pelo dono **ou** pelo administrador (vale 24 h; chega no sino de ambos: `/api/pedidos-edicao`, `/caixa`, `/:id/decidir`). Conteúdo sem dono registrado (anterior à regra) só o administrador mexe. Conteúdo novo com editar/apagar: acrescentar em `RECURSOS`. Testes em `modulos/propriedade/tests`.
+- **Layout (computador, ≥861px):** a janela não rola; topo, abas e rodapé fixos; rolagem só dentro da tela (`.coluna-tela > .conteudo`). Tabelas: cabeçalho fixo até a borda, barra de rolagem abaixo do cabeçalho (`--cab-h`) e abaixo das abas (`--abas-h`), medidos em `App.tsx`; todas ordenam clicando no título. Abas com aparência de aba. Explicações viraram o ícone "!" (`web/src/Dica.tsx`, `DicaAba`). Comunicados: grade 6×3, só a lista rola; tela de entrada em duas colunas; barras de rolagem finas (6px) em tudo.
+- Tela de entrada: imagem preenche o lado esquerdo; card da marca no topo da lateral de Comunicados.
+
+**Pendências:** (1) conferir todo o layout no navegador (só compilou e passou nos testes; ajuste fino possível: altura da grade 6×3, faixa do cabeçalho das tabelas, ícone "!"); (2) teste antigo `banners › leitor vê só banners ativos…` falha por data/fuso (já falhava antes; item "Vencido"); (3) a barra de rolagem abaixo do cabeçalho/abas usa pseudo-elementos `::-webkit-scrollbar` (Chrome/Edge); no Firefox ocupa a altura toda; (4) conteúdo antigo sem dono: decidir se o administrador atribui autores.
+
 ## Sessão de 08/11/2026 (tudo enviado ao GitHub; `main`)
 **Repositórios:** o Portal é `Jampierry/Portal-Intranet` (esta pasta, branch `main`); o app de comissão é outro repositório (`comissao-di-paula`, branch `f05-dashboard-novo`). Não misturar: conferir `git remote -v` antes de commitar. Banco novo: rodar `npm run banco:migrar` (migrações 019 a 024 abaixo). Testes: `npm test` (106), `npm run typecheck`, `npm run build`.
 
