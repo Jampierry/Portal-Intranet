@@ -19,6 +19,7 @@ TypeScript · React 19 + Vite (`web/`) · Fastify + SQLite nativo `node:sqlite` 
 
 ## Regras do domínio (não quebrar)
 - Dados fictícios nesta fase (seed). Nada de pessoas, documentos ou credenciais reais no Git. **Login local obrigatório**: o admin master cria os usuários; perfis `admin`, `editor`, `consulta` (ver `modulos/acessos/README.md`). Toda rota nova em `/api` já nasce protegida; para restringir por perfil use `exigir(...)` de `modulos/acessos/api/guard.ts`. Toda alteração de dados deve chamar `auditar(...)` (sem senhas) e validar a entrada com `servidor/src/validar.ts`.
+- **Propriedade do conteúdo** (`modulos/propriedade/api/index.ts`): só o administrador apaga o que outra pessoa publicou; editar o que é de outra pessoa exige pedido autorizado pelo dono ou pelo administrador (vale 24 h; chega no sino de ambos). O dono fica em `criado_por`. **Conteúdo novo com editar/apagar: acrescente o recurso na lista `RECURSOS` do módulo** (e a coluna `criado_por` numa migração).
 - Abertura de apps externos: **desktop = nova aba** (`_blank`, `rel="noopener noreferrer"`); **celular = mesma aba** (Voltar retorna). Regra em `web/src/links.ts` (testada). Só URLs http(s).
 - Acessibilidade WCAG 2.2 AA: foco visível, teclado, rótulos, `prefers-reduced-motion`. Cores só por variáveis do tema (nunca hex solto nas telas); `web/test/contraste.test.ts` valida.
 - Barra superior fixa e independente do lançador direito; botão de recolher o menu no topo da barra lateral, ao lado da marca.

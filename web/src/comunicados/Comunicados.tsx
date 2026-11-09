@@ -127,6 +127,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
           )}
         </div>
         <aside className="com-lateral" aria-label="Temas">
+          <section className="painel-marca" aria-hidden="true">{empresa.lema.length > 0 && <Lema linhas={empresa.lema} />}<b>{empresa.nome}</b>{empresa.slogan && <small>{empresa.slogan}</small>}</section>
           <section className="painel-lateral">
             <h2>Temas</h2>
             <ul className="temas">
@@ -135,7 +136,6 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
               ))}
             </ul>
           </section>
-          <section className="painel-marca" aria-hidden="true">{empresa.lema.length > 0 && <Lema linhas={empresa.lema} />}<b>{empresa.nome}</b>{empresa.slogan && <small>{empresa.slogan}</small>}</section>
         </aside>
       </div>
     </>

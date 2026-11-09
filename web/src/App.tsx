@@ -68,9 +68,11 @@ function DicaTela({ texto }: { texto: string }) {
 
 /** Sino da barra superior: lista os comunicados urgentes (vem do PREMIA: sino com contador e lista de pendências). */
 interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
-function Sino({ itens, leitura, ir, pedidos, irPedidos }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void }) {
+interface PedidoEdicao { id: number; rotulo: string; titulo: string | null; criado_em: string; status: string; solicitante: string; dono: string | null }
+interface CaixaEdicao { pendentes: PedidoEdicao[]; respostas: PedidoEdicao[] }
+function Sino({ itens, leitura, ir, pedidos, irPedidos, edicoes, decidir }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void; edicoes: CaixaEdicao; decidir: (id: number, aprovar: boolean) => void }) {
   const [aberto, setAberto] = useState(false);
-  const total = itens.length + leitura.length + pedidos.length;
+  const total = itens.length + leitura.length + pedidos.length + edicoes.pendentes.length + edicoes.respostas.length;
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -87,12 +89,27 @@ function Sino({ itens, leitura, ir, pedidos, irPedidos }: { itens: Comunicado[];
       {aberto && (
         <div className="tema-painel painel-avisos" role="dialog" aria-label="Avisos">
           <h3>Avisos</h3>
+          {edicoes.pendentes.length > 0 && <small className="aviso-grupo">Pedidos para editar conteúdo</small>}
+          {edicoes.pendentes.map((p) => (
+            <div key={p.id} className="aviso">
+              <b>{p.solicitante} quer editar {p.rotulo.toLowerCase()}{p.titulo ? `: ${p.titulo}` : ''}</b>
+              <small>{p.dono ? `Criado por ${p.dono}` : 'Sem autor registrado (só o administrador decide)'} · {dataCurta(p.criado_em)}</small>
+              <span style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button className="btn btn-pri" onClick={() => decidir(p.id, true)}>Autorizar</button>
+                <button className="btn btn-sec" onClick={() => decidir(p.id, false)}>Negar</button>
+              </span>
+            </div>
+          ))}
+          {edicoes.respostas.length > 0 && <small className="aviso-grupo">Respostas aos seus pedidos</small>}
+          {edicoes.respostas.map((p) => (
+            <div key={p.id} className="aviso"><b>{p.status === 'aprovado' ? 'Edição autorizada' : 'Edição negada'}: {p.rotulo.toLowerCase()}{p.titulo ? ` “${p.titulo}”` : ''}</b><small>{p.status === 'aprovado' ? 'Vale por 24 horas: abra o conteúdo e edite.' : 'Procure o autor ou o administrador.'}</small></div>
+          ))}
           {pedidos.length > 0 && <small className="aviso-grupo">Pedidos de nova senha</small>}
           {pedidos.map((p) => (
             <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{p.nome} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
           ))}
           {(pedidos.length > 0 || leitura.length > 0) && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
-          {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
+          {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 && edicoes.pendentes.length === 0 && edicoes.respostas.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
             <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
           ))}
           {leitura.length > 0 && <small className="aviso-grupo">Pedem a sua confirmação de leitura</small>}
@@ -137,6 +154,16 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     return () => { vivo = false; clearInterval(t); };
   }, [veSenha, tela]);
 
+  // Pedidos para editar conteúdo de outra pessoa: o dono e o administrador decidem; quem pediu vê a resposta.
+  const [edicoes, setEdicoes] = useState<CaixaEdicao>({ pendentes: [], respostas: [] });
+  const lerEdicoes = () => api<CaixaEdicao>('/api/pedidos-edicao/caixa').then(setEdicoes).catch(() => { /* sem aviso */ });
+  useEffect(() => {
+    void lerEdicoes(); const t = setInterval(() => void lerEdicoes(), 60_000);
+    window.addEventListener('pedidos-edicao', lerEdicoes);
+    return () => { clearInterval(t); window.removeEventListener('pedidos-edicao', lerEdicoes); };
+  }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
+  const decidirEdicao = async (id: number, aprovar: boolean) => { try { await api(`/api/pedidos-edicao/${id}/decidir`, { aprovar }); } finally { void lerEdicoes(); } };
+
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
   useEffect(() => {
     if (!lancador) return;
@@ -176,7 +203,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
-          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} />
+          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} />
           <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} />
         </header>
 

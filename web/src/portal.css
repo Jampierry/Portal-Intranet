@@ -1290,3 +1290,10 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .conta-painel .entrar-campos { gap: 6px; }
 .conta-painel .entrar-campos input { height: 34px; font-size: 13px; }
 @media (max-width: 860px) { .conta-painel { right: -8px; width: min(340px, calc((100vw / var(--zoom, 1)) - 24px)); } }
+
+/* Entrada: a imagem preenche toda a lateral esquerda (altura da tela inteira, sem bordas de desfoque nem de zoom) */
+.entrar { min-height: 100vh; min-height: 100dvh; align-items: stretch; }
+.entrar-marca { align-self: stretch; min-height: 100vh; min-height: 100dvh; }
+.entrar-marca .entrar-fundo-img { inset: -16px; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.entrar-marca.previa { min-height: 320px; }
+@media (max-width: 860px) { .entrar-marca { min-height: 260px; } }

@@ -15,11 +15,13 @@ import { rotasAvisos } from '../../modulos/avisos/api/index.ts';
 import { rotasPulso } from '../../modulos/pulso/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
+import { rotasPropriedade } from '../../modulos/propriedade/api/index.ts';
 import { rotasMarca } from '../../modulos/marca/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
 export const MODULOS = [
   { nome: 'acessos', rotas: rotasAcessos }, // primeiro: registra a proteção global de /api
+  { nome: 'propriedade', rotas: rotasPropriedade }, // logo após acessos: os ganchos precisam do usuário da sessão
   { nome: 'aplicacoes', rotas: rotasAplicacoes },
   { nome: 'banners', rotas: rotasBanners },
   { nome: 'calendario', rotas: rotasCalendario },
