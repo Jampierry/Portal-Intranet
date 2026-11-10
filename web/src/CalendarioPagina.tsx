@@ -26,6 +26,9 @@ export function CalendarioPagina({ podeConfigurar, irConfig, dia }: { podeConfig
   const [ocultas, setOcultas] = useState<string[]>(lerOcultas);
   const [novo, setNovo] = useState<{ titulo: string; data: string; data_fim: string; tipo: TipoData; anual: boolean } | null>(null);
   const [versao, setVersao] = useState(0);
+  // Legendas/camadas: a pessoa escolhe quais ver (clicando em cada uma) e pode minimizar a faixa para dar mais espaço ao calendário; a escolha é lembrada.
+  const [legendaAberta, setLegendaAberta] = useState(() => { try { return localStorage.getItem('calp-legenda') !== '0'; } catch { return true; } });
+  const alternarLegenda = () => setLegendaAberta((a) => { try { localStorage.setItem('calp-legenda', a ? '0' : '1'); } catch { /* ignora */ } return !a; });
 
   // Vindo do calendário do menu (clique duplo ou "Abrir calendário"): abre já no mês e no dia escolhidos.
   useEffect(() => {
@@ -79,10 +82,17 @@ export function CalendarioPagina({ podeConfigurar, irConfig, dia }: { podeConfig
           <button className="cal-nav" onClick={() => mover(1)} aria-label="Próximo mês"><Icone nome="dir" tamanho={16} /></button>
           <button className="btn btn-sec btn-pequeno" onClick={irHoje}>Hoje</button>
         </div>
-        <div className="calp-filtros" role="group" aria-label="O que mostrar">
-          {camadas.map(([id, nome, classe]) => (
-            <button key={id} className={`calp-filtro ${classe}${ocultas.includes(id) ? ' off' : ''}`} aria-pressed={!ocultas.includes(id)} onClick={() => alternar(id)}><i aria-hidden="true" />{nome}</button>
-          ))}
+        <div className="calp-legenda">
+          <button type="button" className="btn btn-sec btn-pequeno calp-legenda-botao" aria-expanded={legendaAberta} onClick={alternarLegenda} title={legendaAberta ? 'Minimizar as legendas' : 'Mostrar as legendas e escolher o que ver'}>
+            <Icone nome="chev" tamanho={13} classe={legendaAberta ? 'gira' : ''} /> Legendas{!legendaAberta && ocultas.length > 0 ? ` (${camadas.length - ocultas.filter((o) => camadas.some(([id]) => id === o)).length}/${camadas.length})` : ''}
+          </button>
+          {legendaAberta && (
+            <div className="calp-filtros" role="group" aria-label="O que mostrar">
+              {camadas.map(([id, nome, classe]) => (
+                <button key={id} className={`calp-filtro ${classe}${ocultas.includes(id) ? ' off' : ''}`} aria-pressed={!ocultas.includes(id)} onClick={() => alternar(id)}><i aria-hidden="true" />{nome}</button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="cal-acoes">
           {podeConfigurar && <button className="btn btn-sec btn-pequeno" onClick={irConfig}><Icone nome="editar" tamanho={13} /> Configurar</button>}

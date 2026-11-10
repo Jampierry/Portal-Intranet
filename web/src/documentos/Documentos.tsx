@@ -9,13 +9,19 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
   const { dados, erro } = useLista<Documento>('/api/documentos');
   const [categoria, setCategoria] = useState('Todas');
   const categorias = useMemo(() => ['Todas', ...new Set((dados ?? []).map((d) => d.categoria))], [dados]);
-  const termo = busca.trim().toLocaleLowerCase('pt-BR');
+  const [q, setQ] = useState('');
+  const norm = (s: string) => s.trim().toLocaleLowerCase('pt-BR');
+  const termos = [norm(busca), norm(q)].filter(Boolean);
   const lista = (dados ?? []).filter((d) =>
-    (categoria === 'Todas' || d.categoria === categoria) && (!termo || [d.titulo, d.resumo, d.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(termo))));
-  const limpar = () => { limparBusca(); setCategoria('Todas'); };
+    (categoria === 'Todas' || d.categoria === categoria) && termos.every((t) => [d.titulo, d.resumo, d.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(t))));
+  const limpar = () => { limparBusca(); setQ(''); setCategoria('Todas'); };
   return (
     <>
       <Cabecalho titulo="Documentos" sub="Procedimentos, políticas e materiais da equipe, sempre com versão e responsável." />
+      <label className="busca-pagina">
+        <Icone nome="busca" tamanho={18} />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por título, assunto ou categoria" aria-label="Buscar documentos" />
+      </label>
       <div className="barra">
         <div className="pilulas filtros" role="group" aria-label="Filtrar por categoria">
           {categorias.map((c) => <button key={c} aria-pressed={categoria === c} onClick={() => setCategoria(c)}>{c}</button>)}

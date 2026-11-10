@@ -8,7 +8,7 @@ export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'confi
 
 // Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];
-const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pessoas', 'Pessoas'], ['ajuda', 'Ajuda']];
+const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pessoas', 'Contatos'], ['ajuda', 'Ajuda']];
 
 const MESES_CURTOS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];

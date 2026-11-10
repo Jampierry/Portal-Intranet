@@ -6,10 +6,10 @@ import { criarAppTeste, entrar } from '../../acessos/tests/ajuda.ts';
 test('começa vazio; editor grava e o leitor vê missão, visão e valores em lista', async () => {
   const { app } = await criarAppTeste();
   const le = await entrar(app, 'le');
-  assert.deepEqual((await app.inject({ url: '/api/institucional', headers: le })).json(), { missao: '', visao: '', valores: [] });
+  assert.deepEqual((await app.inject({ url: '/api/institucional', headers: le })).json(), { missao: '', visao: '', proposito: '', valores: [] });
   const r = await app.inject({ method: 'PUT', url: '/api/gestao/institucional', headers: await entrar(app, 'edita'), payload: { missao: 'Vestir o movimento', visao: 'Ser referência', valores: 'Respeito\n\n Qualidade \nSegurança' } });
   assert.equal(r.statusCode, 200);
-  assert.deepEqual((await app.inject({ url: '/api/institucional', headers: le })).json(), { missao: 'Vestir o movimento', visao: 'Ser referência', valores: ['Respeito', 'Qualidade', 'Segurança'] });
+  assert.deepEqual((await app.inject({ url: '/api/institucional', headers: le })).json(), { missao: 'Vestir o movimento', visao: 'Ser referência', proposito: '', valores: ['Respeito', 'Qualidade', 'Segurança'] });
 });
 
 test('leitor não edita; limites de valores', async () => {

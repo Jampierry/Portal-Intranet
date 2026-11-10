@@ -33,11 +33,11 @@ const AVISOS: Record<Tela, string> = {
   documentos: 'Os arquivos ficam nos sistemas de origem: abra pelo link oficial de cada documento.',
   publicar: 'O que for publicado aparece no portal conforme a situação e a janela de exibição.',
   configuracoes: 'Usuários, perfis e auditoria do portal. Só o administrador acessa.',
-  pessoas: 'Contatos por área: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
+  pessoas: 'Quem procurar em cada área da empresa: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
 };
 // Nome de cada tela, mostrado na barra superior universal (não aparece dentro da janela).
-const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Pessoas', ajuda: 'Ajuda' };
+const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Contatos', ajuda: 'Ajuda' };
 const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */

@@ -923,7 +923,7 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .calp-chip { display: block; font-size: 11px; line-height: 1.3; padding: 1px 5px; border-radius: 4px; border-left: 3px solid var(--cor); background: color-mix(in srgb, var(--cor) 16%, var(--campo)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .calp-nota { margin: 0; font-size: 12.5px; }
 .calp-lado { display: grid; gap: 8px; border: 1px solid var(--linha-suave); border-radius: 12px; padding: 12px; background: var(--campo); position: sticky; top: 8px; }
-.calp-lado h3 { margin: 0; font-size: 14px; text-transform: capitalize; }
+.calp-lado h3 { margin: 0; font-size: 14px; text-transform: none; }
 .calp-lado .calp-h3 { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--linha-suave); text-transform: none; }
 .calp-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .calp-lista li { display: flex; gap: 8px; align-items: flex-start; }
@@ -1651,3 +1651,81 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 @media (max-width: 520px) {   /* título do banner menor: cabe com o botão sem os pontos do carrossel ficarem sobre ele */
   .hero.novidades .slide-texto h2 { font-size: clamp(20px, 6.2vw, 26px); line-height: 1.08; }
 }
+
+/* Carrossel de pessoas: foto redonda, nome e área centralizados embaixo. */
+.pessoa { align-items: center; text-align: center; }
+.pessoa > div:last-child { width: 100%; min-width: 0; }
+.pessoa .capa-pessoa,
+.destaques.compacto .pessoa .capa-pessoa { flex: none; width: min(100%, 132px); height: auto; min-height: 0; aspect-ratio: 1; border-radius: 50%; margin-inline: auto; overflow: hidden; }
+.destaques .pessoa .capa-pessoa { flex: none; height: auto; }
+.pessoa-periodo { left: 50%; right: auto; transform: translateX(-50%); top: 2px; max-width: 90%; }
+
+/* Busca dentro da página (Documentos e Comunicados). */
+.busca-pagina { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; margin-bottom: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); color: var(--suave); min-width: 0; }
+.busca-pagina:focus-within { outline: 2px solid var(--rosa); outline-offset: 1px; }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { flex: 1; min-width: 0; border: 0; background: none; height: 100%; padding: 0; font-size: 16px; outline: 0; }
+
+/* Comunicados: título grande, ferramentas em linha, cartões maiores com categoria em pílula. */
+.com-topo { margin-bottom: 14px; }
+.com-topo h1 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; letter-spacing: -.035em; font-weight: 800; }
+.com-topo > p { margin: 4px 0 14px; font-size: 15px; color: var(--suave); }
+.com-ferramentas { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; }
+.com-ferramentas .busca-pagina { margin: 0; height: 40px; }
+.com-ferramentas select { height: 40px; border-radius: 10px; min-width: 150px; }
+@media (max-width: 640px) { .com-ferramentas { grid-template-columns: 1fr 1fr; } .com-ferramentas .busca-pagina { grid-column: 1 / -1; } .com-ferramentas select { min-width: 0; } }
+.destaque-com { border-radius: 18px; }
+.destaque-com .btn-pri { border-radius: 99px; }
+.com-mais .barra h2 { font-size: 18px; }
+.com-rolagem .cartao-com { border-radius: 14px; }
+.com-rolagem .cartao-com .capa-card { border-radius: 0; }
+.com-rolagem .cartao-com .cat { align-self: flex-start; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--vinho) 80%, #000); color: #fff; letter-spacing: .06em; }
+@media (min-width: 1181px) {
+  .com-rolagem .grade-com:not(.linha) { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: max(190px, calc((100cqh - 8px - 12px) / 2)); gap: 12px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com h3 { font-size: 14px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com p { font-size: 12px; -webkit-line-clamp: 2; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com-corpo { padding: 9px 12px 8px; gap: 3px; }
+}
+
+/* Campos de busca e filtro das páginas seguem o padrão da busca do topo: pílula compacta, borda fina, fonte pequena. */
+.busca-pagina, .com-ferramentas .busca-pagina { height: 32px; padding: 0 13px; gap: 7px; border-radius: 99px; border: 1px solid var(--linha); background: var(--card); }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { font-size: 13px; }
+.busca-pagina svg { width: 14px; height: 14px; flex: none; }
+.com-ferramentas select { height: 32px; border-radius: 99px; padding: 0 12px; font-size: 13px; min-width: 140px; }
+.com-ferramentas { gap: 8px; }
+@media (max-width: 640px) { .busca-pagina input:not([type=checkbox]):not([type=radio]) { font-size: 16px; } }
+
+/* Busca da página: ícone no início, dentro do campo, na mesma linha do texto (o label global é uma coluna). */
+label.busca-pagina { flex-direction: row; align-items: center; font-weight: 500; }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { width: auto; flex: 1 1 0; }
+.busca-pagina input[type=search]::-webkit-search-cancel-button { appearance: none; }
+
+/* Ajuda: perguntas em duas colunas no computador (uma só no celular); só uma aberta por vez. */
+.faq { max-width: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; margin-bottom: 14px; }
+@media (max-width: 900px) { .faq { grid-template-columns: minmax(0, 1fr); } }
+.mvv-corpo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 1181px) and (max-width: 1500px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+.calp-lado h3::first-letter { text-transform: uppercase; }
+
+/* Calendário do menu: botão de recolher (a seta vira para cima quando está aberto). */
+.cal-recolher .gira { transform: rotate(180deg); }
+.cal-topo { gap: 2px; }
+.cal-topo b { white-space: nowrap; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.cal-topo .cal-nav { width: 22px; height: 22px; flex: none; }
+
+/* Comunicados no celular: o painel Temas vira um botão à direita, abaixo do banner, com menu flutuante. */
+.temas-flutuante { display: none; }
+@media (max-width: 860px) {
+  .com-lateral .painel-lateral { display: none; }
+  .temas-flutuante { display: flex; justify-content: flex-end; position: relative; z-index: 30; }
+  .temas-botao { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: 600 13px var(--fonte); max-width: 100%; }
+  .temas-botao .gira { transform: rotate(180deg); }
+  .temas-fundo { position: fixed; inset: 0; z-index: 1; border: 0; background: rgba(0, 0, 0, .35); padding: 0; }
+  .temas-menu { position: absolute; z-index: 2; top: calc(100% + 6px); right: 0; width: min(280px, 88vw); max-height: 42vh; overflow-y: auto; background: var(--card); border: 1px solid var(--linha); border-radius: 14px; box-shadow: 0 14px 32px rgba(0, 0, 0, .35); padding: 6px 12px; }
+}
+
+/* Calendário: faixa de legendas minimizável. */
+.calp-legenda { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; flex-wrap: wrap; min-width: 0; }
+.calp-legenda .calp-filtros { flex: 1 1 0; min-width: 0; }
+.calp-legenda-botao .gira { transform: rotate(180deg); }
+.calp-barra > .calp-legenda { flex: 1 1 260px; }

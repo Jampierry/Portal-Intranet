@@ -86,25 +86,35 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
   const [categoria, setCategoria] = useState('Todas');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
   const categorias = useMemo(() => ['Todas', ...new Set((dados ?? []).map((c) => c.categoria))], [dados]);
-  const termo = busca.trim().toLocaleLowerCase('pt-BR');
+  const [q, setQ] = useState('');
+  const [temasAberto, setTemasAberto] = useState(false);
+  const norm = (s: string) => s.trim().toLocaleLowerCase('pt-BR');
+  const termos = [norm(busca), norm(q)].filter(Boolean);
   const lista = (dados ?? [])
-    .filter((c) => (categoria === 'Todas' || c.categoria === categoria) && (!termo || [c.titulo, c.resumo, c.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(termo))))
+    .filter((c) => (categoria === 'Todas' || c.categoria === categoria) && termos.every((t) => [c.titulo, c.resumo, c.categoria].some((v) => v.toLocaleLowerCase('pt-BR').includes(t))))
     .sort((a, b) => (a.publicado_em ?? '').localeCompare(b.publicado_em ?? '') * (ordem === 'recentes' ? -1 : 1));
-  const filtrando = termo !== '' || categoria !== 'Todas';
+  const filtrando = termos.length > 0 || categoria !== 'Todas';
   // Destaque: o primeiro urgente (ou o mais recente) quando não há filtro.
   const destaque = !filtrando ? lista.find((c) => c.prioridade === 'urgente') ?? lista[0] : undefined;
   const resto = destaque ? lista.filter((c) => c !== destaque) : lista;
-  const limpar = () => { limparBusca(); setCategoria('Todas'); };
+  const limpar = () => { limparBusca(); setQ(''); setCategoria('Todas'); };
 
   return (
     <>
-      <Cabecalho titulo="Comunicados" sub={`Fique por dentro do que acontece na ${empresa.nome}.`}>
-        <label className="linha ordem">Ordenar
+      <div className="com-topo">
+        <div className="com-ferramentas">
+          <label className="busca-pagina">
+            <Icone nome="busca" tamanho={18} />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar comunicados" aria-label="Buscar comunicados" />
+          </label>
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} aria-label="Filtrar por área">
+            {categorias.map((c) => <option key={c} value={c}>{c === 'Todas' ? 'Todas as áreas' : c}</option>)}
+          </select>
           <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar comunicados">
             <option value="recentes">Mais recentes</option><option value="antigos">Mais antigos</option>
           </select>
-        </label>
-      </Cabecalho>
+        </div>
+      </div>
       <Estado dados={dados} erro={erro} vazio={!!dados && lista.length === 0} limpar={limpar} />
       <div className="com-layout">
         <div className="com-principal">
@@ -119,9 +129,24 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
               <Capa semente={destaque.slug} icone={iconeDe(destaque)} foto={destaque.imagem} classe="capa-grande">{empresa.lema_destaque.length > 0 && <Lema linhas={empresa.lema_destaque} classe="lema-capa" />}</Capa>
             </section>
           )}
+          <div className="temas-flutuante">
+            <button type="button" className="temas-botao" aria-expanded={temasAberto} aria-haspopup="true" onClick={() => setTemasAberto((a) => !a)}>
+              <Icone nome={categoria === 'Todas' ? 'comunicados' : iconePorTexto(categoria, 'comunicados')} tamanho={16} /> Temas{categoria !== 'Todas' ? `: ${categoria}` : ''} <Icone nome="chev" tamanho={14} classe={temasAberto ? 'gira' : ''} />
+            </button>
+            {temasAberto && (
+              <>
+                <button type="button" className="temas-fundo" aria-label="Fechar temas" onClick={() => setTemasAberto(false)} />
+                <ul className="temas temas-menu" role="menu">
+                  {categorias.map((c) => (
+                    <li key={c} role="none"><button role="menuitem" aria-pressed={categoria === c} onClick={() => { setCategoria(c); setTemasAberto(false); }}><Icone nome={c === 'Todas' ? 'comunicados' : iconePorTexto(c, 'comunicados')} tamanho={20} /><span>{c}</span></button></li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
           {resto.length > 0 && (
             <section className="com-mais" aria-labelledby="mais-com">
-              <div className="barra"><h2 id="mais-com">{destaque ? 'Mais comunicados' : `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}`}</h2><span className="suave" aria-live="polite">{filtrando ? `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}` : ''}</span></div>
+              <div className="barra"><h2 id="mais-com">{destaque ? 'Outros comunicados' : `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}`}</h2><span className="suave" aria-live="polite">{filtrando ? `${lista.length} ${lista.length === 1 ? 'resultado' : 'resultados'}` : ''}</span></div>
               <div className="com-rolagem"><ListaComunicados itens={resto} /></div>
             </section>
           )}

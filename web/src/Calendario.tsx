@@ -41,6 +41,12 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
   const [erroAcao, setErroAcao] = useState('');
   const [verLegenda, setVerLegenda] = useState(false);
   const caixa = useRef<HTMLElement>(null);
+  // Em telas baixas (menos de 900 px) o calendário do menu começa recolhido, para não cobrir os itens do menu; a escolha da pessoa é lembrada.
+  const [recolhido, setRecolhido] = useState(() => {
+    try { const v = localStorage.getItem('cal-menu-recolhido'); if (v !== null) return v === '1'; } catch { /* sem armazenamento: usa o padrão */ }
+    return window.innerHeight < 900;
+  });
+  const alternar = () => setRecolhido((r) => { try { localStorage.setItem('cal-menu-recolhido', r ? '0' : '1'); } catch { /* ignora */ } return !r; });
   // A legenda abre pelo "i" e fecha ao clicar fora, no "i" de novo ou com Esc.
   useEffect(() => {
     if (!verLegenda) return;
@@ -101,7 +107,9 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
           {legenda.length > 0 && <button type="button" className="cal-info" aria-expanded={verLegenda} aria-label="O que significam as cores" title="O que significam as cores" onClick={() => setVerLegenda((v) => !v)}><Icone nome="info" tamanho={12} /></button>}
         </b>
         <button className="cal-nav" onClick={() => mover(1)} aria-label="Próximo mês"><Icone nome="dir" tamanho={14} /></button>
+        <button type="button" className="cal-nav cal-recolher" onClick={alternar} aria-expanded={!recolhido} aria-label={recolhido ? 'Mostrar o calendário' : 'Recolher o calendário'} title={recolhido ? 'Mostrar o calendário' : 'Recolher o calendário'}><Icone nome="chev" tamanho={14} classe={recolhido ? '' : 'gira'} /></button>
       </div>
+      {!recolhido && <>
       {verLegenda && <div className="cal-legenda" role="dialog" aria-label="Legenda das cores">{legenda.map(([c, nome]) => <span key={c} className={c}><i aria-hidden="true" />{nome}</span>)}</div>}
       <div className="cal-grade" role="grid" aria-label={`${MESES_LONGOS[ref.mes]} de ${ref.ano}`}>
         {SEMANA.map((s, i) => <span key={i} className="cal-sem" role="columnheader">{s}</span>)}
@@ -145,6 +153,7 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
         {erroAcao && <p className="cal-aviso" role="alert">{erroAcao}</p>}
         {podeCriar && resp?.conectado && !resp.sem_agenda && <button type="button" className="cal-novo" onClick={() => setNovo({ titulo: '', data: sel, data_fim: '', dia_inteiro: true, hora_inicio: '09:00', hora_fim: '10:00', local: '' })}>+ Data importante</button>}
       </div>
+      </>}
       {novo && (
         <JanelaForm titulo="Nova data importante" rotuloEnviar="Cadastrar" aoFechar={() => setNovo(null)}
           aoEnviar={async () => {
