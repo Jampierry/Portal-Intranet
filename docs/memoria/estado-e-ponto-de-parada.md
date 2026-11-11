@@ -1,6 +1,15 @@
 # Estado e ponto de parada
 
-## Sessão de 11/11/2026 (noite) — pesquisas com várias perguntas (não enviado)
+## Sessão de 11/11/2026 (noite, parte 2) — pesquisas: editor, pop-up em passos e resultado (enviado em `03cb0c6`)
+- **Editor** (`PulsoPerguntas.tsx`): lista de perguntas em coluna única; o número da pergunta é botão que **minimiza** o cartão (fica título, ↑↓, Remover); opções em cartões horizontais (foto à esquerda, descrição ao lado). Rolagem é do **corpo da janela** (`.janela-extra .janela-corpo`), não da lista: `fieldset` não repassa altura em flex, por isso o editor é `div` com `fieldset` `display: contents` por dentro.
+- **Pop-up** (`PulsoCard.tsx`): uma pergunta por vez, bolinhas numeradas (verde ✓ nas passadas, clicáveis), Voltar/Próxima/Enviar, opções com foto ao lado do texto e sem caixinha, **fogos** ao enviar (CSS puro; ignora "reduzir animações" de propósito).
+- **Resultado** (`Pulso.tsx`): janela extra, resumo em faixa, **3 cartões por linha**, barras (texto numa linha com reticências; notas em linha única), listas com altura máxima e rolagem interna; **prévia com dados fictícios** quando faltam 5 respostas.
+- **Dados de exemplo** (`modulos/demonstracao/api/pacote.ts`): pesquisas encerradas "Festa de final de ano (exemplo)" (anônima, 28 respostas, 4 tipos) e "Clima da equipe (exemplo, identificada)" (12) + 30 usuários `colegaNN.demo` (sem senha utilizável). Ligar com `npm run demo`.
+- 123 testes, typecheck e build OK. Telas conferidas pelo usuário por captura durante os ajustes.
+- **Próximo:** o RH **liberar o resultado aos colaboradores** no portal. Decidir: quem vê (todos ou só quem respondeu), se comentários/textos aparecem, onde acessar (Início, sino ou aba), liberação por pesquisa. Possível: exportar resultado.
+- **Pendências:** `web/imagens/` (3 JPEGs) fora do Git, perguntar o que fazer; 30 usuários de exemplo poluem a lista de Usuários; security-review; busca duplicada no celular, Início cortado, Feirão Outlet repetido, aba "Dados de exemplo" em produção; Zimbra real; HTTPS para o PWA.
+
+## Sessão de 11/11/2026 (noite) — pesquisas com várias perguntas
 - Publicar › **Pesquisas** (antes "Pesquisa de pulso"): título + explicação + **várias perguntas**; cada uma escolhe o tipo (nota 1–5, escolha única, múltipla escolha, texto), obrigatória ou não, **imagem na pergunta e em cada opção**, ordem (↑↓). Várias pesquisas abertas ao mesmo tempo; pop-up mostra a mais recente ainda não respondida. Anônimo, resultado só com 5+ respostas, com barras por opção. Perguntas travam após a 1ª resposta.
 - Migração 031 (`pulso_perguntas`, `pulso_respostas_item`; antigas viram 1 pergunta de nota). Código: `modulos/pulso/api`, `web/src/gestao/Pulso.tsx`, `PulsoPerguntas.tsx`, `web/src/inicio/PulsoCard.tsx`; `Crud` ganhou campo `tipo: 'custom'`. 122 testes/typecheck/build OK; telas NÃO conferidas no navegador.
 - **Pesquisa identificada** (migração 032, `pulsos.anonima`, `pulso_respostas_item.usuario_id`): o RH escolhe ao criar "Anônima" (padrão) ou "Identificada" (guarda quem respondeu, mostra nomes por opção, sem mínimo de 5; quem responde é avisado; não troca depois da 1ª resposta).
