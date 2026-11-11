@@ -1,3 +1,4 @@
+import { confirmar } from './Confirmar.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { MESES_LONGOS } from './dados';
@@ -92,7 +93,7 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
   const [sa, sm, sd] = sel.split('-').map(Number);
   const rotuloSel = `${NOME_DIA[new Date(sa, sm - 1, sd).getDay()]}, ${sd} de ${MESES_LONGOS[sm - 1].toLowerCase()}`;
   const excluir = async (e: Evento) => {
-    if (!window.confirm(`Excluir a data importante "${e.titulo}"?`)) return;
+    if (!(await confirmar({ titulo: 'Excluir data', mensagem: `Excluir a data importante "${e.titulo}"?`, confirmar: 'Excluir', perigo: true }))) return;
     setErroAcao('');
     try { await api(`/api/calendario/${encodeURIComponent(e.id)}`, undefined, 'DELETE'); setVersao((v) => v + 1); }
     catch (x) { setErroAcao((x as Error).message); }

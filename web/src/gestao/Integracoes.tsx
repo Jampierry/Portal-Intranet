@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { Selo } from './Crud';
@@ -68,7 +69,7 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
     await api('/api/integracoes/zimbra', { url: conexao.url, token: conexao.token || undefined, agenda: conexao.agenda }, 'PUT');
     setAviso('Conexão salva.'); await carregar();
   }); };
-  const desconectar = () => { if (!window.confirm('Desconectar o portal do serviço Zimbra? O calendário deixa de mostrar datas até reconectar.')) return; void executar('conexao', async () => {
+  const desconectar = async () => { if (!(await confirmar({ titulo: 'Desconectar', mensagem: 'Desconectar o portal do serviço Zimbra? O calendário deixa de mostrar datas até reconectar.', confirmar: 'Desconectar', perigo: true }))) return; void executar('conexao', async () => {
     await api('/api/integracoes/zimbra', { desconectar: true }, 'PUT'); setAviso('Desconectado.'); await carregar();
   }); };
   const salvarServico = (e: FormEvent) => { e.preventDefault(); void executar('servico', async () => {

@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -38,7 +39,7 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
     catch (e) { setAviso((e as Error).message); }
   };
   const excluir = async (d: DataLocal) => {
-    if (!window.confirm(`Excluir "${d.titulo}"?`)) return;
+    if (!(await confirmar({ titulo: 'Excluir data', mensagem: `Excluir "${d.titulo}"?`, confirmar: 'Excluir', perigo: true }))) return;
     try { await api(`/api/gestao/calendario/datas/${d.id}`, undefined, 'DELETE'); recarregar(); } catch (e) { setAviso((e as Error).message); }
   };
   const salvarAgendas = async () => {

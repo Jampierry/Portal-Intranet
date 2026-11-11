@@ -1,3 +1,4 @@
+import { avisar } from '../Confirmar.tsx';
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
 import { iconePorTexto } from '../iconesAuto';
@@ -9,7 +10,7 @@ import { dataCurta, useLista, type Documento } from '../dados';
 function CopiarCaminho({ caminho }: { caminho: string }) {
   const [copiado, setCopiado] = useState(false);
   const copiar = async () => {
-    try { await navigator.clipboard.writeText(caminho); } catch { prompt('Copie o caminho:', caminho); }
+    try { await navigator.clipboard.writeText(caminho); } catch { void avisar({ titulo: 'Copie o caminho', mensagem: caminho }); }
     setCopiado(true); setTimeout(() => setCopiado(false), 2500);
   };
   return <button type="button" className="btn btn-pri btn-pequeno abrir-doc" onClick={copiar} title={caminho}>{copiado ? 'Caminho copiado!' : 'Copiar caminho de rede'}</button>;

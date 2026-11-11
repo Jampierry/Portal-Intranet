@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -119,7 +120,7 @@ export function ListaPerfis({ souAdmin, permissoes }: { souAdmin: boolean; permi
     ? { codigo: p.codigo, nome: p.nome, marcadas: new Set(p.permissoes), sistema: p.sistema, fixo: p.fixo, apps: [] }
     : { codigo: null, nome: '', marcadas: new Set(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.pessoas', 'ver.ajuda']), sistema: false, fixo: false, apps: [] });
   const apagar = async (p: PerfilPerm) => {
-    if (!window.confirm(`Apagar o perfil "${p.nome}"? Essa ação não pode ser desfeita.`)) return;
+    if (!(await confirmar({ titulo: 'Apagar perfil', mensagem: `Apagar o perfil "${p.nome}"? Essa ação não pode ser desfeita.`, confirmar: 'Apagar', perigo: true }))) return;
     setFalha(''); setAviso('');
     try { await api(`/api/perfis/${p.codigo}`, undefined, 'DELETE'); setAviso(`Perfil "${p.nome}" apagado.`); recarregar(); }
     catch (e) { setFalha((e as Error).message); }

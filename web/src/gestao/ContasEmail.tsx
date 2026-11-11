@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { Selo } from './Crud';
@@ -48,7 +49,7 @@ export function ContasEmail({ edita }: { edita: boolean }) {
     await api('/api/integracoes/zimbra/contas', { ...form, smtp_port: form.smtp_port || undefined, senha: form.senha || undefined }, 'POST');
     setForm(null); setAviso(`Conta salva.${dados?.tipos[form.tipo]?.oauth ? ' Agora clique em Conectar para autorizar o acesso.' : ''}`); await carregar();
   }); };
-  const remover = (c: Conta) => { if (!window.confirm(`Remover a conta ${c.nome}? Senhas e autorizações guardadas dela serão apagadas.`)) return; void executar('rem-' + c.id, async () => {
+  const remover = async (c: Conta) => { if (!(await confirmar({ titulo: 'Remover conta', mensagem: `Remover a conta ${c.nome}? Senhas e autorizações guardadas dela serão apagadas.`, confirmar: 'Remover', perigo: true }))) return; void executar('rem-' + c.id, async () => {
     await api(`/api/integracoes/zimbra/contas/${c.id}`, undefined, 'DELETE'); setAviso('Conta removida.'); await carregar();
   }); };
   const testar = (c: Conta) => void executar('t-' + c.id, async () => {

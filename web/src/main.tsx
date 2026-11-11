@@ -1,9 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
+import { ConfirmarHost } from './Confirmar.tsx';
 import './estilo.css';
 import './portal.css';
 
-createRoot(document.getElementById('raiz')!).render(<App />);
+createRoot(document.getElementById('raiz')!).render(<><App /><ConfirmarHost /></>);
 
 // PWA: registra o service worker só no site publicado (em desenvolvimento ele atrapalharia o recarregamento do Vite).
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

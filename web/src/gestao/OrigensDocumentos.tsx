@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { DicaAba } from '../Dica';
@@ -72,7 +73,7 @@ export function OrigensDocumentos() {
   useEffect(() => { void carregar(); }, []);
 
   const apagar = async (o: Origem) => {
-    if (!window.confirm(`Apagar a origem "${o.nome}"? Os arquivos no servidor não são tocados.`)) return;
+    if (!(await confirmar({ titulo: 'Apagar origem', mensagem: `Apagar a origem "${o.nome}"? Os arquivos no servidor não são tocados.`, confirmar: 'Apagar', perigo: true }))) return;
     setErro('');
     try { await api(`/api/gestao/documentos/origens/${o.id}`, undefined, 'DELETE'); await carregar(); } catch (e) { setErro((e as Error).message); }
   };

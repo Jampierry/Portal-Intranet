@@ -297,3 +297,9 @@ label small { font-weight: 500; }
 .doc-pasta-busca { padding: 8px 8px 4px; }
 .doc-pasta-busca input { width: 100%; }
 .campo-doc .doc-pasta-lista { max-height: 260px; }
+
+/* Aviso/confirmação próprio do portal (Confirmar.tsx) */
+.janela-aviso { width: min(440px, calc((100vw / var(--zoom, 1)) - 32px)); }
+.janela-aviso .aviso-texto { white-space: pre-line; overflow-wrap: anywhere; margin: 0; line-height: 1.5; }
+.janela-aviso footer { justify-content: flex-end; }
+.btn-perigo { background: var(--erro); border-color: var(--erro); color: var(--card); }

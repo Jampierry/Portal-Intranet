@@ -1,3 +1,4 @@
+import { confirmar } from './Confirmar.tsx';
 /** Erro da API com o status HTTP e o código opcional (ex.: "trocar_senha"). */
 export class ErroApi extends Error {
   status: number;
@@ -22,9 +23,7 @@ export async function api<T>(url: string, corpo?: unknown, metodo?: 'POST' | 'PU
     const j = json as { erro?: string; codigo?: string; recurso?: string; registro?: string };
     // Editar o que outra pessoa criou: oferece pedir autorização ao dono (o administrador também recebe o pedido).
     if (r.status === 403 && j.codigo === 'precisa_autorizacao' && j.recurso && j.registro) {
-      if (window.confirm(`${j.erro}
-
-Enviar o pedido ao autor e ao administrador agora?`)) {
+      if (await confirmar({ titulo: 'Pedir autorização', mensagem: `${j.erro}\n\nEnviar o pedido ao autor e ao administrador agora?`, confirmar: 'Enviar pedido' })) {
         await api('/api/pedidos-edicao', { recurso: j.recurso, registro: j.registro });
         window.dispatchEvent(new Event('pedidos-edicao'));
         throw new ErroApi('Pedido enviado ao autor e ao administrador. Quando liberarem, você recebe um aviso no sino e pode editar.', 403, 'pedido_enviado');

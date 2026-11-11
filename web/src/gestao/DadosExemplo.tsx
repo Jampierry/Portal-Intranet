@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Selo } from './Crud';
@@ -21,8 +22,8 @@ export function DadosExemplo() {
   useEffect(() => { api<Estado>('/api/gestao/demonstracao').then(setE).catch((x: Error) => setErro(x.message)); }, []);
 
   const mudar = async (ativo: boolean) => {
-    if (!ativo && !window.confirm('Desligar os dados de exemplo? Os comunicados, documentos, banners, pessoas, imagens e usuários de exemplo são apagados e a identidade da empresa volta ao que era antes. O que sua empresa cadastrou de verdade não é tocado.')) return;
-    if (ativo && !window.confirm('Ligar os dados de exemplo? A identidade da empresa (nome, logo e tela de entrada) passa a ser a da empresa fictícia "Aurora Esportes" até você desligar.')) return;
+    if (!ativo && !(await confirmar({ titulo: 'Desligar dados de exemplo', mensagem: 'Desligar os dados de exemplo? Os comunicados, documentos, banners, pessoas, imagens e usuários de exemplo são apagados e a identidade da empresa volta ao que era antes. O que sua empresa cadastrou de verdade não é tocado.', confirmar: 'Desligar', perigo: true }))) return;
+    if (ativo && !(await confirmar({ titulo: 'Ligar dados de exemplo', mensagem: 'Ligar os dados de exemplo? A identidade da empresa (nome, logo e tela de entrada) passa a ser a da empresa fictícia "Aurora Esportes" até você desligar.', confirmar: 'Ligar' }))) return;
     setOcupado(true); setErro('');
     try { setE(await api<Estado>('/api/gestao/demonstracao', { ativo })); window.location.reload(); }
     catch (x) { setErro((x as Error).message); setOcupado(false); }

@@ -1,3 +1,4 @@
+import { confirmar } from '../Confirmar.tsx';
 import { CampoDocumento } from './CampoDocumento';
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { api } from '../api';
@@ -180,7 +181,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
     recarregar();
   };
   const apagar = async (r: T, nome: string) => {
-    if (!window.confirm(`Apagar ${rotuloItem} "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    if (!(await confirmar({ titulo: 'Apagar', mensagem: `Apagar ${rotuloItem} "${nome}"? Esta ação não pode ser desfeita.`, confirmar: 'Apagar', perigo: true }))) return;
     setFalha('');
     try { await api(`${base}/${encodeURIComponent(String(idDe(r)))}`, undefined, 'DELETE'); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} apagado.`); recarregar(); }
     catch (x) { setFalha((x as Error).message); }

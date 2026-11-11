@@ -1,6 +1,13 @@
 # Estado e ponto de parada
 
-## Sessão de 11/11/2026 — origens de documentos, máscara de telefone, calendário do menu (NÃO enviado; `main` = `8182969` + locais)
+## Sessão de 11/11/2026 (tarde) — avisos próprios e calendário do menu
+**Feito (122 testes, typecheck e build OK; telas não conferidas no navegador):**
+- **Pop-up próprio** no lugar de `confirm`/`prompt` do navegador: `web/src/Confirmar.tsx` (`confirmar({titulo, mensagem, confirmar, perigo})` → Promise<boolean>, `avisar(...)`, `<ConfirmarHost/>` montado em `main.tsx`). Usado em todas as exclusões e confirmações (Crud, origens, perfis, datas, contas de e-mail, Zimbra, dados de exemplo, pedido de autorização em `api.ts`). **Regra: nunca usar `window.confirm/alert/prompt`; use `confirmar`/`avisar`.**
+- Calendário do menu: só resta o botão "+ Data importante" (saíram "Abrir calendário" e o × de excluir; excluir continua no calendário completo e em Configurações › Calendário). Clicar num dia ainda abre o calendário completo.
+- `web/imagens/` (3 JPEGs) está fora do Git de propósito (origem desconhecida); confirmar com o usuário.
+
+
+## Sessão de 11/11/2026 (manhã) — origens de documentos, máscara de telefone, calendário do menu (enviado em `4f4e89a`)
 **Feito (122 testes, typecheck e build OK; telas não conferidas no navegador):**
 - **Origens de documentos** (migração 030, tabela `documento_origens`, coluna `documentos.origem_id`): o administrador cadastra pastas do servidor/rede em Configurações › **Pastas de documentos** (`OrigensDocumentos.tsx`, janela de tamanho fixo, botão "Procurar…" com seletor de pastas do servidor e campo de pesquisa; rota `/api/gestao/documentos/origens[/navegar]`, só admin). No documento, "Onde está o documento" = Link / Pasta do portal / "Servidor: <origem>" (valor `s<id>` no formulário; no banco `origem='servidor'` + `origem_id`); o arquivo é escolhido por navegador de pastas com **pesquisa** (oculta `~$`); download pelo servidor (`/api/documentos/:slug/arquivo`). Digitar caminho de rede foi removido (docs antigos `rede` aparecem como "antigo"). Botão Abrir corrigido para origem servidor. Origem em uso não pode ser apagada. Servidor do portal precisa de leitura na pasta (TI).
 - **Máscara de telefone** (`tipo: 'telefone'` em `Crud.tsx`): celular (começa com 9) `(62) 99999-0000`, fixo `(62) 3333-0000`; aplicada em Contatos › Celular.
