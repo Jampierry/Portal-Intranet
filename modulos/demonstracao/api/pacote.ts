@@ -251,10 +251,56 @@ export function ativarExemplo(db: Banco, opcoes: { producao?: boolean; hoje?: Da
         'INSERT INTO calendario_datas (data, data_fim, titulo, tipo, anual, criado_em) VALUES (?, ?, ?, ?, 0, ?)', [d(n), fim === null ? null : d(fim), titulo, tipo, agora]);
     }
 
-    // Pesquisa de pulso: abre só se não houver outra aberta (uma por vez).
+    // Pesquisa de pulso: abre só se não houver outra aberta (uma por vez, no exemplo).
     const aberta = db.prepare("SELECT 1 FROM pulsos WHERE status = 'aberto'").get();
-    unico('pulsos', 'SELECT id FROM pulsos WHERE pergunta = ?', [PERGUNTA_PULSO],
+    const idPulso = unico('pulsos', 'SELECT id FROM pulsos WHERE pergunta = ?', [PERGUNTA_PULSO],
       'INSERT INTO pulsos (pergunta, status, criado_em, aberto_em) VALUES (?, ?, ?, ?)', [PERGUNTA_PULSO, aberta ? 'rascunho' : 'aberto', agora, aberta ? null : agora]);
+    if (!db.prepare('SELECT 1 FROM pulso_perguntas WHERE pulso_id = ?').get(idPulso))
+      db.prepare("INSERT INTO pulso_perguntas (pulso_id, ordem, texto, tipo, obrigatoria) VALUES (?, 0, ?, 'nota', 1)").run(idPulso, PERGUNTA_PULSO);
+
+    // Pesquisas encerradas, já com respostas inventadas, para testar a tela de Resultado (uma anônima e uma identificada).
+    const colegas: number[] = [];
+    for (let k = 1; k <= 30; k++) {
+      const login = `colega${String(k).padStart(2, '0')}.demo`;
+      colegas.push(unico('usuarios', 'SELECT id FROM usuarios WHERE login = ?', [login], 'INSERT INTO usuarios (login, nome, senha_hash, perfil, criado_em) VALUES (?, ?, ?, ?, ?)',
+        [login, `Colaborador ${String(k).padStart(2, '0')} (exemplo)`, hashSenha(randomBytes(18).toString('hex')), 'consulta', agora]) as number);
+    }
+    let semente = 12345;
+    const sorte = () => { semente = (semente * 1103515245 + 12345) % 2147483648; return semente / 2147483648; };
+    const pesos = <T,>(itens: [T, number][]): T => { let x = sorte() * itens.reduce((a, i) => a + i[1], 0); for (const [v, p] of itens) { x -= p; if (x <= 0) return v; } return itens[itens.length - 1][0]; };
+    const pesquisaPronta = (titulo: string, descricao: string, anonima: boolean, qtd: number,
+      perguntas: { texto: string; tipo: 'nota' | 'unica' | 'multipla' | 'texto'; opcoes?: string[] }[],
+      gerar: (q: { tipo: string; opcoes: string[] }, n: number) => { valor: string; comentario?: string }[]) => {
+      const idp = unico('pulsos', 'SELECT id FROM pulsos WHERE pergunta = ?', [titulo],
+        'INSERT INTO pulsos (pergunta, descricao, status, anonima, criado_em, aberto_em, encerrado_em) VALUES (?, ?, ?, ?, ?, ?, ?)', [titulo, descricao, 'encerrado', anonima ? 1 : 0, agora, agora, agora]) as number;
+      if (db.prepare('SELECT 1 FROM pulso_perguntas WHERE pulso_id = ?').get(idp)) return;
+      const qs = perguntas.map((q, ordem) => ({ ...q, opcoes: q.opcoes ?? [], id: Number(db.prepare('INSERT INTO pulso_perguntas (pulso_id, ordem, texto, tipo, obrigatoria, opcoes) VALUES (?, ?, ?, ?, 1, ?)')
+        .run(idp, ordem, q.texto, q.tipo, q.opcoes ? JSON.stringify(q.opcoes.map((t) => ({ texto: t, imagem: null }))) : null).lastInsertRowid) }));
+      for (let n = 0; n < qtd; n++) {
+        db.prepare('INSERT INTO pulso_participacao (pulso_id, usuario_id) VALUES (?, ?)').run(idp, colegas[n]);
+        for (const q of qs) for (const r of gerar(q, n))
+          db.prepare('INSERT INTO pulso_respostas_item (pulso_id, pergunta_id, valor, comentario, dia, usuario_id) VALUES (?, ?, ?, ?, ?, ?)').run(idp, q.id, r.valor, r.comentario ?? null, d(-2), anonima ? null : colegas[n]);
+      }
+    };
+    const COMENT = ['Ótimo ambiente de trabalho.', 'Gostaria de mais momentos de integração.', 'Equipe unida e prestativa.', 'A comunicação entre as áreas pode melhorar.', 'Me sinto valorizado(a) aqui.'];
+    const SUGEST = ['Mais opções para vegetarianos.', 'Local com estacionamento.', 'Horário um pouco mais cedo.', 'Sorteio de brindes maiores.', 'Música ao vivo, de preferência pagode.', 'Espaço para as crianças.'];
+    const CARDAPIO = ['Churrasco, arroz, feijão tropeiro e salada', 'Massas e saladas', 'Feijoada completa', 'Buffet de pratos executivos'];
+    const ATRACOES = ['Banda ao vivo', 'DJ', 'Sorteio de brindes', 'Karaokê', 'Brincadeiras e gincanas'];
+    pesquisaPronta('Festa de final de ano (exemplo)', 'Ajude a escolher a festa da empresa. Pesquisa de exemplo com respostas inventadas.', true, 28, [
+      { texto: 'O que você acha da empresa?', tipo: 'nota' },
+      { texto: 'Qual cardápio você quer para a festa de final de ano?', tipo: 'unica', opcoes: CARDAPIO },
+      { texto: 'Quais atrações você gostaria de ter?', tipo: 'multipla', opcoes: ATRACOES },
+      { texto: 'Deixe uma sugestão para a festa', tipo: 'texto' },
+    ], (q, n) => {
+      if (q.tipo === 'nota') return [{ valor: String(pesos([[5, 9], [4, 11], [3, 5], [2, 2], [1, 1]])), comentario: n % 3 === 0 ? COMENT[n % COMENT.length] : undefined }];
+      if (q.tipo === 'unica') return [{ valor: pesos(q.opcoes.map((o, i) => [o, [12, 6, 4, 2][i]] as [string, number])) }];
+      if (q.tipo === 'multipla') return q.opcoes.filter((_, i) => sorte() < [0.7, 0.45, 0.8, 0.3, 0.35][i]).map((valor) => ({ valor }));
+      return n % 3 === 1 ? [{ valor: SUGEST[n % SUGEST.length] }] : [];
+    });
+    pesquisaPronta('Clima da equipe (exemplo, identificada)', 'Pesquisa identificada de exemplo: o RH vê quem respondeu.', false, 12, [
+      { texto: 'Como você avalia o clima da sua equipe?', tipo: 'nota' },
+      { texto: 'O que mais ajudaria o seu dia a dia?', tipo: 'unica', opcoes: ['Mais treinamento', 'Melhor comunicação', 'Mais flexibilidade de horário', 'Ferramentas melhores'] },
+    ], (q) => q.tipo === 'nota' ? [{ valor: String(pesos([[5, 4], [4, 6], [3, 3], [2, 1]])), comentario: undefined }] : [{ valor: pesos(q.opcoes.map((o, i) => [o, [3, 5, 2, 4][i]] as [string, number])) }]);
 
     db.exec('COMMIT');
   } catch (e) {

@@ -1,5 +1,12 @@
 # Estado e ponto de parada
 
+## Sessão de 11/11/2026 (noite) — pesquisas com várias perguntas (não enviado)
+- Publicar › **Pesquisas** (antes "Pesquisa de pulso"): título + explicação + **várias perguntas**; cada uma escolhe o tipo (nota 1–5, escolha única, múltipla escolha, texto), obrigatória ou não, **imagem na pergunta e em cada opção**, ordem (↑↓). Várias pesquisas abertas ao mesmo tempo; pop-up mostra a mais recente ainda não respondida. Anônimo, resultado só com 5+ respostas, com barras por opção. Perguntas travam após a 1ª resposta.
+- Migração 031 (`pulso_perguntas`, `pulso_respostas_item`; antigas viram 1 pergunta de nota). Código: `modulos/pulso/api`, `web/src/gestao/Pulso.tsx`, `PulsoPerguntas.tsx`, `web/src/inicio/PulsoCard.tsx`; `Crud` ganhou campo `tipo: 'custom'`. 122 testes/typecheck/build OK; telas NÃO conferidas no navegador.
+- **Pesquisa identificada** (migração 032, `pulsos.anonima`, `pulso_respostas_item.usuario_id`): o RH escolhe ao criar "Anônima" (padrão) ou "Identificada" (guarda quem respondeu, mostra nomes por opção, sem mínimo de 5; quem responde é avisado; não troca depois da 1ª resposta).
+- **Layout do formulário:** janela extra larga (`Crud` ganhou `larga`, `feminino`, `gradeClasse`, `Campo.classe/linhas`); cabeçalho em grade (título/tipo/situação à esquerda, explicação à direita); perguntas em cartões compactos, opções em grade com foto; **rolagem só na lista de perguntas** (`.pq-lista`, `portal.css` fim).
+- 123 testes, typecheck e build OK. Falta: conferir no navegador (editor, rolagem, pop-up com fotos, resultado); possível: exportar resultado. **Nada enviado** (só o gatilho "enviar" sobe).
+
 ## Sessão de 11/11/2026 (tarde) — avisos próprios e calendário do menu
 **Feito (122 testes, typecheck e build OK; telas não conferidas no navegador):**
 - **Pop-up próprio** no lugar de `confirm`/`prompt` do navegador: `web/src/Confirmar.tsx` (`confirmar({titulo, mensagem, confirmar, perigo})` → Promise<boolean>, `avisar(...)`, `<ConfirmarHost/>` montado em `main.tsx`). Usado em todas as exclusões e confirmações (Crud, origens, perfis, datas, contas de e-mail, Zimbra, dados de exemplo, pedido de autorização em `api.ts`). **Regra: nunca usar `window.confirm/alert/prompt`; use `confirmar`/`avisar`.**

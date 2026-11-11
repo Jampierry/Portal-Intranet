@@ -1743,3 +1743,169 @@ label.busca-pagina { flex-direction: row; align-items: center; font-weight: 500;
   .menu > .cal-menu > .cal-lista { display: grid; align-content: start; flex: 1 1 0; min-height: 70px; overflow-y: auto; scrollbar-width: thin; }
   .menu .sbfoot { margin-top: 0; }
 }
+
+/* Pesquisas com várias perguntas (editor do RH, resposta e resultado) */
+.pq-editor { display: grid; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.pq-editor legend { font-weight: 700; padding: 0; margin-bottom: 6px; }
+.pq-cartao { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--linha); border-radius: var(--raio); background: var(--afundado); }
+.pq-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pq-topo-acoes { display: flex; gap: 6px; }
+.pq-imagem { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pq-imagem img { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--linha); }
+.pq-imagem-peq img { width: 40px; height: 40px; }
+.pq-opcoes { display: grid; gap: 8px; }
+.pq-opcao { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.pq-resp { display: grid; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.pq-resp legend { padding: 0; margin-bottom: 8px; }
+.pq-resp-img, .pq-res-img { max-width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid var(--linha); }
+.pq-opcoes-resp { display: grid; gap: 8px; }
+.pq-opcao-resp { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); cursor: pointer; }
+.pq-opcao-resp:hover { background: var(--hover); }
+.pq-opcao-resp.on { border-color: var(--vinho); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); }
+.pq-opcao-resp img { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; }
+.pq-res { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--linha); }
+.pq-res h3 { margin: 0; font-size: 14px; }
+.pulso-barra-linha { display: grid; grid-template-columns: minmax(80px, 40%) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.pulso-barra-rotulo { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.pq-mini { width: 32px; height: 24px; object-fit: cover; border-radius: 4px; }
+
+/* Janela larga das pesquisas e editor de perguntas em cartões */
+.janela-extra { width: min(1080px, calc((100vw / var(--zoom, 1)) - 24px)); }
+.pq-linha { display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(0, 1fr); gap: 12px 18px; align-items: end; }
+.pq-linha > label { margin: 0; }
+.pq-linha .pq-imagem { justify-content: flex-end; }
+.pq-opcoes-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.pq-opcao { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; padding: 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); }
+.pq-opcao-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pq-opcao textarea { width: 100%; resize: vertical; }
+.pq-imagem-cartao { display: grid; gap: 6px; justify-items: stretch; }
+.pq-imagem-cartao img, .pq-imagem-cartao .pq-sem-foto { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--linha); }
+.pq-sem-foto { display: grid; place-items: center; background: var(--afundado); color: var(--suave); font-size: 12px; }
+.pq-imagem-cartao .btn { justify-self: start; }
+.pq-opcao-nova { min-height: 150px; border: 2px dashed var(--linha); border-radius: 12px; background: transparent; color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
+.pq-opcao-nova:hover { background: var(--hover); }
+@media (max-width: 720px) { .pq-linha { grid-template-columns: minmax(0, 1fr); } .pq-linha .pq-imagem { justify-content: flex-start; } }
+
+/* Cabeçalho da pesquisa: título, tipo e situação à esquerda; explicação à direita, na altura dos três */
+.grade2.grade-pesq { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grade-pesq > .gp-2 { grid-column: span 2; }
+.grade-pesq > .gp-1 { grid-column: span 1; }
+.grade-pesq > .gp-alto { grid-column: 3 / span 2; grid-row: 1 / span 2; display: flex; }
+.grade-pesq > .gp-alto > label { display: flex; flex-direction: column; flex: 1; }
+.grade-pesq > .gp-alto textarea { flex: 1; min-height: 70px; resize: vertical; }
+@media (max-width: 720px) {
+  .grade2.grade-pesq { grid-template-columns: minmax(0, 1fr); }
+  .grade-pesq > .gp-2, .grade-pesq > .gp-1, .grade-pesq > .gp-alto { grid-column: 1 / -1; grid-row: auto; }
+}
+
+/* Perguntas compactas; a rolagem fica só na lista de perguntas */
+.janela-extra form { height: calc((100vh / var(--zoom, 1)) - 48px); }
+.janela-extra .janela-corpo { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.janela-extra .grade2.grade-pesq { flex: 0 0 auto; }
+.grade-pesq > .cheia { align-self: stretch; display: flex; flex-direction: column; }
+.pq-editor { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.pq-editor > p, .pq-editor .pq-add { flex: 0 0 auto; align-self: flex-start; }
+.pq-titulo { flex: 0 0 auto; font-weight: 700; }
+.pq-sem-caixa { display: contents; border: 0; padding: 0; margin: 0; }
+.pq-lista { display: grid; gap: 8px; flex: 0 0 auto; padding-right: 2px; align-content: start; }
+.pq-cartao { gap: 6px; padding: 8px 10px; align-content: start; }
+.pq-topo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.pq-num { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--vinho); color: var(--sobre-acento); font-size: 12px; }
+.pq-topo input { margin: 0; }
+.pq-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.pq-linha select { width: auto; min-width: 180px; max-width: 100%; margin: 0; }
+.pq-linha > label { margin: 0; }
+.pq-linha .pq-imagem { margin-left: 0; justify-content: flex-start; }
+.pq-opcoes { gap: 6px; }
+.pq-opcoes-grade { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+.pq-opcao { padding: 8px; gap: 6px; }
+.pq-opcao { grid-template-columns: 76px minmax(0, 1fr); align-items: stretch; gap: 4px 8px; }
+.pq-opcao-topo { grid-column: 1 / -1; }
+.pq-imagem-cartao { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 4px; }
+.pq-imagem-cartao img, .pq-imagem-cartao .pq-sem-foto { width: 76px; height: 54px; }
+.pq-imagem-cartao .btn { justify-self: stretch; padding-inline: 4px; font-size: 11px; text-align: center; }
+.pq-opcao textarea { min-height: 0; height: 100%; min-height: 64px; resize: none; }
+.pq-opcao-nova { min-height: 0; }
+
+.pq-num { border: 0; padding: 0; cursor: pointer; font-weight: 700; }
+.pq-num:hover { filter: brightness(1.15); }
+
+/* Pesquisa em passos: bolinhas numeradas no topo e opções com foto ao lado do texto */
+.pq-passos { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.pq-passo { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.pq-passo.atual { border-color: var(--vinho); background: var(--vinho); color: var(--sobre-acento); }
+.pq-passo.feito { border-color: var(--ok); background: var(--ok); color: var(--sobre-acento); }
+.pq-passo:disabled { opacity: .5; cursor: not-allowed; }
+.pulso-modal .pq-opcao-resp { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; text-align: left; margin: 0; }
+.pulso-modal .pq-opcao-resp input { flex: 0 0 auto; width: auto; margin: 0; }
+.pulso-modal .pq-opcao-resp img { flex: 0 0 auto; width: 96px; height: 72px; }
+.pulso-modal .pq-opcao-resp span { flex: 1 1 auto; text-align: left; font-weight: 600; }
+.pulso-modal .pq-opcao-resp input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pulso-modal .pq-opcao-resp { position: relative; }
+.pulso-modal .pq-opcao-resp:focus-within { outline: 2px solid var(--vinho); outline-offset: 2px; }
+
+/* Fogos de comemoração ao enviar a pesquisa (sem piscar; só dura ~3 s) */
+.pq-fogos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; min-height: 150px; }
+.pq-fogo { position: absolute; width: 0; height: 0; }
+.pq-fogo i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--c); opacity: 0; transform: rotate(var(--a)) translateX(0); animation: pq-estourar 1.4s ease-out both; }
+@keyframes pq-estourar {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(0) scale(.6); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) translateY(14px) scale(1); }
+}
+.pulso-modal .pulso-obrigado { position: relative; z-index: 1; margin-block: 56px; }
+.aviso-previa { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 8px 10px; border: 1px dashed var(--laranja); border-radius: 10px; background: var(--afundado); }
+
+/* Resultado da pesquisa: resumo em números, perguntas em cartões lado a lado, barras com o texto em cima e a barra embaixo */
+.pr-resumo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.pr-resumo li { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--afundado); }
+.pr-resumo b { font-size: 22px; line-height: 1.1; }
+.pr-resumo span { font-size: 12px; color: var(--suave); }
+.pr-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; align-items: start; }
+.pr-grade .pq-res { padding: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); align-content: start; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { grid-column: 1; grid-row: 1; font-weight: 600; overflow-wrap: anywhere; }
+.pulso-barras .pulso-barra-linha small { grid-column: 2; grid-row: 1; white-space: nowrap; }
+.pulso-barras .pulso-barra-linha .pulso-barra { grid-column: 1 / -1; grid-row: 2; }
+@media (max-width: 720px) { .pr-grade { grid-template-columns: minmax(0, 1fr); } }
+
+/* Resultado compacto: números em faixa fina, barras em uma linha (texto | barra | valor), listas de nomes em colunas */
+.pulso-res { gap: 8px; }
+.pr-resumo { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pr-resumo li { grid-template-columns: auto 1fr; align-items: baseline; gap: 0 8px; padding: 6px 10px; border-radius: 10px; }
+.pr-resumo b { font-size: 17px; }
+.pr-resumo span { font-size: 11px; }
+.pr-grade { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px; }
+.pr-grade .pq-res { gap: 6px; padding: 8px 10px; border-top-width: 1px; }
+.pr-grade .pq-res h3 { font-size: 13px; }
+.pr-grade .pulso-barras { gap: 3px; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(70px, 36%) minmax(0, 1fr) 58px; gap: 8px; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { grid-column: 1; grid-row: 1; font-size: 12px; font-weight: 600; }
+.pulso-barras .pulso-barra-linha .pulso-barra { grid-column: 2; grid-row: 1; height: 10px; }
+.pulso-barras .pulso-barra-linha small { grid-column: 3; grid-row: 1; text-align: right; font-size: 11px; }
+.pr-grade .pulso-coment { max-height: none; overflow: visible; columns: 2 150px; column-gap: 16px; font-size: 12px; display: block; }
+.pr-grade .pulso-coment li { break-inside: avoid; margin-bottom: 2px; }
+.pr-grade .pq-res > b { font-size: 12px; }
+@media (max-width: 720px) { .pr-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pr-grade { align-items: stretch; }
+
+/* Cartões de tamanho estável: barras e listas têm altura máxima e rolam por dentro (barra fina), em vez de crescer o cartão */
+.pr-grade { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.pr-grade .pulso-barras { max-height: 150px; overflow-y: auto; padding-right: 4px; }
+.pr-grade .pulso-coment { columns: auto; display: grid; max-height: 120px; overflow-y: auto; padding-right: 4px; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(60px, 40%) minmax(0, 1fr) 54px; }
+
+/* Aproveita a altura da janela e evita quebra de linha: texto da opção numa linha (reticências, completo na dica), barra embaixo */
+.pr-grade { --alt: calc((100vh / var(--zoom, 1)) - 330px); }
+.pr-grade .pulso-barras { max-height: calc(var(--alt) * .55); min-height: 60px; }
+.pr-grade .pulso-coment { max-height: calc(var(--alt) * .45); min-height: 60px; font-size: 12px; }
+.pr-grade .pulso-coment li { white-space: normal; }
+.pulso-barras .pulso-barra-linha:not(.curta) { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; }
+.pulso-barras .pulso-barra-linha:not(.curta) .pulso-barra-rotulo { grid-column: 1; grid-row: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.pulso-barras .pulso-barra-linha:not(.curta) small { grid-column: 2; grid-row: 1; }
+.pulso-barras .pulso-barra-linha:not(.curta) .pulso-barra { grid-column: 1 / -1; grid-row: 2; }
+.pulso-barras .pulso-barra-linha.curta { grid-template-columns: 70px minmax(0, 1fr) 54px; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { overflow-wrap: normal; }
+.pr-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .pr-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .pr-grade { grid-template-columns: minmax(0, 1fr); } }

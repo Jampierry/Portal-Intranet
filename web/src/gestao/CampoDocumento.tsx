@@ -3,7 +3,7 @@ import { api } from '../api';
 import { Icone } from '../icones';
 import { formatoPorNome } from './formatoDocumento.ts';
 
-type Valores = Record<string, string | boolean>;
+type Valores = Record<string, string | boolean | object>;
 
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 

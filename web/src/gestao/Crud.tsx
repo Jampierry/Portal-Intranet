@@ -17,7 +17,11 @@ const areaDe = (base: string) => { const a = base.split('/').pop() ?? ''; return
 export interface Campo {
   chave: string;
   rotulo: string;
-  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento' | 'telefone';
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento' | 'telefone' | 'custom';
+  /** Só para tipo 'area': altura em linhas (padrão 5). */
+  linhas?: number;
+  /** Só para tipo 'custom': editor próprio do campo (o valor pode ser um objeto/lista). */
+  render?: (valor: unknown, mudar: (v: unknown) => void, todos: Valores) => ReactNode;
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
@@ -26,13 +30,15 @@ export interface Campo {
   /** Só para tipo 'imagem': busca a imagem sozinha a partir de outro campo (ex.: ícone do aplicativo a partir do endereço). */
   auto?: { endpoint: string; origem: string; rotulo: string };
   metade?: boolean;
+  /** Classe extra na caixa do campo (posição própria na grade do formulário). */
+  classe?: string;
 }
 export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode; /** Valor para ordenar ao clicar no cabeçalho (padrão: o próprio texto da coluna). */ ordem?: (r: T) => string | number | null }
-type Valores = Record<string, string | boolean>;
+type Valores = Record<string, string | boolean | object>;
 
 /** Janela (dialog nativo) com formulário. Fecha com Esc ou clicando fora; erros aparecem dentro dela. */
-export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', children }: {
-  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; children: ReactNode;
+export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', extra, children }: {
+  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; /** Janela bem larga (formulários com muito conteúdo). */ extra?: boolean; children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [erro, setErro] = useState('');
@@ -43,7 +49,7 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
     try { await aoEnviar(); } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
   };
   return (
-    <dialog className="janela janela-larga" ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
+    <dialog className={`janela janela-larga${extra ? ' janela-extra' : ''}`} ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
       <form className="janela-form" onSubmit={enviar}>
         <header><h2>{titulo}</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
         <div className="janela-corpo">{children}{erro && <p className="erro" role="alert">{erro}</p>}</div>
@@ -62,8 +68,9 @@ export function mascaraTelefone(v: string): string {
   return `(${d.slice(0, 2)}) ${d.slice(2, corte)}${d.length > corte ? '-' + d.slice(corte) : ''}`;
 }
 
-function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
+function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean | object; mudar: (v: string | boolean | object) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
+  if (c.tipo === 'custom') return <div>{c.render!(valor, mudar as (v: unknown) => void, todos)}</div>;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
   if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} metade={c.metade} />;
@@ -72,7 +79,7 @@ function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: s
   if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
     <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
-      {c.tipo === 'area' ? <textarea rows={5} {...comum} onChange={(e) => mudar(e.target.value)} />
+      {c.tipo === 'area' ? <textarea rows={c.linhas ?? 5} {...comum} onChange={(e) => mudar(e.target.value)} />
         : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
         : c.tipo === 'telefone' ? <input type="tel" inputMode="numeric" autoComplete="off" placeholder="(__) _____-____" {...comum} maxLength={15} onChange={(e) => mudar(mascaraTelefone(e.target.value))} />
         : <input type={c.tipo === 'data' ? 'date' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
@@ -160,10 +167,10 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
 }
 
 /** Tela de cadastro genérica (lista + novo/editar/apagar) usada em comunicados, documentos, destaques e aplicações. */
-export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao }: {
+export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao, feminino, larga, gradeClasse }: {
   base: string; rotuloItem: string; idDe: (r: T) => string | number; campos: Campo[]; colunas: Coluna<T>[];
   valoresNovos: Valores; paraForm: (r: T) => Valores; podeApagar?: (r: T) => boolean;
-  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string;
+  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
   const ord = useOrdenacao(dados, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
@@ -173,6 +180,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
   const [edit, setEdit] = useState<{ id: string | number | null; v: Valores } | null>(null);
   const [aviso, setAviso] = useState('');
   const [falha, setFalha] = useState('');
+  const g = feminino ? { novo: 'Nova', salvo: 'salva', apagado: 'apagada' } : { novo: 'Novo', salvo: 'salvo', apagado: 'apagado' };
 
   const salvar = async (id: string | number | null, v: Valores) => {
     const corpo: Record<string, unknown> = {};
@@ -183,7 +191,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
   const apagar = async (r: T, nome: string) => {
     if (!(await confirmar({ titulo: 'Apagar', mensagem: `Apagar ${rotuloItem} "${nome}"? Esta ação não pode ser desfeita.`, confirmar: 'Apagar', perigo: true }))) return;
     setFalha('');
-    try { await api(`${base}/${encodeURIComponent(String(idDe(r)))}`, undefined, 'DELETE'); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} apagado.`); recarregar(); }
+    try { await api(`${base}/${encodeURIComponent(String(idDe(r)))}`, undefined, 'DELETE'); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} ${g.apagado}.`); recarregar(); }
     catch (x) { setFalha((x as Error).message); }
   };
 
@@ -192,7 +200,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
       {introducao && !libera('criar') && <DicaAba>{introducao}</DicaAba>}
       {libera('criar') && <div className="barra barra-fim">
         {introducao && <Dica lado="dir">{introducao}</Dica>}
-        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> Novo {rotuloItem}</button>
+        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> {g.novo} {rotuloItem}</button>
       </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {(erro || falha) && <p className="erro" role="alert">{erro || falha}</p>}
@@ -221,11 +229,11 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
         </div>
       )}
       {edit && (
-        <JanelaForm titulo={edit.id === null ? `Novo ${rotuloItem}` : `Editar ${rotuloItem}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await salvar(edit.id, edit.v); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} salvo.`); setEdit(null); }}>
-          <div className="grade2">
+        <JanelaForm titulo={edit.id === null ? `${g.novo} ${rotuloItem}` : `Editar ${rotuloItem}`} extra={larga} aoFechar={() => setEdit(null)}
+          aoEnviar={async () => { await salvar(edit.id, edit.v); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} ${g.salvo}.`); setEdit(null); }}>
+          <div className={`grade2${gradeClasse ? ' ' + gradeClasse : ''}`}>
             {campos.map((c) => (
-              <div key={c.chave} className={c.metade ? undefined : 'cheia'}>
+              <div key={c.chave} className={[c.metade ? '' : 'cheia', c.classe ?? ''].join(' ').trim() || undefined}>
                 <CampoForm c={c} todos={edit.v} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit((e) => e && { ...e, v: { ...e.v, [c.chave]: valor } })} mudarVarios={(p) => setEdit((e) => e && { ...e, v: { ...e.v, ...p } })} />
               </div>
             ))}
