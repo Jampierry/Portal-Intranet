@@ -4,7 +4,7 @@ import { Selo } from './Crud';
 import { DicaAba } from '../Dica';
 
 interface Estado {
-  ativo: boolean; total: number; por_tabela: Record<string, number>; empresa: string; producao: boolean; senha_exemplo: string | null;
+  ativo: boolean; total: number; por_tabela: Record<string, number>; empresa: string; producao: boolean; permitido: boolean; senha_exemplo: string | null;
   usuarios: { login: string; nome: string; perfil: string }[];
 }
 const ROTULOS: [string, string][] = [
@@ -38,7 +38,7 @@ export function DadosExemplo() {
           <div className="barra" style={{ alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>Dados de exemplo</h3>
             <Selo texto={e.ativo ? 'Ligados' : 'Desligados'} tom={e.ativo ? 'ok' : 'neutro'} />
-            <button type="button" className={e.ativo ? 'btn btn-sec' : 'btn'} disabled={ocupado} onClick={() => void mudar(!e.ativo)}>
+            <button type="button" className={e.ativo ? 'btn btn-sec' : 'btn'} disabled={ocupado || (!e.ativo && !e.permitido)} title={!e.ativo && !e.permitido ? 'Bloqueado em produção' : undefined} onClick={() => void mudar(!e.ativo)}>
               {ocupado ? 'Aguarde…' : e.ativo ? 'Desligar dados de exemplo' : 'Ligar dados de exemplo'}
             </button>
           </div>

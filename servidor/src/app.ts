@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import type { Banco } from './db.ts';
+import { config } from './config.ts';
+import { servirSite } from './estatico.ts';
 import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
@@ -40,12 +42,20 @@ export const MODULOS = [
   { nome: 'demonstracao', rotas: rotasDemonstracao },
 ];
 
-export async function criarApp(db: Banco, producao = false) {
-  const app = Fastify({ logger: producao });
+export async function criarApp(db: Banco, producao = false, opcoes: { pastaSite?: string } = {}) {
+  const app = Fastify({ logger: producao, trustProxy: config.confiarProxy });
   await app.register(cookie);
+  if (producao) {
+    // Cabeçalhos de segurança básicos em todas as respostas (HTTPS/HSTS e CSP ficam por conta do proxy reverso).
+    app.addHook('onSend', async (_req, resp) => {
+      resp.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'same-origin');
+    });
+  }
   // Quem abrir a porta da API no navegador é levado ao site (em desenvolvimento, o Vite na 5174).
   if (!producao) app.get('/', async (_req, resp) => resp.redirect('http://localhost:5174/'));
   app.get('/api/saude', async () => ({ ok: true, versao: '0.1.0', modulos: MODULOS.map((m) => m.nome) }));
   for (const m of MODULOS) await m.rotas(app, { db, producao });
+  // Em produção o próprio servidor entrega o site compilado (npm run build); em desenvolvimento quem entrega é o Vite.
+  if (producao || opcoes.pastaSite) servirSite(app, opcoes.pastaSite ?? config.pastaSite);
   return app;
 }

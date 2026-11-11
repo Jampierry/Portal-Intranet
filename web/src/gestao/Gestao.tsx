@@ -131,13 +131,13 @@ function Banners() {
   );
 }
 
-interface Doc { id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; link_oficial: string | null; revisado_em: string | null }
+interface Doc { id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null }
 function Documentos() {
   const { dados } = useLista<Doc>('/api/gestao/documentos');
   const categorias = [...new Set((dados ?? []).map((d) => d.categoria))];
   return (
     <Crud<Doc> base="/api/gestao/documentos" rotuloItem="documento" idDe={(r) => r.id}
-      introducao="O arquivo fica no sistema de origem: informe o link oficial. Documento 'restrito' só aparece para editores e administradores."
+      introducao="Informe onde o documento está: link na internet, arquivo na pasta de documentos do portal ou caminho de rede. Documento 'restrito' só aparece para editores e administradores."
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
@@ -147,7 +147,8 @@ function Documentos() {
         { chave: 'responsavel', rotulo: 'Responsável', max: 80, metade: true },
         { chave: 'classificacao', rotulo: 'Quem pode ver', tipo: 'select', opcoes: [['interno', 'Todos os logados'], ['publico', 'Público (interno, sem restrição)'], ['restrito', 'Restrito (editores e admin)']], metade: true },
         { chave: 'revisado_em', rotulo: 'Revisado em', tipo: 'data', metade: true },
-        { chave: 'link_oficial', rotulo: 'Link do documento (http/https)', max: 500 },
+        { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ['rede', 'Servidor (caminho de rede)']] },
+        { chave: 'link_oficial', rotulo: 'Endereço do documento', tipo: 'documento' },
       ]}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
@@ -155,10 +156,10 @@ function Documentos() {
         { titulo: 'Versão', ver: (r) => r.versao ?? '—' },
         { titulo: 'Responsável', ver: (r) => r.responsavel ?? '—' },
         { titulo: 'Acesso', ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
-        { titulo: 'Link', ver: (r) => (r.link_oficial ? 'Sim' : 'Sem link') },
+        { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'rede' ? 'Caminho de rede' : 'Link') },
       ]}
-      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', link_oficial: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), link_oficial: s(r.link_oficial) })}
+      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', origem: 'link', link_oficial: '' }}
+      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), origem: r.origem, link_oficial: s(r.link_oficial) })}
     />
   );
 }

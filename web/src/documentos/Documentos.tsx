@@ -5,6 +5,16 @@ import { Cabecalho, Estado } from '../Cabecalho';
 import { LinkApp } from '../aplicacoes/LinkApp';
 import { dataCurta, useLista, type Documento } from '../dados';
 
+/** Navegador não abre pasta de rede a partir de página web: o botão copia o caminho para colar no Explorer. */
+function CopiarCaminho({ caminho }: { caminho: string }) {
+  const [copiado, setCopiado] = useState(false);
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(caminho); } catch { prompt('Copie o caminho:', caminho); }
+    setCopiado(true); setTimeout(() => setCopiado(false), 2500);
+  };
+  return <button type="button" className="btn btn-pri btn-pequeno abrir-doc" onClick={copiar} title={caminho}>{copiado ? 'Caminho copiado!' : 'Copiar caminho de rede'}</button>;
+}
+
 export function Documentos({ busca, limparBusca }: { busca: string; limparBusca: () => void }) {
   const { dados, erro } = useLista<Documento>('/api/documentos');
   const [categoria, setCategoria] = useState('Todas');
@@ -35,7 +45,11 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
             <span className="icone"><Icone nome={iconePorTexto(`${d.categoria} ${d.titulo}`, 'documentos')} tamanho={22} /></span>
             <div className="texto"><h3>{d.titulo}</h3><p>{d.resumo}</p><small>{d.categoria} · {d.formato}{d.link_oficial ? '' : ' · sem link oficial'}</small>
               {(d.versao || d.responsavel) && <dl className="meta-doc">{d.versao && <div><dt>Versão</dt><dd>{d.versao}</dd></div>}{d.responsavel && <div><dt>Responsável</dt><dd>{d.responsavel}</dd></div>}{d.revisado_em && <div><dt>Revisado em</dt><dd>{dataCurta(d.revisado_em)}</dd></div>}</dl>}
-              {d.link_oficial && <LinkApp url={d.link_oficial} className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></LinkApp>}</div>
+              {d.link_oficial && (d.origem === 'rede'
+                ? <CopiarCaminho caminho={d.link_oficial} />
+                : d.origem === 'pasta'
+                ? <a href={d.link_oficial} target="_blank" rel="noopener noreferrer" className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></a>
+                : <LinkApp url={d.link_oficial} className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></LinkApp>)}</div>
           </article>
         ))}
       </div>

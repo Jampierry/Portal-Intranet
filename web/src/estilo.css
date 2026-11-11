@@ -265,3 +265,17 @@ label small { font-weight: 500; }
 @media (prefers-reduced-motion: reduce) { .menu { transition: none; } }
 
 
+
+/* Campo de endereço do documento (link, caminho de rede ou arquivo da pasta do portal) */
+.campo-doc { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.campo-doc .rotulo-doc { font-weight: 600; }
+.campo-doc .linha-doc { display: flex; gap: 8px; }
+.campo-doc .linha-doc input[type="text"] { flex: 1; min-width: 0; }
+.doc-pasta { border: 1px solid var(--linha-suave); border-radius: 10px; overflow: hidden; }
+.doc-pasta-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--linha-suave); font-size: 13px; }
+.doc-pasta-topo .link-bt, .doc-pasta-lista button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.doc-pasta-topo .link-bt { text-decoration: underline; padding: 0; }
+.doc-pasta-lista { list-style: none; margin: 0; padding: 4px; max-height: 190px; overflow-y: auto; }
+.doc-pasta-lista button { display: block; width: 100%; padding: 7px 10px; border-radius: 8px; }
+.doc-pasta-lista button:hover, .doc-pasta-lista button.ativo { background: var(--vinho-claro); color: var(--vinho-texto); }
+.vazio-pasta { padding: 8px 10px; }

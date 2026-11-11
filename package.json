@@ -17,10 +17,13 @@
     "banco:migrar": "npm run migrar -w servidor",
     "banco:seed": "npm run seed -w servidor",
     "admin:criar": "npm run admin -w servidor --",
-    "test": "node --test web/test/*.test.ts modulos/*/tests/*.test.ts",
+    "test": "node --test web/test/*.test.ts modulos/*/tests/*.test.ts servidor/tests/*.test.ts",
     "build": "npm run build -w web",
     "typecheck": "tsc --noEmit -p web && tsc --noEmit -p servidor",
-    "demo": "npm run banco:migrar && npm run demo -w servidor"
+    "demo": "npm run banco:migrar && npm run demo -w servidor",
+    "start": "npm run start -w servidor",
+    "backup": "npm run backup -w servidor",
+    "publicar": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

@@ -3,7 +3,7 @@ import { api } from './api';
 
 export interface Aplicacao { slug: string; nome: string; descricao: string; categoria: string; url: string; acesso: string; icone: string; logo?: string | null }
 export interface Comunicado { slug: string; titulo: string; resumo: string; categoria: string; prioridade: string; imagem?: string | null; publicado_em: string | null; exige_leitura?: number; lido?: number }
-export interface Documento { slug: string; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; link_oficial: string | null; revisado_em: string | null }
+export interface Documento { slug: string; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null }
 export const MESES_LONGOS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 /** "Novembro/2026" (ou só "2026" quando o destaque antigo não tem mês). */
 export const periodoDe = (d: { mes: number | null; ano: number }) => (d.mes ? `${MESES_LONGOS[d.mes - 1]}/${d.ano}` : String(d.ano));

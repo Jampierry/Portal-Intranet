@@ -1,3 +1,4 @@
+import { CampoDocumento } from './CampoDocumento';
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -15,7 +16,7 @@ const areaDe = (base: string) => { const a = base.split('/').pop() ?? ''; return
 export interface Campo {
   chave: string;
   rotulo: string;
-  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link';
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento';
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
@@ -51,11 +52,12 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
   );
 }
 
-function CampoForm({ c, valor, mudar, todos }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void; todos: Valores }) {
+function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
   if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} metade={c.metade} />;
+  if (c.tipo === 'documento') return <CampoDocumento rotulo={c.rotulo} todos={todos} mudarVarios={mudarVarios} />;
   if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} todos={todos} />;
   if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
@@ -213,7 +215,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
           <div className="grade2">
             {campos.map((c) => (
               <div key={c.chave} className={c.metade ? undefined : 'cheia'}>
-                <CampoForm c={c} todos={edit.v} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit({ ...edit, v: { ...edit.v, [c.chave]: valor } })} />
+                <CampoForm c={c} todos={edit.v} valor={edit.v[c.chave] ?? ''} mudar={(valor) => setEdit((e) => e && { ...e, v: { ...e.v, [c.chave]: valor } })} mudarVarios={(p) => setEdit((e) => e && { ...e, v: { ...e.v, ...p } })} />
               </div>
             ))}
           </div>

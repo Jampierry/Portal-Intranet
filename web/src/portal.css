@@ -425,7 +425,10 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
 .st-aviso { background: color-mix(in srgb, var(--laranja) 16%, var(--card)); color: var(--laranja); }
 .st-erro { background: var(--erro-fundo); color: var(--erro); }
 .st-neutro { background: var(--afundado); color: var(--suave); }
-.abrir-doc { align-self: flex-start; margin-top: 6px; text-decoration: none; }
+.abrir-doc { align-self: flex-start; margin-top: auto; text-decoration: none; }
+.cartao-doc .texto { display: flex; flex-direction: column; align-self: stretch; min-width: 0; flex: 1; }
+.cartao-doc .abrir-doc { margin-top: auto; }
+.cartao-doc .texto > :nth-last-child(2):not(.abrir-doc) { margin-bottom: 10px; }
 
 @media (max-width: 860px) {
   .entrar { grid-template-columns: minmax(0, 1fr); }

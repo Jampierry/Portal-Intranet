@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/main.ts",
-    "start": "node src/main.ts",
-    "migrar": "node src/cli/migrar.ts",
+    "start": "node --env-file-if-exists=.env src/main.ts",
+    "migrar": "node --env-file-if-exists=.env src/cli/migrar.ts",
     "seed": "node src/cli/seed.ts",
-    "admin": "node src/cli/admin.ts",
-    "demo": "node src/cli/demo.ts"
+    "admin": "node --env-file-if-exists=.env src/cli/admin.ts",
+    "demo": "node src/cli/demo.ts",
+    "backup": "node --env-file-if-exists=.env src/cli/backup.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",
