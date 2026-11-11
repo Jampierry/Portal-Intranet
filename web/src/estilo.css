@@ -279,3 +279,21 @@ label small { font-weight: 500; }
 .doc-pasta-lista button { display: block; width: 100%; padding: 7px 10px; border-radius: 8px; }
 .doc-pasta-lista button:hover, .doc-pasta-lista button.ativo { background: var(--vinho-claro); color: var(--vinho-texto); }
 .vazio-pasta { padding: 8px 10px; }
+
+/* Origens de documentos: janela de cadastro com seletor de pastas do servidor */
+.form-origem { display: flex; flex-direction: column; gap: 14px; }
+.form-origem label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.campo-doc .linha-doc { align-items: center; }
+.campo-doc .linha-doc .btn { flex: none; white-space: nowrap; }
+.form-origem .doc-pasta-topo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; font-weight: 600; }
+.janela:has(.form-origem) { width: min(580px, 94vw); }  /* tamanho fixo: não muda ao navegar pelas pastas */
+.form-origem { height: min(440px, calc(100vh - 220px)); min-width: 0; }
+.form-origem > * { flex: none; min-width: 0; }
+.form-origem .doc-pasta { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.form-origem .doc-pasta-lista { flex: 1 1 0; min-height: 0; max-height: none; }
+.form-origem .doc-pasta-vazio { flex: 1; display: grid; place-items: center; text-align: center; padding: 16px; font-size: 13px; }
+.doc-pasta-acoes { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px; background: var(--card); border-top: 1px solid var(--linha-suave); }
+.acoes-linha { display: flex; gap: 8px; justify-content: flex-end; white-space: nowrap; }
+.doc-pasta-busca { padding: 8px 8px 4px; }
+.doc-pasta-busca input { width: 100%; }
+.campo-doc .doc-pasta-lista { max-height: 260px; }

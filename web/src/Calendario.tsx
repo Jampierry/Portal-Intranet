@@ -129,7 +129,7 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
         })}
       </div>
       <div className="cal-lista" aria-live="polite">
-        <div className="cal-data-linha"><small className="cal-data">{rotuloSel}</small>{abrirCalendario && <button type="button" className="cal-abrir" onClick={() => abrirCalendario(sel)}>Abrir calendário <Icone nome="dir" tamanho={11} /></button>}</div>
+        <div className="cal-data-linha"><small className="cal-data">{rotuloSel}</small></div>
         {resp && !resp.conectado && !porDia.size && <p className="cal-aviso">Agenda ainda não conectada ao Zimbra.</p>}
         {resp?.sem_agenda && !porDia.size && <p className="cal-aviso">Nenhuma agenda escolhida ainda. O administrador define em Configurações › Calendário.</p>}
         {resp?.erro && <p className="cal-aviso">{resp.erro}</p>}
@@ -137,8 +137,7 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
         {doDia.length === 0 && (resp?.conectado ? !resp.sem_agenda && !resp.erro : !!resp) && <p className="cal-aviso">Nenhuma data importante.</p>}
         <ul>
           {doDia.slice(0, 4).map((e) => (
-            <li key={`${e.id}${e.inicio}`} className={classe(e)} title={[e.titulo, quem(e), e.local].filter(Boolean).join(' · ')}><i aria-hidden="true" /><div><span>{hora(e)}</span> {e.titulo}<small>{quem(e)}</small></div>
-              {podeExcluir && <button type="button" className="cal-x" onClick={() => void excluir(e)} aria-label={`Excluir ${e.titulo}`} title="Excluir">×</button>}</li>
+            <li key={`${e.id}${e.inicio}`} className={classe(e)} title={[e.titulo, quem(e), e.local].filter(Boolean).join(' · ')}><i aria-hidden="true" /><div><span>{hora(e)}</span> {e.titulo}<small>{quem(e)}</small></div></li>
           ))}
         </ul>
         {doDia.length > 4 && <small className="cal-aviso">+ {doDia.length - 4} outras</small>}

@@ -1732,3 +1732,14 @@ label.busca-pagina { flex-direction: row; align-items: center; font-weight: 500;
 .calp-legenda .calp-filtros { flex: 1 1 0; min-width: 0; }
 .calp-legenda-botao .gira { transform: rotate(180deg); }
 .calp-barra > .calp-legenda { flex: 1 1 260px; }
+
+/* Telas baixas (calendário sem a lista de datas): o calendário sobe e fica 10px abaixo do último item do menu (Configurações);
+   o rodapé "Juntos vamos mais longe" fica no fim. */
+@media (max-height: 800px) and (min-width: 861px) {
+  .menu nav { flex: 0 1 auto; }
+  .menu > .cal-menu { margin-top: 10px; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .menu > .cal-menu > * { flex: none; }
+  /* detalhes da agenda do dia: ocupam o espaço que sobra e rolam por dentro */
+  .menu > .cal-menu > .cal-lista { display: grid; align-content: start; flex: 1 1 0; min-height: 70px; overflow-y: auto; scrollbar-width: thin; }
+  .menu .sbfoot { margin-top: 0; }
+}

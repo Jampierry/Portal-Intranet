@@ -47,7 +47,7 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
               {(d.versao || d.responsavel) && <dl className="meta-doc">{d.versao && <div><dt>Versão</dt><dd>{d.versao}</dd></div>}{d.responsavel && <div><dt>Responsável</dt><dd>{d.responsavel}</dd></div>}{d.revisado_em && <div><dt>Revisado em</dt><dd>{dataCurta(d.revisado_em)}</dd></div>}</dl>}
               {d.link_oficial && (d.origem === 'rede'
                 ? <CopiarCaminho caminho={d.link_oficial} />
-                : d.origem === 'pasta'
+                : (d.origem === 'pasta' || d.origem === 'servidor')
                 ? <a href={d.link_oficial} target="_blank" rel="noopener noreferrer" className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></a>
                 : <LinkApp url={d.link_oficial} className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></LinkApp>)}</div>
           </article>

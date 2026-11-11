@@ -1,28 +1,31 @@
-import { createReadStream, readdirSync, realpathSync, statSync } from 'node:fs';
-import { basename, extname, isAbsolute, relative, resolve } from 'node:path';
+import { createReadStream, existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { basename, dirname, extname, isAbsolute, relative, resolve } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { config } from '../../../servidor/src/config.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
+import { auditar, exigir, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
 const CLASSIFICACOES = ['publico', 'interno', 'restrito'] as const;
-const ORIGENS = ['link', 'pasta', 'rede'] as const;
-const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em, atualizado_em';
+const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, atualizado_em';
 const TIPOS: Record<string, string> = { '.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.csv': 'text/csv; charset=utf-8' };
+const CAMINHO_ABSOLUTO = /^(\\\\[^\\/]+[\\/]|[A-Za-z]:[\\/]|\/)/;
 
-/** Endereço do documento conforme a origem: link http(s), caminho relativo à pasta do portal ou caminho de rede (UNC / unidade). */
-function lerEndereco(c: Record<string, unknown>, origem: (typeof ORIGENS)[number]): string | null {
+/** Endereço do documento: link http(s) ou caminho relativo dentro da pasta de origem (portal ou servidor cadastrado). */
+function lerEndereco(c: Record<string, unknown>, origem: 'link' | 'pasta' | 'servidor'): string | null {
   if (origem === 'link') return urlHttp(c, 'link_oficial', 'Link do documento');
-  const v = texto(c, 'link_oficial', origem === 'pasta' ? 'Caminho na pasta do portal' : 'Caminho de rede', { max: 500, opcional: true });
+  const v = texto(c, 'link_oficial', 'Arquivo na pasta', { max: 500, opcional: true });
   if (v === null) return null;
-  if (origem === 'rede') {
-    if (!/^(\\\\[^\\/]+[\\/]|[A-Za-z]:[\\/])/.test(v)) throw new ErroValidacao('Caminho de rede: use o formato \\\\servidor\\pasta\\arquivo ou X:\\pasta\\arquivo.');
-    return v;
-  }
   const rel = v.replace(/\\/g, '/').replace(/^\/+/, '');
-  if (!rel || rel.split('/').some((p) => p === '..' || p === '') || /^[A-Za-z]:/.test(rel)) throw new ErroValidacao('Caminho na pasta do portal: informe um caminho relativo, como RH/politica.pdf (sem "..").');
+  if (!rel || rel.split('/').some((p) => p === '..' || p === '') || /^[A-Za-z]:/.test(rel)) throw new ErroValidacao('Arquivo na pasta: escolha o arquivo na lista (caminho relativo, sem "..").');
   return rel;
+}
+
+/** Pasta-raiz do documento: a do portal ('pasta') ou a origem cadastrada ('servidor'). */
+function raizDe(db: Banco, origem: string, origemId: number | null): string | null {
+  if (origem === 'pasta') return config.pastaDocumentos();
+  if (origem === 'servidor' && origemId) return (db.prepare('SELECT caminho FROM documento_origens WHERE id = ?').get(origemId) as { caminho: string } | undefined)?.caminho ?? null;
+  return null;
 }
 
 export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
@@ -33,17 +36,19 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     const lista = db
       .prepare(`SELECT slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em FROM documentos ${podeVerRestrito ? '' : "WHERE classificacao <> 'restrito'"} ORDER BY titulo`)
       .all() as { slug: string; origem: string; link_oficial: string | null }[];
-    // Sem a permissão de abrir, o endereço do documento nem sai do servidor. Na pasta do portal, o endereço é o da rota
-    // de download (o caminho real no servidor nunca sai).
-    return lista.map((d) => (!podeAbrir || !d.link_oficial ? { ...d, link_oficial: null } : d.origem === 'pasta' ? { ...d, link_oficial: `/api/documentos/${d.slug}/arquivo` } : d));
+    // Sem a permissão de abrir, o endereço do documento nem sai do servidor. Em pasta (portal ou servidor), o endereço é o da
+    // rota de download (o caminho real no servidor nunca sai).
+    return lista.map((d) => (!podeAbrir || !d.link_oficial ? { ...d, link_oficial: null } : (d.origem === 'pasta' || d.origem === 'servidor') ? { ...d, link_oficial: `/api/documentos/${d.slug}/arquivo` } : d));
   });
 
   app.get<{ Params: { slug: string } }>('/api/documentos/:slug/arquivo', { preHandler: exigirPerm('ver.documentos') }, async (req, resp) => {
     if (!req.usuario?.permissoes.includes('documentos.abrir')) return resp.code(403).send({ erro: 'Sem permissão para abrir documentos.' });
-    const d = db.prepare("SELECT classificacao, link_oficial FROM documentos WHERE slug = ? AND origem = 'pasta'").get(req.params.slug) as { classificacao: string; link_oficial: string | null } | undefined;
+    const d = db.prepare("SELECT classificacao, link_oficial, origem, origem_id FROM documentos WHERE slug = ? AND origem IN ('pasta', 'servidor')").get(req.params.slug) as { classificacao: string; link_oficial: string | null; origem: string; origem_id: number | null } | undefined;
     if (!d?.link_oficial || (d.classificacao === 'restrito' && !req.usuario.permissoes.includes('documentos.restritos'))) return resp.code(404).send({ erro: 'Arquivo não encontrado.' });
     try {
-      const raiz = realpathSync(config.pastaDocumentos());
+      const base = raizDe(db, d.origem, d.origem_id);
+      if (!base) throw new Error('sem origem');
+      const raiz = realpathSync(base);
       const alvo = realpathSync(resolve(raiz, d.link_oficial));
       const rel = relative(raiz, alvo);
       if (rel.startsWith('..') || isAbsolute(rel) || !statSync(alvo).isFile()) throw new Error('fora da pasta');
@@ -54,13 +59,16 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
         .header('Content-Disposition', `${tipo ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(basename(alvo))}`)
         .send(createReadStream(alvo));
     } catch {
-      return resp.code(404).send({ erro: 'Arquivo não encontrado na pasta de documentos do servidor.' });
+      return resp.code(404).send({ erro: 'Arquivo não encontrado na pasta do servidor.' });
     }
   });
 
-
   function ler(c: Record<string, unknown>) {
-    const origem = escolha(c, 'origem', 'Onde está o documento', ORIGENS, 'link');
+    // O formulário envia 'link', 'pasta' ou 's<id>' (origem cadastrada).
+    const m = /^s(\d+)$/.exec(String(c.origem ?? ''));
+    const origem: 'link' | 'pasta' | 'servidor' = m ? 'servidor' : escolha(c, 'origem', 'Onde está o documento', ['link', 'pasta'] as const, 'link');
+    const origemId = m ? Number(m[1]) : null;
+    if (origemId !== null && !db.prepare('SELECT 1 FROM documento_origens WHERE id = ?').get(origemId)) throw new ErroValidacao('Origem de documentos não encontrada.');
     return {
       titulo: String(texto(c, 'titulo', 'Título', { min: 3, max: 120 })),
       categoria: String(texto(c, 'categoria', 'Categoria', { max: 40 })),
@@ -70,17 +78,21 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
       responsavel: texto(c, 'responsavel', 'Responsável', { max: 80, opcional: true }),
       classificacao: escolha(c, 'classificacao', 'Classificação', CLASSIFICACOES, 'interno'),
       origem,
+      origem_id: origemId,
       link_oficial: lerEndereco(c, origem),
       revisado_em: dataIso(c, 'revisado_em', 'Revisado em'),
     };
   }
 
-  // Navegador da pasta de documentos do portal (subpastas e arquivos de um nível), para escolher o arquivo no formulário.
-  app.get<{ Querystring: { sub?: string } }>('/api/gestao/documentos/pasta', { preHandler: exigirPerm('pub.documentos.criar', 'pub.documentos.editar') }, async (req, resp) => {
+  // Navegador de pastas (subpastas e arquivos de um nível): pasta do portal (sem ?origem) ou origem cadastrada (?origem=<id>).
+  app.get<{ Querystring: { sub?: string; origem?: string } }>('/api/gestao/documentos/pasta', { preHandler: exigirPerm('pub.documentos.criar', 'pub.documentos.editar') }, async (req, resp) => {
     const sub = (req.query.sub ?? '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
     if (sub.split('/').some((p) => p === '..')) return resp.code(400).send({ erro: 'Caminho inválido.' });
+    const idOrigem = /^\d+$/.test(req.query.origem ?? '') ? Number(req.query.origem) : null;
     try {
-      const raiz = realpathSync(config.pastaDocumentos());
+      const base = idOrigem ? raizDe(db, 'servidor', idOrigem) : config.pastaDocumentos();
+      if (!base) throw new Error('sem origem');
+      const raiz = realpathSync(base);
       const dir = realpathSync(resolve(raiz, sub));
       const rel = relative(raiz, dir);
       if (rel.startsWith('..') || isAbsolute(rel) || !statSync(dir).isDirectory()) throw new Error('fora');
@@ -89,8 +101,62 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
         .sort((a, b) => Number(b.pasta) - Number(a.pasta) || a.nome.localeCompare(b.nome, 'pt-BR'));
       return { sub: rel.replace(/\\/g, '/'), itens };
     } catch {
-      return resp.code(404).send({ erro: 'A pasta de documentos do portal não existe no servidor ou está vazia. Crie a pasta e copie os arquivos (variável DOCUMENTOS_PASTA).' });
+      return resp.code(404).send({ erro: idOrigem ? 'O servidor do portal não consegue abrir esta pasta (caminho errado ou sem permissão de leitura). Fale com a TI.' : 'A pasta de documentos do portal não existe no servidor ou está vazia (variável DOCUMENTOS_PASTA).' });
     }
+  });
+
+  // Origens de documentos: quem publica vê só os nomes; o administrador vê o caminho e altera.
+  app.get('/api/gestao/documentos/origens', { preHandler: exigirPerm('pub.documentos.ver', 'pub.documentos.criar', 'pub.documentos.editar') }, async (req) => {
+    const lista = db.prepare('SELECT id, nome, caminho FROM documento_origens ORDER BY nome').all() as { id: number; nome: string; caminho: string }[];
+    if (req.usuario?.perfil !== 'admin') return lista.map((o) => ({ id: o.id, nome: o.nome }));
+    return lista.map((o) => ({ ...o, acessivel: (() => { try { return statSync(o.caminho).isDirectory(); } catch { return false; } })() }));
+  });
+  // Seletor de pasta do servidor (só administrador): lista as subpastas de um caminho; sem caminho, lista as unidades (Windows) ou a raiz.
+  app.get<{ Querystring: { caminho?: string } }>('/api/gestao/documentos/origens/navegar', { preHandler: exigir('admin') }, async (req, resp) => {
+    const caminho = (req.query.caminho ?? '').trim();
+    if (!caminho) {
+      const raizes = process.platform === 'win32' ? 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => `${l}:\\`).filter((r) => existsSync(r)) : ['/'];
+      return { caminho: '', pai: null, pastas: raizes.map((r) => ({ nome: r, caminho: r })) };
+    }
+    if (!CAMINHO_ABSOLUTO.test(caminho)) return resp.code(400).send({ erro: 'Informe um caminho completo (\\\\servidor\\pasta ou X:\\pasta).' });
+    try {
+      if (!statSync(caminho).isDirectory()) throw new Error('não é pasta');
+      const pastas = readdirSync(caminho, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('$'))
+        .map((e) => ({ nome: e.name, caminho: resolve(caminho, e.name) })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      const pai = dirname(resolve(caminho));
+      return { caminho: resolve(caminho), pai: pai === resolve(caminho) ? '' : pai, pastas };
+    } catch {
+      return resp.code(404).send({ erro: 'O servidor do portal não consegue abrir essa pasta (não existe ou sem permissão de leitura).' });
+    }
+  });
+  const lerOrigem = (c: Record<string, unknown>, idAtual: number) => {
+    const caminho = String(texto(c, 'caminho', 'Pasta no servidor', { max: 500 }));
+    if (!CAMINHO_ABSOLUTO.test(caminho)) throw new ErroValidacao('Pasta no servidor: use \\\\servidor\\pasta, X:\\pasta ou um caminho absoluto.');
+    const nome = String(texto(c, 'nome', 'Nome da origem', { min: 2, max: 40 }));
+    if (db.prepare('SELECT 1 FROM documento_origens WHERE nome = ? AND id <> ?').get(nome, idAtual)) throw new ErroValidacao('Já existe uma origem com esse nome.');
+    return { nome, caminho };
+  };
+  app.post('/api/gestao/documentos/origens', { preHandler: exigir('admin') }, async (req, resp) => {
+    const o = lerOrigem(corpoObjeto(req.body), 0);
+    const id = Number(db.prepare('INSERT INTO documento_origens (nome, caminho) VALUES (?, ?)').run(o.nome, o.caminho).lastInsertRowid);
+    auditar(db, req.usuario!.id, 'documento_origem_criada', { id, ...o });
+    return resp.code(201).send({ id, ...o });
+  });
+  app.put<{ Params: { id: string } }>('/api/gestao/documentos/origens/:id', { preHandler: exigir('admin') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Origem');
+    if (!db.prepare('SELECT 1 FROM documento_origens WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Origem não encontrada.' });
+    const o = lerOrigem(corpoObjeto(req.body), id);
+    db.prepare('UPDATE documento_origens SET nome = ?, caminho = ? WHERE id = ?').run(o.nome, o.caminho, id);
+    auditar(db, req.usuario!.id, 'documento_origem_alterada', { id, ...o });
+    return { id, ...o };
+  });
+  app.delete<{ Params: { id: string } }>('/api/gestao/documentos/origens/:id', { preHandler: exigir('admin') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Origem');
+    const n = (db.prepare("SELECT COUNT(*) AS n FROM documentos WHERE origem = 'servidor' AND origem_id = ?").get(id) as { n: number }).n;
+    if (n > 0) return resp.code(400).send({ erro: `Há ${n} documento(s) usando esta origem. Mude ou apague esses documentos antes.` });
+    db.prepare('DELETE FROM documento_origens WHERE id = ?').run(id);
+    auditar(db, req.usuario!.id, 'documento_origem_apagada', { id });
+    return { ok: true };
   });
 
   app.get('/api/gestao/documentos', { preHandler: exigirPerm('pub.documentos.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM documentos ORDER BY titulo`).all());
@@ -99,9 +165,9 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     const d = ler(corpoObjeto(req.body));
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM documentos WHERE slug = ?').get(s), d.titulo);
     const r = db.prepare(
-      `INSERT INTO documentos (slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em, atualizado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(slug, d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.link_oficial, d.revisado_em, new Date().toISOString());
+      `INSERT INTO documentos (slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, atualizado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(slug, d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, new Date().toISOString());
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'documento_criado', { id, titulo: d.titulo });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id));
@@ -112,8 +178,8 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     if (!db.prepare('SELECT 1 FROM documentos WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Documento não encontrado.' });
     const d = ler(corpoObjeto(req.body));
     db.prepare(
-      `UPDATE documentos SET titulo = ?, categoria = ?, resumo = ?, formato = ?, versao = ?, responsavel = ?, classificacao = ?, origem = ?, link_oficial = ?, revisado_em = ?, atualizado_em = ? WHERE id = ?`,
-    ).run(d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.link_oficial, d.revisado_em, new Date().toISOString(), id);
+      `UPDATE documentos SET titulo = ?, categoria = ?, resumo = ?, formato = ?, versao = ?, responsavel = ?, classificacao = ?, origem = ?, origem_id = ?, link_oficial = ?, revisado_em = ?, atualizado_em = ? WHERE id = ?`,
+    ).run(d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'documento_alterado', { id, titulo: d.titulo });
     return db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id);
   });

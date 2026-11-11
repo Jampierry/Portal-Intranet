@@ -11,6 +11,7 @@ import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import { ListaPerfis } from './Permissoes';
 import { Integracoes } from './Integracoes';
 import { DadosExemplo } from './DadosExemplo';
+import { OrigensDocumentos } from './OrigensDocumentos';
 import { CalendarioConfig } from './CalendarioConfig';
 import { EntradaConfig } from './EntradaConfig';
 import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
@@ -131,13 +132,15 @@ function Banners() {
   );
 }
 
-interface Doc { id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null }
+interface OrigemDoc { id: number; nome: string }
+interface Doc { origem_id: number | null; id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null }
 function Documentos() {
   const { dados } = useLista<Doc>('/api/gestao/documentos');
   const categorias = [...new Set((dados ?? []).map((d) => d.categoria))];
+  const { dados: origens } = useLista<OrigemDoc>('/api/gestao/documentos/origens');
   return (
     <Crud<Doc> base="/api/gestao/documentos" rotuloItem="documento" idDe={(r) => r.id}
-      introducao="Informe onde o documento está: link na internet, arquivo na pasta de documentos do portal ou caminho de rede. Documento 'restrito' só aparece para editores e administradores."
+      introducao="Escolha de onde vem o documento (link, pasta do portal ou uma pasta do servidor cadastrada pelo administrador) e clique no arquivo. Documento 'restrito' só aparece para editores e administradores."
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
@@ -147,7 +150,7 @@ function Documentos() {
         { chave: 'responsavel', rotulo: 'Responsável', max: 80, metade: true },
         { chave: 'classificacao', rotulo: 'Quem pode ver', tipo: 'select', opcoes: [['interno', 'Todos os logados'], ['publico', 'Público (interno, sem restrição)'], ['restrito', 'Restrito (editores e admin)']], metade: true },
         { chave: 'revisado_em', rotulo: 'Revisado em', tipo: 'data', metade: true },
-        { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ['rede', 'Servidor (caminho de rede)']] },
+        { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ...(origens ?? []).map((o): [string, string] => [`s${o.id}`, `Servidor: ${o.nome}`])] },
         { chave: 'link_oficial', rotulo: 'Endereço do documento', tipo: 'documento' },
       ]}
       colunas={[
@@ -156,10 +159,10 @@ function Documentos() {
         { titulo: 'Versão', ver: (r) => r.versao ?? '—' },
         { titulo: 'Responsável', ver: (r) => r.responsavel ?? '—' },
         { titulo: 'Acesso', ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
-        { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'rede' ? 'Caminho de rede' : 'Link') },
+        { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
       ]}
       valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', origem: 'link', link_oficial: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), origem: r.origem, link_oficial: s(r.link_oficial) })}
+      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), origem: r.origem === 'servidor' ? `s${r.origem_id}` : r.origem, link_oficial: s(r.link_oficial) })}
     />
   );
 }
@@ -205,7 +208,7 @@ function Contatos() {
         { chave: 'nome', rotulo: 'Assunto / contato', obrigatorio: true, max: 80, dica: 'Ex.: Folha de pagamento', metade: true },
         { chave: 'canal', rotulo: 'Canal (e-mail ou link)', max: 120, dica: 'E-mail ou endereço http(s) de chamados', metade: true },
         { chave: 'ramal', rotulo: 'Ramal', max: 20, dica: 'Ex.: 2400', metade: true },
-        { chave: 'celular', rotulo: 'Celular corporativo', max: 20, dica: 'Com DDD. Ex.: (62) 99999-0000 — informe ao menos canal, ramal ou celular', metade: true },
+        { chave: 'celular', rotulo: 'Celular corporativo', tipo: 'telefone', max: 20, dica: 'Só números; a máscara é automática — informe ao menos canal, ramal ou celular', metade: true },
         { chave: 'publicavel', rotulo: 'Aparece no portal', tipo: 'check' },
       ]}
       colunas={[
@@ -309,12 +312,12 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
   );
 }
 
-type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'calendario' | 'integracoes' | 'exemplo' | 'auditoria';
-const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['exemplo', 'Dados de exemplo'], ['auditoria', 'Auditoria']];
+type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'calendario' | 'integracoes' | 'exemplo' | 'origens' | 'auditoria';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['origens', 'Pastas de documentos'], ['exemplo', 'Dados de exemplo'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
   useAbaVisivel(pedida);
-  const abas = ABAS_CONFIG.filter(([id]) => (id === 'exemplo' ? souAdmin : id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
+  const abas = ABAS_CONFIG.filter(([id]) => (id === 'exemplo' || id === 'origens' ? souAdmin : id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
@@ -327,6 +330,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
       {aba === 'perfis' ? <ListaPerfis souAdmin={souAdmin} permissoes={permissoes} />
         : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
         : aba === 'exemplo' ? <DadosExemplo />
+        : aba === 'origens' ? <OrigensDocumentos />
         : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
         : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />
         : aba === 'empresa' ? <EmpresaConfig permissoes={permissoes} />

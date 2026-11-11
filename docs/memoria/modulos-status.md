@@ -6,7 +6,7 @@
 | acessos | ✅ | Login local, perfis admin/editor/consulta, usuários, troca de senha, auditoria (só inclusão) |
 | inicio | ✅ | Faixa de novidades, pessoas em destaque (exige consentimento), comunicados, avisos importantes, documentos recentes |
 | comunicados | ✅ | Lista, detalhe e gestão (rascunho, publicar, arquivar, janela de exibição) |
-| documentos | ✅ | Versão, responsável, revisão, link oficial, classificação; gestão. Anexos ⬜ |
+| documentos | ✅ | Versão, responsável, revisão, classificação; origem = link, pasta do portal ou pasta do servidor cadastrada (Configurações › Pastas de documentos) com seletor e pesquisa. Anexos ⬜ |
 | aplicacoes | ✅ | Barra da direita (favoritos por usuário no servidor) + Gestão › Aplicativos (cadastro: admin) |
 | pessoas | ✅ | Contatos por área, sem dados pessoais; gestão na aba Contatos |
 | ajuda | ✅ | FAQ em `web/src/ajuda/Ajuda.tsx` (texto no código) |

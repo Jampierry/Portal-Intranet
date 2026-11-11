@@ -16,7 +16,7 @@ const areaDe = (base: string) => { const a = base.split('/').pop() ?? ''; return
 export interface Campo {
   chave: string;
   rotulo: string;
-  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento';
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento' | 'telefone';
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
@@ -52,6 +52,15 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
   );
 }
 
+/** Máscara de telefone brasileiro enquanto digita: (62) 99999-0000 (celular) ou (62) 3333-0000 (fixo, quando o número não começa com 9). */
+export function mascaraTelefone(v: string): string {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (!d) return '';
+  if (d.length <= 2) return `(${d}`;
+  const corte = d[2] === '9' || d.length > 10 ? 7 : 6; // celular começa com 9 (9 dígitos); fixo tem 8
+  return `(${d.slice(0, 2)}) ${d.slice(2, corte)}${d.length > corte ? '-' + d.slice(corte) : ''}`;
+}
+
 function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean; mudar: (v: string | boolean) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
@@ -64,6 +73,7 @@ function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: s
     <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
       {c.tipo === 'area' ? <textarea rows={5} {...comum} onChange={(e) => mudar(e.target.value)} />
         : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
+        : c.tipo === 'telefone' ? <input type="tel" inputMode="numeric" autoComplete="off" placeholder="(__) _____-____" {...comum} maxLength={15} onChange={(e) => mudar(mascaraTelefone(e.target.value))} />
         : <input type={c.tipo === 'data' ? 'date' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
       {c.dica && <small className="suave">{c.dica}</small>}
     </label>

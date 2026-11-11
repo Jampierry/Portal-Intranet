@@ -61,15 +61,13 @@ test('documento na pasta do portal: serve o arquivo e bloqueia saída da pasta',
   const post = (origem: string, link: string, extra: object = {}) => app.inject({ method: 'POST', url: '/api/gestao/documentos', headers: ed, payload: novo({ origem, link_oficial: link, ...extra }) });
   assert.equal((await post('pasta', '../segredo-fora.txt')).statusCode, 400);
   assert.equal((await post('pasta', 'C:/Windows/win.ini')).statusCode, 400);
-  assert.equal((await post('rede', 'qualquer coisa')).statusCode, 400);
-  assert.equal((await post('rede', '\\\\srv\\docs\\a.pdf', { titulo: 'Em rede' })).statusCode, 201);
+  assert.equal((await post('s999', 'RH/ferias.txt')).statusCode, 400);
   assert.equal((await post('pasta', 'RH/ferias.txt', { titulo: 'Férias' })).statusCode, 201);
   assert.equal((await post('pasta', 'RH/nao-existe.txt', { titulo: 'Sumiu' })).statusCode, 201);
   const le = await entrar(app, 'le');
   const lista = (await app.inject({ url: '/api/documentos', headers: le })).json<{ slug: string; titulo: string; origem: string; link_oficial: string }[]>();
   const ferias = lista.find((d) => d.titulo === 'Férias')!;
   assert.equal(ferias.link_oficial, `/api/documentos/${ferias.slug}/arquivo`);
-  assert.equal(lista.find((d) => d.titulo === 'Em rede')!.origem, 'rede');
   const r = await app.inject({ url: ferias.link_oficial, headers: le });
   assert.equal(r.statusCode, 200);
   assert.equal(r.body, 'conteudo ok');
@@ -83,4 +81,43 @@ test('documento na pasta do portal: serve o arquivo e bloqueia saída da pasta',
   assert.equal((await app.inject({ url: '/api/gestao/documentos/pasta?sub=..', headers: ed })).statusCode, 400);
   assert.equal((await app.inject({ url: '/api/gestao/documentos/pasta', headers: le })).statusCode, 403);
   delete process.env.DOCUMENTOS_PASTA;
+});
+
+test('origem cadastrada pelo administrador: publicador escolhe o arquivo e o portal entrega', async () => {
+  const { mkdtempSync, writeFileSync, mkdirSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const raiz = mkdtempSync(join(tmpdir(), 'orig-'));
+  mkdirSync(join(raiz, 'Politicas'));
+  writeFileSync(join(raiz, 'Politicas', 'conduta.txt'), 'texto da origem');
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const ed = await entrar(app, 'edita');
+  const le = await entrar(app, 'le');
+  const cria = (h: Record<string, string>, caminho = raiz) => app.inject({ method: 'POST', url: '/api/gestao/documentos/origens', headers: h, payload: { nome: 'RH', caminho } });
+  assert.equal((await cria(ed)).statusCode, 403);
+  assert.equal((await cria(adm, 'relativo/x')).statusCode, 400);
+  const id = (await cria(adm)).json<{ id: number }>().id;
+  assert.equal((await cria(adm)).statusCode, 400); // nome repetido
+  // Publicador vê só o nome; administrador vê o caminho.
+  assert.deepEqual((await app.inject({ url: '/api/gestao/documentos/origens', headers: ed })).json(), [{ id, nome: 'RH' }]);
+  assert.equal((await app.inject({ url: '/api/gestao/documentos/origens', headers: adm })).json<{ caminho: string }[]>()[0].caminho, raiz);
+  const nav = (await app.inject({ url: `/api/gestao/documentos/pasta?origem=${id}&sub=Politicas`, headers: ed })).json<{ itens: { nome: string }[] }>();
+  assert.deepEqual(nav.itens.map((i) => i.nome), ['conduta.txt']);
+  assert.equal((await app.inject({ url: `/api/gestao/documentos/pasta?origem=${id}&sub=..`, headers: ed })).statusCode, 400);
+  const doc = await app.inject({ method: 'POST', url: '/api/gestao/documentos', headers: ed, payload: novo({ titulo: 'Conduta', origem: `s${id}`, link_oficial: 'Politicas/conduta.txt' }) });
+  assert.equal(doc.statusCode, 201);
+  assert.equal(doc.json<{ origem: string; origem_id: number }>().origem_id, id);
+  const lista = (await app.inject({ url: '/api/documentos', headers: le })).json<{ slug: string; link_oficial: string }[]>();
+  const r = await app.inject({ url: lista[0].link_oficial, headers: le });
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.body, 'texto da origem');
+  // Seletor de pasta do servidor: só administrador.
+  const sel = (h: Record<string, string>, caminho: string) => app.inject({ url: `/api/gestao/documentos/origens/navegar?caminho=${encodeURIComponent(caminho)}`, headers: h });
+  assert.equal((await sel(ed, raiz)).statusCode, 403);
+  assert.deepEqual((await sel(adm, raiz)).json<{ pastas: { nome: string }[] }>().pastas.map((p) => p.nome), ['Politicas']);
+  assert.equal((await sel(adm, 'relativo')).statusCode, 400);
+  assert.ok((await app.inject({ url: '/api/gestao/documentos/origens/navegar', headers: adm })).json<{ pastas: unknown[] }>().pastas.length > 0);
+  // Origem em uso não pode ser apagada.
+  assert.equal((await app.inject({ method: 'DELETE', url: `/api/gestao/documentos/origens/${id}`, headers: adm })).statusCode, 400);
 });

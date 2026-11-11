@@ -1,6 +1,6 @@
 # Decisões-chave
 
-- Stack igual ao PREMIA: React 19 + Vite (`web/`), Fastify + SQLite (`servidor/`), TypeScript, temas claro/escuro × 5 estilos, `node:test`. Sem Next.js, sem pnpm. Node 24+.
+- Stack: React 19 + Vite (`web/`), Fastify + SQLite (`servidor/`), TypeScript, temas claro/escuro × 5 estilos, `node:test`. Sem Next.js, sem pnpm. Node 24+.
 - Front em `web/src/<modulo>/`; API em `modulos/<nome>/api`; um módulo por vez.
 - Dados 100% fictícios; sem login ainda (API só de leitura).
 - Desktop abre apps em nova aba; celular na mesma aba (`web/src/links.ts`).

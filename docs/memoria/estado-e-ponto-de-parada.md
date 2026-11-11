@@ -1,5 +1,14 @@
 # Estado e ponto de parada
 
+## Sessão de 11/11/2026 — origens de documentos, máscara de telefone, calendário do menu (NÃO enviado; `main` = `8182969` + locais)
+**Feito (122 testes, typecheck e build OK; telas não conferidas no navegador):**
+- **Origens de documentos** (migração 030, tabela `documento_origens`, coluna `documentos.origem_id`): o administrador cadastra pastas do servidor/rede em Configurações › **Pastas de documentos** (`OrigensDocumentos.tsx`, janela de tamanho fixo, botão "Procurar…" com seletor de pastas do servidor e campo de pesquisa; rota `/api/gestao/documentos/origens[/navegar]`, só admin). No documento, "Onde está o documento" = Link / Pasta do portal / "Servidor: <origem>" (valor `s<id>` no formulário; no banco `origem='servidor'` + `origem_id`); o arquivo é escolhido por navegador de pastas com **pesquisa** (oculta `~$`); download pelo servidor (`/api/documentos/:slug/arquivo`). Digitar caminho de rede foi removido (docs antigos `rede` aparecem como "antigo"). Botão Abrir corrigido para origem servidor. Origem em uso não pode ser apagada. Servidor do portal precisa de leitura na pasta (TI).
+- **Máscara de telefone** (`tipo: 'telefone'` em `Crud.tsx`): celular (começa com 9) `(62) 99999-0000`, fixo `(62) 3333-0000`; aplicada em Contatos › Celular.
+- **Calendário do menu em telas baixas (≤800px de altura, ≥861 de largura):** sobe para 10px abaixo de Configurações, mostra os detalhes do dia com rolagem interna; rodapé "Juntos vamos mais longe" no fim (`portal.css`, fim do arquivo).
+- Memória do Portal separada da do PREMIA; menções ao PREMIA removidas de `CLAUDE.md`/`docs/memoria`.
+
+**Próximo:** "enviar" (commit + push), conferir no navegador as telas novas (Pastas de documentos, seletor com pesquisa, calendário), depois security-review e pendências visuais (busca duplicada no celular, Início cortado, Feirão Outlet repetido, aba "Dados de exemplo" em produção). Possível: busca recursiva nas subpastas; origens por perfil.
+
 ## Sessão de 09/11/2026 — dados de exemplo no banco e ícone do sistema
 **Feito:**
 - **Imagens no banco** (migração 027, tabela `imagens_arquivo`): uploads, logos e capas ficam no SQLite e valem em qualquer máquina/celular. Arquivos antigos de `dados-privados/imagens` são importados sozinhos na primeira subida. `guardarImagem(db, ...)` agora recebe o banco.
@@ -53,7 +62,7 @@
 - `docs/comparativo-mercado.md` (pesquisa e ideias). Testes: `npm test` com 84 (1 falha antiga e não relacionada: "leitor vê só banners ativos…", depende da data de hoje). Typecheck e build ok. **Falta:** conferir por screenshot as telas novas (Calendário, Configurações › Calendário, janela Aplicativos) e testar com o serviço Zimbra real; revisar o teste de banners; commit/push (gatilho *enviar*).
 
 ## Onde estamos
-- Portal Intranet Di Paula na stack do PREMIA: `web/` (Vite + React), `servidor/` (Fastify + SQLite), `infra/migracoes` (001 base, 002 portal, 003 acessos), `modulos/<nome>/{api,tests,data}`.
+- Portal Intranet Di Paula na stack: `web/` (Vite + React), `servidor/` (Fastify + SQLite), `infra/migracoes` (001 base, 002 portal, 003 acessos), `modulos/<nome>/{api,tests,data}`.
 - **Login local** criado pelo admin master (perfis `admin`, `editor`, `consulta`), portal fechado, auditoria, bloqueio por tentativas, troca obrigatória da senha provisória.
 - **Telas:** Início, Comunicados (lista + detalhe), Documentos, Pessoas (contatos por área), Ajuda (FAQ) e **Gestão** (abas: Comunicados, Documentos, Pessoas em destaque, Contatos, Aplicativos, Usuários, Auditoria). Aplicativos ficam na barra da direita e em Gestão › Aplicativos (sem item no menu esquerdo).
 - **Visual:** estilo de tema **Di Paula** (padrão) + 5 estilos antigos, claro/escuro, modo compacto, barra superior universal com aviso da tela, Capa em cor no lugar de fotos.
@@ -113,7 +122,7 @@
 # Histórico (do mais antigo ao mais novo)
 ## Redesign visual (2026-11-06)
 - Layout das imagens de `docs/origem-manus/design/` aplicado sobre os temas existentes (nenhuma cor nova): menu escuro com marca e "Aplicações web", topo claro com busca/tema/sino/avatar, Início (saudação, faixa "Novidades da semana", pessoas em destaque, comunicados, aplicações favoritas), Comunicados (destaque + grade + painel "Temas"), Aplicações e Documentos em cartões, abas fixas no celular.
-- Trazido do PREMIA: avatares (galeria de 16 + iniciais) e janela "Meu perfil", cartão de usuário no menu, submenus flutuantes com hover no menu recolhido, sino com avisos (comunicados urgentes), pular para o conteúdo.
+- Trazido de outro projeto: avatares (galeria de 16 + iniciais) e janela "Meu perfil", cartão de usuário no menu, submenus flutuantes com hover no menu recolhido, sino com avisos (comunicados urgentes), pular para o conteúdo.
 - Barra lateral direita de aplicativos recriada (`web/src/aplicacoes/Lancador.tsx`): recolhida = ícones dos favoritos com dica; aberta = abas Favoritos / Todos os apps com estrela; no celular vira gaveta pelo botão de apps do topo. As favoritas também aparecem no menu e no Início.
 - Tela inicial vem do endereço (`#comunicados`, `#aplicacoes`, `#documentos`); Voltar do navegador funciona.
 - CSS novo em `web/src/portal.css`; tokens de tema continuam em `estilo.css` (o teste de contraste lê só ele).

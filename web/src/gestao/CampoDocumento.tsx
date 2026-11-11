@@ -5,32 +5,41 @@ import { formatoPorNome } from './formatoDocumento.ts';
 
 type Valores = Record<string, string | boolean>;
 
+const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 interface Pasta { sub: string; itens: { nome: string; pasta: boolean }[] }
 
 /** Navegador da pasta de documentos do portal: entra nas subpastas e escolhe o arquivo com um clique. */
-function EscolherNaPasta({ valor, escolher }: { valor: string; escolher: (caminho: string) => void }) {
+function EscolherNaPasta({ origem, valor, escolher }: { origem: string; valor: string; escolher: (caminho: string) => void }) {
   // Parte da pasta do arquivo já escolhido; ignora valores de outra origem (link http, caminho de rede).
   const [sub, setSub] = useState(() => (/^[a-z][a-z0-9+.-]*:|\\/i.test(valor) || !valor.includes('/')) ? '' : valor.slice(0, valor.lastIndexOf('/')));
   const [pasta, setPasta] = useState<Pasta | null>(null);
   const [erro, setErro] = useState('');
+  const [filtro, setFiltro] = useState('');
   useEffect(() => {
-    setErro('');
-    api<Pasta>(`/api/gestao/documentos/pasta?sub=${encodeURIComponent(sub)}`).then(setPasta).catch((e: Error) => { setPasta(null); setErro(e.message); });
-  }, [sub]);
+    setErro(''); setFiltro('');
+    api<Pasta>(`/api/gestao/documentos/pasta?sub=${encodeURIComponent(sub)}${/^s\d+$/.test(origem) ? `&origem=${origem.slice(1)}` : ''}`).then(setPasta).catch((e: Error) => { setPasta(null); setErro(e.message); });
+  }, [sub, origem]);
+  const alvo = semAcento(filtro.trim());
+  const visiveis = (pasta?.itens ?? []).filter((i) => !i.nome.startsWith('~$') && (!alvo || semAcento(i.nome).includes(alvo)));
   const partes = sub ? sub.split('/') : [];
   return (
     <div className="doc-pasta">
       <div className="doc-pasta-topo" aria-label="Pasta atual">
         <Icone nome="documentos" tamanho={14} />
-        <button type="button" className="link-bt" onClick={() => setSub('')}>Documentos do portal</button>
+        <button type="button" className="link-bt" onClick={() => setSub('')}>{origem === 'pasta' ? 'Documentos do portal' : 'Início da pasta'}</button>
         {partes.map((p, i) => <span key={i}> / <button type="button" className="link-bt" onClick={() => setSub(partes.slice(0, i + 1).join('/'))}>{p}</button></span>)}
       </div>
       {erro && <p className="erro" role="alert">{erro}</p>}
       {pasta && (
+        <div className="doc-pasta-busca"><input type="search" value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="Pesquisar nesta pasta…" aria-label="Pesquisar nesta pasta" /></div>
+      )}
+      {pasta && (
         <ul className="doc-pasta-lista">
           {sub && <li><button type="button" onClick={() => setSub(partes.slice(0, -1).join('/'))}>↰ Voltar</button></li>}
           {pasta.itens.length === 0 && <li className="suave vazio-pasta">Esta pasta está vazia.</li>}
-          {pasta.itens.map((i) => {
+          {pasta.itens.length > 0 && visiveis.length === 0 && <li className="suave vazio-pasta">Nada encontrado para “{filtro}”.</li>}
+          {visiveis.map((i) => {
             const caminho = sub ? `${sub}/${i.nome}` : i.nome;
             return (
               <li key={i.nome}>
@@ -46,22 +55,10 @@ function EscolherNaPasta({ valor, escolher }: { valor: string; escolher: (caminh
   );
 }
 
-/** Une o nome do arquivo escolhido (o navegador não informa a pasta) ao caminho já digitado. */
-function juntarNome(atual: string, nome: string): string {
-  const a = atual.trim();
-  if (!a) return nome;
-  const sep = a.includes('\\') ? '\\' : '/';
-  if (/[\\/]$/.test(a)) return a + nome;
-  const ultimo = a.slice(Math.max(a.lastIndexOf('\\'), a.lastIndexOf('/')) + 1);
-  if (ultimo.includes('.')) return a.slice(0, a.length - ultimo.length) + nome;
-  return a + sep + nome;
-}
-
 /** Endereço do documento: muda conforme "Onde está o documento" (link, pasta do portal ou caminho de rede). */
 export function CampoDocumento({ rotulo, todos, mudarVarios }: { rotulo: string; todos: Valores; mudarVarios: (p: Valores) => void }) {
   const origem = String(todos.origem ?? 'link');
   const valor = String(todos.link_oficial ?? '');
-  const arquivo = useRef<HTMLInputElement>(null);
   const anterior = useRef(origem);
   useEffect(() => { if (anterior.current !== origem) { anterior.current = origem; mudarVarios({ link_oficial: '' }); } }, [origem]); // eslint-disable-line react-hooks/exhaustive-deps
   const definir = (endereco: string, nome = endereco) => {
@@ -74,20 +71,10 @@ export function CampoDocumento({ rotulo, todos, mudarVarios }: { rotulo: string;
       {origem === 'link' && (
         <input type="text" maxLength={500} value={valor} placeholder="https://…" aria-label={rotulo} onChange={(e) => definir(e.target.value)} />
       )}
-      {origem === 'rede' && (
-        <>
-          <div className="linha-doc">
-            <input type="text" maxLength={500} value={valor} placeholder="\\servidor\pasta\arquivo.pdf" aria-label={rotulo} onChange={(e) => definir(e.target.value)} />
-            <button type="button" className="btn btn-sec" onClick={() => arquivo.current?.click()}>Escolher arquivo…</button>
-            <input ref={arquivo} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) definir(juntarNome(valor, f.name), f.name); e.target.value = ''; }} />
-          </div>
-          <small className="suave">O navegador só informa o <strong>nome</strong> do arquivo, nunca a pasta. Digite ou cole a pasta do servidor (ex.: \\servidor\rh\) e depois use "Escolher arquivo…" para completar o nome e o formato.</small>
-        </>
-      )}
-      {origem === 'pasta' && (
+      {origem !== 'link' && (
         <>
           <input type="text" readOnly value={valor} placeholder="Nenhum arquivo escolhido — clique em um arquivo abaixo" aria-label={rotulo} />
-          <EscolherNaPasta valor={valor} escolher={(c) => definir(c, c)} />
+          <EscolherNaPasta origem={origem} valor={valor} escolher={(c) => definir(c, c)} />
         </>
       )}
     </div>
