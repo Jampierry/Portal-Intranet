@@ -23,7 +23,7 @@
 @media print { .manual-topo { display: none; } }
 
 /* Ajuda: coluna central, com introdução e abas compactas */
-.ajuda-pagina { max-width: 860px; margin: 0 auto; padding-bottom: 12px; }
+.ajuda-pagina { width: 100%; max-width: 960px; margin: 0 auto; padding-bottom: 12px; }
 .ajuda-intro { text-align: center; margin: 4px 0 16px; }
 .ajuda-intro h2 { margin: 0 0 4px; font-size: 22px; }
 .ajuda-intro p { margin: 0; font-size: 13.5px; }
