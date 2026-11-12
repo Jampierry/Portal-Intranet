@@ -64,4 +64,4 @@ Migrações só avançam, então a volta usa o backup:
 Para testar uma atualização com dados parecidos com os de produção, copie um backup para o banco do teste (`BANCO` do teste). Mantenha o envio de e-mails e as integrações reais desligados nesse ambiente.
 
 ## Fora do escopo deste documento (depende da TI)
-Servidor, nome interno, certificado HTTPS, quem opera o backup, conta de serviço que roda o Node, e o serviço Zimbra/OAuth (`zimbra-mcp`) em produção, com o endereço de retorno real cadastrado no Google e na Microsoft.
+**Checklist completo, com responsável e data: [pendências da TI](pendencias-ti.md).** Resumo: Servidor, nome interno, certificado HTTPS, quem opera o backup, conta de serviço que roda o Node, e o serviço Zimbra/OAuth (`zimbra-mcp`) em produção, com o endereço de retorno real cadastrado no Google e na Microsoft.

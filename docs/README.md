@@ -17,6 +17,7 @@ Atualizada em 12/11/2026. Idioma: português do Brasil. **Todos os dados do port
 | [Referência da API](referencia-api.md) | todas as rotas, com a permissão exigida |
 | [Banco de dados](banco-de-dados.md) | tabelas e histórico das 47 migrações |
 | [Permissões e perfis](permissoes-e-perfis.md) | catálogo de permissões e como o perfil e o ajuste por pessoa se combinam |
+| [**Pendências da TI**](pendencias-ti.md) | **checklist do que a TI precisa fazer para ir à produção** |
 | [Implantação](implantacao.md) | ambientes, `.env`, instalação, atualização, rollback e backup |
 | [**Revisão do sistema**](revisao-do-sistema-2026-11-12.md) | **o que melhorar e o que ainda falta fazer** |
 | [Melhorias futuras](melhorias-futuras.md) · [Requisitos](requisitos.md) · [Decisões](decisoes.md) · [Roteiro](roteiro-modulos.md) | planejamento |

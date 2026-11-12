@@ -14,6 +14,8 @@ O que separa o sistema de uma **produção com dados reais** é, principalmente,
 ## 2. O que ainda falta fazer
 
 ### 2.1 Depende da TI (bloqueia a ida para produção)
+Checklist para a TI: [pendencias-ti.md](pendencias-ti.md). Lista de melhorias: [melhorias-futuras.md](melhorias-futuras.md).
+
 | Item | Por quê |
 |---|---|
 | Servidor e nome interno (ex.: `portal.empresa.com.br`) | o portal precisa de endereço fixo |
