@@ -271,3 +271,10 @@
 ## 12/11/2026 (madrugada) — repositório da organização e vidro
 - Enviado ao repositório da organização (`Di-Paula-Moda-Esportiva/Portal-Intranet`, conta `jampierry-silva`) um commit único limpo (branch local `org-main`, remoto `org`): sem `origem-manus`, `web/imagens`, CLAUDE.md nem memória. O trabalho segue na `main` (remoto `origin` pessoal) até a TI liberar a homologação; para atualizar a organização, levar as mudanças da `main` para a `org-main` sem os arquivos do Claude.
 - Efeito vidro no sistema: `web/src/css/parte-11.css` (janelas, menus/painéis flutuantes, dicas, barra superior e abas no celular). Falta conferir no navegador. Ideia anotada: vídeo em banners e tela de entrada.
+
+## Ponto de parada — 12/11/2026 (madrugada)
+- **Organização:** repositório `Di-Paula-Moda-Esportiva/Portal-Intranet` recebeu 1 commit limpo (branch local `org-main`, remoto `org`, conta GitHub `jampierry-silva` logada no Git Credential Manager). Trabalho continua na `main` (`origin` pessoal) até a TI liberar a homologação. Para atualizar a organização: levar mudanças da `main` à `org-main` sem CLAUDE.md, `.claude/`, `docs/memoria/` (já no `.gitignore` da `org-main`) e enviar `git push org org-main:main`.
+- **Vidro:** `web/src/css/parte-11.css` = fundo ambiente (manchas vinho/coral) + cartões, janelas, menus, dicas e barras do celular em vidro; override sólido para `prefers-reduced-transparency`. Lição: nunca usar `@media not (feature-nova)` (navegador que não conhece descarta o bloco). Falta o usuário conferir nos 6 estilos × claro/escuro; ajuste fino: `opacity` das manchas, `78%/66%` dos cartões.
+- **Melhorias anotadas:** vídeo nos banners e na tela de entrada (em `docs/melhorias-futuras.md`).
+- Commits locais da `main` ainda NÃO enviados ao `origin` (d35adbf, e07bc93, 8ada11d, 58c7fd0 e este). Lint, typecheck, build e 153 testes OK.
+- **Próximo:** conferir o vidro no navegador; manuais por perfil (usuário lista os perfis); "enviar"; 2FA TOTP; Playwright; vídeo nos banners; resposta da TI (homologação).
