@@ -166,7 +166,9 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const podeConfig = ['usuarios', 'perfis', 'empresa', 'entrada', 'integracoes', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`)) || podeAbaCalendario(usuario.permissoes);
   const telasLiberadas = (['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
   const libera = (t: Tela) => t === 'inicio' || t === 'pesquisas' || telasLiberadas.includes(t);
-  const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
+  const { dados: comunicados, recarregar: recarregarComunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
+  // Ao confirmar a leitura (tela do comunicado), o aviso sai do sino na hora, sem recarregar a página.
+  useEffect(() => { window.addEventListener('leitura-confirmada', recarregarComunicados); return () => window.removeEventListener('leitura-confirmada', recarregarComunicados); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const leitura = (comunicados ?? []).filter((c) => c.exige_leitura && !c.lido);
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente' && !leitura.includes(c));
   // Quem pode redefinir senhas recebe no sino os pedidos de "Esqueci minha senha" (atualiza a cada minuto e ao trocar de tela).
@@ -289,7 +291,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
             {tela === 'pesquisas' && <Pesquisas />}
-            {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} exigeAprovacao={!!usuario.exige_aprovacao} />}
+            {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} perfil={usuario.perfil} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}

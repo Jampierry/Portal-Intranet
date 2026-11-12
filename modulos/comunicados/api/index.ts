@@ -59,7 +59,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
   app.post('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     // quem precisa de aprovação não publica direto: o comunicado fica em rascunho e vai para a fila do RH
-    const paraAprovar = d.status === 'publicado' && exigeAprovacao(db, req.usuario!.id);
+    const paraAprovar = d.status === 'publicado' && exigeAprovacao(req.usuario!, 'comunicados');
     if (paraAprovar) d.status = 'rascunho';
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM comunicados WHERE slug = ?').get(s), d.titulo);
     const agora = new Date().toISOString();
@@ -74,12 +74,27 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
   });
 
+  // Mudar só a data de publicação (exibir a partir de): quem precisa de aprovação volta para a fila do RH (o comunicado sai do ar até lá).
+  app.post<{ Params: { id: string } }>('/api/gestao/comunicados/:id/data', { preHandler: exigirPerm('pub.comunicados.editar') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Comunicado');
+    const atual = db.prepare('SELECT titulo, status, exibir_ate FROM comunicados WHERE id = ?').get(id) as { titulo: string; status: string; exibir_ate: string | null } | undefined;
+    if (!atual) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
+    const data = dataIso(corpoObjeto(req.body), 'exibir_de', 'Nova data de publicação');
+    if (!data) throw new ErroValidacao('Nova data de publicação: informe a data.');
+    if (atual.exibir_ate && atual.exibir_ate < data) throw new ErroValidacao('A nova data fica depois do fim da exibição. Ajuste o campo "Exibir até" pelo botão Editar.');
+    const volta = atual.status === 'publicado' && exigeAprovacao(req.usuario!, 'comunicados');
+    db.prepare(`UPDATE comunicados SET exibir_de = ?${volta ? ", status = 'rascunho'" : ''}, atualizado_em = ? WHERE id = ?`).run(data, new Date().toISOString(), id);
+    if (volta) solicitarAprovacao(db, { tipo: 'comunicado', registroId: id, titulo: `${atual.titulo} (nova data: ${data.split('-').reverse().join('/')})`, solicitanteId: req.usuario!.id });
+    auditar(db, req.usuario!.id, 'comunicado_data_alterada', { id, data, volta_para_aprovacao: volta });
+    return db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id);
+  });
+
   app.put<{ Params: { id: string } }>('/api/gestao/comunicados/:id', { preHandler: exigirPerm('pub.comunicados.editar') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Comunicado');
     const atual = db.prepare('SELECT status, publicado_em FROM comunicados WHERE id = ?').get(id) as { status: string; publicado_em: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     const d = ler(corpoObjeto(req.body));
-    const paraAprovar = d.status === 'publicado' && exigeAprovacao(db, req.usuario!.id);
+    const paraAprovar = d.status === 'publicado' && exigeAprovacao(req.usuario!, 'comunicados');
     if (paraAprovar) d.status = 'rascunho'; // volta para rascunho até o RH aprovar a versão nova
     // A data de publicação nasce na primeira vez que vira "publicado" e não muda depois.
     const publicado_em = atual.publicado_em ?? (d.status === 'publicado' ? hoje() : null);

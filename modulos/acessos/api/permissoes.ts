@@ -9,12 +9,16 @@ export interface AreaPermissao { id: string; rotulo: string; acoes: AcaoPermissa
 export interface GrupoPermissao { grupo: string; areas: AreaPermissao[] }
 
 /** Cria/edita/exclui de uma aba de Publicar. */
-const crud = (id: string, rotulo: string): AreaPermissao => ({
+const crud = (id: string, rotulo: string, comAprovacao = false): AreaPermissao => ({
   id, rotulo, acoes: [
     { chave: `pub.${id}.ver`, rotulo: 'Ver a aba' }, { chave: `pub.${id}.criar`, rotulo: 'Criar' },
     { chave: `pub.${id}.editar`, rotulo: 'Editar' }, { chave: `pub.${id}.excluir`, rotulo: 'Excluir' },
+    ...(comAprovacao ? [{ chave: `pub.${id}.aprovacao`, rotulo: 'Precisa da aprovação do RH para publicar' }] : []),
   ],
 });
+
+/** Abas de Publicar em que o RH pode exigir aprovação antes de sair (a chave `pub.<aba>.aprovacao` marca "precisa de aprovação"). */
+export const ABAS_COM_APROVACAO = ['comunicados', 'redes', 'banners', 'documentos'] as const;
 
 export const CATALOGO: GrupoPermissao[] = [
   { grupo: 'Telas', areas: [
@@ -34,10 +38,10 @@ export const CATALOGO: GrupoPermissao[] = [
     { id: 'ajuda', rotulo: 'Ajuda', acoes: [{ chave: 'ver.ajuda', rotulo: 'Acessar a tela' }] },
   ] },
   { grupo: 'Publicar (abas)', areas: [
-    crud('comunicados', 'Comunicados'), crud('banners', 'Banners (Novidades)'),
+    crud('comunicados', 'Comunicados', true), crud('banners', 'Banners (Novidades)', true),
     { id: 'institucional', rotulo: 'Missão, Visão e Valores', acoes: [{ chave: 'pub.institucional.ver', rotulo: 'Ver a aba' }, { chave: 'pub.institucional.editar', rotulo: 'Editar' }] },
-    crud('documentos', 'Documentos'), crud('destaques', 'Colaborador Destaque'), crud('contatos', 'Contatos'), crud('aplicativos', 'Aplicativos (cadastro)'),
-    crud('redes', 'Redes sociais'),
+    crud('documentos', 'Documentos', true), crud('destaques', 'Colaborador Destaque'), crud('contatos', 'Contatos'), crud('aplicativos', 'Aplicativos (cadastro)'),
+    crud('redes', 'Redes sociais', true),
     { id: 'aprovacoes', rotulo: 'Aprovações de publicações (RH)', acoes: [{ chave: 'pub.aprovacoes.ver', rotulo: 'Ver a fila e o histórico' }, { chave: 'pub.aprovacoes.decidir', rotulo: 'Aprovar ou rejeitar' }] },
     crud('aniversariantes', 'Aniversariantes (RH)'), crud('novos', 'Novos colaboradores (RH)'), { ...crud('pulso', 'Pesquisas (RH)'), acoes: [...crud('pulso', '').acoes, { chave: 'pub.pulso.resultado', rotulo: 'Ver o resultado completo (nomes) e liberar aos colaboradores' }] },
   ] },
@@ -73,7 +77,7 @@ export function normalizar(chaves: Iterable<string>): string[] {
 export interface PerfilInfo { codigo: string; nome: string; sistema: boolean; fixo: boolean; permissoes: string[]; usuarios: number }
 
 export const PADRAO_PERFIL: Record<string, string[]> = {
-  editor: normalizar(TODAS.filter((c) => !c.startsWith('cfg.') && !c.startsWith('pub.aplicativos') && c !== 'calendario.agendas')),
+  editor: normalizar(TODAS.filter((c) => !c.startsWith('cfg.') && !c.startsWith('pub.aplicativos') && c !== 'calendario.agendas' && !c.endsWith('.aprovacao'))),
   consulta: normalizar(['ver.comunicados', 'ver.documentos', 'documentos.abrir', 'ver.calendario', 'ver.pessoas', 'ver.ajuda']),
 };
 

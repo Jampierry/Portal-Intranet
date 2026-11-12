@@ -2,6 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
+import { cancelarPendentes, exigeAprovacao, solicitarAprovacao } from '../../aprovacoes/api/index.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 const VISIVEL = "ativo = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND (exibir_ate IS NULL OR exibir_ate >= date('now','localtime'))";
@@ -47,11 +48,15 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
 
   app.post('/api/gestao/banners', { preHandler: exigirPerm('pub.banners.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
+    // quem precisa de aprovação não publica direto: o banner fica inativo e vai para a fila do RH
+    const paraAprovar = d.ativo === 1 && exigeAprovacao(req.usuario!, 'banners');
+    if (paraAprovar) d.ativo = 0;
     const agora = new Date().toISOString();
     const id = Number(db.prepare(
       'INSERT INTO banners (titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, ativo, exibir_de, exibir_ate, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.posicao, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, agora, agora).lastInsertRowid);
     auditar(db, req.usuario!.id, 'banner_criado', { id, titulo: d.titulo });
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'banner', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id));
   });
 
@@ -59,9 +64,28 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     const id = inteiro(req.params.id, 'Banner');
     if (!db.prepare('SELECT 1 FROM banners WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Banner não encontrado.' });
     const d = ler(corpoObjeto(req.body));
+    const paraAprovar = d.ativo === 1 && exigeAprovacao(req.usuario!, 'banners');
+    if (paraAprovar) d.ativo = 0; // volta a ficar inativo até o RH aprovar a versão nova
     db.prepare('UPDATE banners SET titulo = ?, subtitulo = ?, imagem = ?, botao_texto = ?, link = ?, posicao = ?, ordem = ?, ativo = ?, exibir_de = ?, exibir_ate = ?, atualizado_em = ? WHERE id = ?')
       .run(d.titulo, d.subtitulo, d.imagem, d.botao_texto, d.link, d.posicao, d.ordem, d.ativo, d.exibir_de, d.exibir_ate, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'banner_alterado', { id, ativo: d.ativo });
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'banner', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
+    else cancelarPendentes(db, 'banner', id);
+    return db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id);
+  });
+
+  // Mudar só a data de publicação (exibir a partir de): quem precisa de aprovação volta para a fila do RH (o banner sai do ar até lá).
+  app.post<{ Params: { id: string } }>('/api/gestao/banners/:id/data', { preHandler: exigirPerm('pub.banners.editar') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Banner');
+    const atual = db.prepare('SELECT titulo, ativo, exibir_ate FROM banners WHERE id = ?').get(id) as { titulo: string; ativo: number; exibir_ate: string | null } | undefined;
+    if (!atual) return resp.code(404).send({ erro: 'Banner não encontrado.' });
+    const data = dataIso(corpoObjeto(req.body), 'exibir_de', 'Nova data de publicação');
+    if (!data) throw new ErroValidacao('Nova data de publicação: informe a data.');
+    if (atual.exibir_ate && atual.exibir_ate < data) throw new ErroValidacao('A nova data fica depois do fim da exibição. Ajuste o campo "Exibir até" pelo botão Editar.');
+    const volta = atual.ativo === 1 && exigeAprovacao(req.usuario!, 'banners');
+    db.prepare(`UPDATE banners SET exibir_de = ?${volta ? ', ativo = 0' : ''}, atualizado_em = ? WHERE id = ?`).run(data, new Date().toISOString(), id);
+    if (volta) solicitarAprovacao(db, { tipo: 'banner', registroId: id, titulo: `${atual.titulo} (nova data: ${data.split('-').reverse().join('/')})`, solicitanteId: req.usuario!.id });
+    auditar(db, req.usuario!.id, 'banner_data_alterada', { id, data, volta_para_aprovacao: volta });
     return db.prepare(`SELECT ${CAMPOS} FROM banners WHERE id = ?`).get(id);
   });
 

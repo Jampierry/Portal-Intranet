@@ -37,7 +37,7 @@ function ConfirmarLeitura({ c, aoConfirmar }: { c: ComDetalhe; aoConfirmar: (qua
   const [erro, setErro] = useState('');
   if (!c.exige_leitura) return null;
   if (c.lido) return <p className="leitura-ok" role="status"><Icone nome="info" tamanho={16} /> Leitura confirmada{c.lido_em ? ` em ${dataCurta(c.lido_em.slice(0, 10))}` : ''}.</p>;
-  const confirmar = async () => { setErro(''); setOcupado(true); try { const r = await api<{ lido_em: string }>(`/api/comunicados/${encodeURIComponent(c.slug)}/confirmar`, {}); aoConfirmar(r.lido_em); } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); } };
+  const confirmar = async () => { setErro(''); setOcupado(true); try { const r = await api<{ lido_em: string }>(`/api/comunicados/${encodeURIComponent(c.slug)}/confirmar`, {}); aoConfirmar(r.lido_em); window.dispatchEvent(new Event('leitura-confirmada')); } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); } };
   return (
     <div className="leitura-pede" role="group" aria-label="Confirmação de leitura">
       <p><b>Este comunicado pede a confirmação da sua leitura.</b> Leia o texto acima e confirme que está ciente.</p>

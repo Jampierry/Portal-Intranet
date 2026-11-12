@@ -3,7 +3,7 @@ import { api, ErroApi } from './api';
 
 /** Código do perfil: 'admin', 'editor', 'consulta' ou o de um perfil personalizado (ex.: 'p-recursos-humanos'). */
 export type PerfilAcesso = string;
-export interface Usuario { id: number; login: string; nome: string; perfil: PerfilAcesso; perfil_nome: string; trocar_senha: number; exige_aprovacao?: number; permissoes: string[] }
+export interface Usuario { id: number; login: string; nome: string; perfil: PerfilAcesso; perfil_nome: string; trocar_senha: number; permissoes: string[] }
 
 /** Permissão efetiva do usuário (perfil + ajustes feitos pelo administrador). O servidor confere de novo em cada chamada. */
 export const pode = (u: Usuario | null | undefined, chave: string) => !!u && (u.perfil === 'admin' || (u.permissoes ?? []).includes(chave));

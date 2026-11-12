@@ -4,10 +4,11 @@ import type { FastifyInstance } from 'fastify';
 import { config } from '../../../servidor/src/config.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigir, exigirPerm } from '../../acessos/api/guard.ts';
+import { cancelarPendentes, exigeAprovacao, solicitarAprovacao } from '../../aprovacoes/api/index.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, slugUnico, texto, urlHttp } from '../../../servidor/src/validar.ts';
 
 const CLASSIFICACOES = ['publico', 'interno', 'restrito'] as const;
-const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, atualizado_em';
+const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, exibir_de, atualizado_em, publicado';
 const TIPOS: Record<string, string> = { '.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.csv': 'text/csv; charset=utf-8' };
 const CAMINHO_ABSOLUTO = /^(\\\\[^\\/]+[\\/]|[A-Za-z]:[\\/]|\/)/;
 
@@ -34,7 +35,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     const podeVerRestrito = !!req.usuario?.permissoes.includes('documentos.restritos');
     const podeAbrir = !!req.usuario?.permissoes.includes('documentos.abrir');
     const lista = db
-      .prepare(`SELECT slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em FROM documentos ${podeVerRestrito ? '' : "WHERE classificacao <> 'restrito'"} ORDER BY titulo`)
+      .prepare(`SELECT slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em FROM documentos WHERE publicado = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime'))${podeVerRestrito ? '' : " AND classificacao <> 'restrito'"} ORDER BY titulo`)
       .all() as { slug: string; origem: string; link_oficial: string | null }[];
     // Sem a permissão de abrir, o endereço do documento nem sai do servidor. Em pasta (portal ou servidor), o endereço é o da
     // rota de download (o caminho real no servidor nunca sai).
@@ -43,7 +44,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
 
   app.get<{ Params: { slug: string } }>('/api/documentos/:slug/arquivo', { preHandler: exigirPerm('ver.documentos') }, async (req, resp) => {
     if (!req.usuario?.permissoes.includes('documentos.abrir')) return resp.code(403).send({ erro: 'Sem permissão para abrir documentos.' });
-    const d = db.prepare("SELECT classificacao, link_oficial, origem, origem_id FROM documentos WHERE slug = ? AND origem IN ('pasta', 'servidor')").get(req.params.slug) as { classificacao: string; link_oficial: string | null; origem: string; origem_id: number | null } | undefined;
+    const d = db.prepare("SELECT classificacao, link_oficial, origem, origem_id FROM documentos WHERE slug = ? AND publicado = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND origem IN ('pasta', 'servidor')").get(req.params.slug) as { classificacao: string; link_oficial: string | null; origem: string; origem_id: number | null } | undefined;
     if (!d?.link_oficial || (d.classificacao === 'restrito' && !req.usuario.permissoes.includes('documentos.restritos'))) return resp.code(404).send({ erro: 'Arquivo não encontrado.' });
     try {
       const base = raizDe(db, d.origem, d.origem_id);
@@ -81,6 +82,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
       origem_id: origemId,
       link_oficial: lerEndereco(c, origem),
       revisado_em: dataIso(c, 'revisado_em', 'Revisado em'),
+      exibir_de: dataIso(c, 'exibir_de', 'Publicar a partir de'),
     };
   }
 
@@ -163,13 +165,15 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
 
   app.post('/api/gestao/documentos', { preHandler: exigirPerm('pub.documentos.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
+    const paraAprovar = exigeAprovacao(req.usuario!, 'documentos'); // fica oculto até o RH aprovar
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM documentos WHERE slug = ?').get(s), d.titulo);
     const r = db.prepare(
-      `INSERT INTO documentos (slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, atualizado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(slug, d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, new Date().toISOString());
+      `INSERT INTO documentos (slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, exibir_de, atualizado_em, publicado)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(slug, d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, d.exibir_de, new Date().toISOString(), paraAprovar ? 0 : 1);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'documento_criado', { id, titulo: d.titulo });
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'documento', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id));
   });
 
@@ -177,10 +181,27 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     const id = inteiro(req.params.id, 'Documento');
     if (!db.prepare('SELECT 1 FROM documentos WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Documento não encontrado.' });
     const d = ler(corpoObjeto(req.body));
+    const paraAprovar = exigeAprovacao(req.usuario!, 'documentos'); // a versão nova fica oculta até o RH aprovar
     db.prepare(
-      `UPDATE documentos SET titulo = ?, categoria = ?, resumo = ?, formato = ?, versao = ?, responsavel = ?, classificacao = ?, origem = ?, origem_id = ?, link_oficial = ?, revisado_em = ?, atualizado_em = ? WHERE id = ?`,
-    ).run(d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, new Date().toISOString(), id);
+      `UPDATE documentos SET publicado = ${paraAprovar ? 0 : 1}, titulo = ?, categoria = ?, resumo = ?, formato = ?, versao = ?, responsavel = ?, classificacao = ?, origem = ?, origem_id = ?, link_oficial = ?, revisado_em = ?, exibir_de = ?, atualizado_em = ? WHERE id = ?`,
+    ).run(d.titulo, d.categoria, d.resumo, d.formato, d.versao, d.responsavel, d.classificacao, d.origem, d.origem_id, d.link_oficial, d.revisado_em, d.exibir_de, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'documento_alterado', { id, titulo: d.titulo });
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'documento', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
+    else cancelarPendentes(db, 'documento', id);
+    return db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id);
+  });
+
+  // Mudar só a data de publicação: quem precisa de aprovação volta para a fila do RH (o documento sai do ar até lá).
+  app.post<{ Params: { id: string } }>('/api/gestao/documentos/:id/data', { preHandler: exigirPerm('pub.documentos.editar') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Documento');
+    const d = db.prepare('SELECT titulo FROM documentos WHERE id = ?').get(id) as { titulo: string } | undefined;
+    if (!d) return resp.code(404).send({ erro: 'Documento não encontrado.' });
+    const data = dataIso(corpoObjeto(req.body), 'exibir_de', 'Nova data de publicação');
+    if (!data) throw new ErroValidacao('Nova data de publicação: informe a data.');
+    const volta = exigeAprovacao(req.usuario!, 'documentos');
+    db.prepare(`UPDATE documentos SET exibir_de = ?${volta ? ', publicado = 0' : ''}, atualizado_em = ? WHERE id = ?`).run(data, new Date().toISOString(), id);
+    if (volta) solicitarAprovacao(db, { tipo: 'documento', registroId: id, titulo: `${d.titulo} (nova data: ${data.split('-').reverse().join('/')})`, solicitanteId: req.usuario!.id });
+    auditar(db, req.usuario!.id, 'documento_data_alterada', { id, data, volta_para_aprovacao: volta });
     return db.prepare(`SELECT ${CAMPOS} FROM documentos WHERE id = ?`).get(id);
   });
 

@@ -1961,13 +1961,75 @@ button.mini-item { width: 100%; text-align: left; background: none; border: 0; f
 
 /* Aprovações e redes sociais */
 .motivo-rej { display: block; margin-top: 2px; color: var(--erro); font-size: 12px; }
-.aprov-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-items: start; }
-.aprov-cartao { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 14px; background: var(--card); }
+.aprov-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; align-items: start; }
+.aprov-cartao { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 12px; font-size: 13px; background: var(--card); }
 .aprov-cartao header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.aprov-cartao h3 { margin: 0; font-size: 16px; }
-.aprov-tipo { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
-.aprov-previa { display: flex; gap: 10px; padding: 8px; border: 1px dashed var(--linha); border-radius: 10px; background: var(--afundado); }
-.aprov-previa img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; flex: none; }
-.aprov-previa p { margin: 0 0 4px; }
-.aprov-texto { white-space: pre-wrap; max-height: 140px; overflow-y: auto; }
-.aprov-cartao footer { display: flex; gap: 8px; margin-top: 4px; }
+.aprov-cartao h3 { margin: 0; font-size: 14px; line-height: 1.25; }
+.aprov-cartao small { font-size: 11.5px; line-height: 1.3; }
+.aprov-tipo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
+.aprov-previa { display: flex; gap: 8px; padding: 6px; border: 1px dashed var(--linha); border-radius: 10px; background: var(--afundado); }
+.aprov-previa img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; }
+.aprov-previa p { margin: 0 0 2px; font-size: 12.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.aprov-texto { white-space: pre-wrap; max-height: 84px; overflow-y: auto; }
+.aprov-cartao footer { display: flex; gap: 6px; margin-top: 2px; justify-content: center; }
+
+/* Anexos das publicações para redes sociais: cartões com miniatura; no formulário, só esta área rola (a janela não muda) */
+.campo-anexos { display: grid; gap: 6px; margin: 0 0 10px; }
+.campo-anexos .rotulo-campo { font-size: 13px; font-weight: 700; }
+.anexos-grade { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; min-width: 0; }
+.anexos-rolagem { max-height: 238px; overflow-y: auto; padding: 6px; border: 1px solid var(--linha); border-radius: 10px; background: var(--afundado); overscroll-behavior: contain; }
+.anexo-cartao { display: flex; flex-direction: column; gap: 3px; padding: 4px; border: 1px solid var(--linha); border-radius: 9px; background: transparent; width: fit-content; max-width: 100%; min-width: 0; }
+.anexo-abrir { display: flex; flex-direction: column; gap: 3px; color: var(--texto); text-decoration: none; min-width: 0; }
+.anexo-abrir:hover .anexo-nome { text-decoration: underline; }
+.anexo-abrir:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; border-radius: 6px; }
+.anexo-mini { width: 96px; height: 64px; object-fit: cover; border-radius: 7px; border: 1px solid var(--linha); background: var(--afundado); }
+.anexo-mini-tipo { display: grid; place-items: center; font-size: 15px; font-weight: 800; letter-spacing: .04em; color: var(--suave); }
+.anexo-nome { font-size: 12px; font-weight: 700; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anexo-cartao small { font-size: 11px; line-height: 1.2; }
+.anexo-cartao .btn { align-self: flex-start; }
+/* Na tabela: miniaturas pequenas, 3 lado a lado */
+.anexos-compacta { gap: 5px; }
+.anexos-compacta .anexo-cartao { padding: 3px; gap: 2px; border-radius: 8px; }
+.anexos-compacta .anexo-mini { width: 56px; height: 40px; border-radius: 5px; }
+.anexos-compacta .anexo-mini-tipo { font-size: 11px; }
+.anexos-compacta .anexo-nome { font-size: 10.5px; font-weight: 600; max-width: 56px; }
+
+/* Tabelas da gestão (desktop): a célula de ações é célula de tabela, para os botões ficarem centralizados na altura da linha (com display:flex ela subia para o topo). */
+@media (min-width: 861px) {
+  .dados td.col-acoes { display: table-cell; vertical-align: middle; text-align: right; }
+  .dados td.col-acoes > .btn, .dados td.col-acoes > a.btn { margin: 2px 0 2px 6px; vertical-align: middle; }
+}
+
+/* Anexo: cartão é botão; pop-up com miniatura maior e ações */
+button.anexo-abrir { background: none; border: 0; padding: 0; margin: 0; font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.janela-anexo { width: min(640px, calc((100vw / var(--zoom, 1)) - 24px)); }
+.janela-anexo .anexo-titulo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.janela-anexo .anexo-corpo { display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; }
+.janela-anexo .anexo-grande { max-width: 100%; max-height: min(58vh, 460px); object-fit: contain; border-radius: 10px; border: 1px solid var(--linha); background: var(--afundado); }
+.janela-anexo .anexo-grande-tipo { width: 160px; height: 120px; font-size: 28px; }
+.janela-anexo .anexo-dados { margin: 0; font-size: 13px; }
+.janela-anexo footer { flex-wrap: wrap; }
+.janela-anexo footer a.btn { text-decoration: none; }
+
+/* Pop-up do anexo: setas de navegação nas laterais da prévia */
+.janela-anexo .anexo-palco { display: flex; align-items: center; gap: 6px; padding: 0 8px; min-height: 0; flex: 1 1 auto; }
+.janela-anexo .anexo-palco .anexo-corpo { flex: 1 1 auto; min-width: 0; }
+.anexo-seta { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font-size: 26px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0 0 3px; }
+.anexo-seta:hover { background: var(--hover); }
+.anexo-seta:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }
+
+/* Aprovações: as abas internas ficam coladas nas abas de Publicar */
+.crud.aprov-secao { gap: 8px; margin-top: -8px; }
+
+/* Cartão de aprovação: os anexos ficam em miniaturas pequenas e o cartão não cresce (rola por dentro se forem muitos) */
+.aprov-cartao .anexos-grade { max-height: 112px; overflow-y: auto; }
+.aprov-cartao { min-width: 0; }
+
+/* Leitura da publicação enviada para aprovação (somente leitura) */
+.detalhe-pedido { display: grid; gap: 10px; align-content: start; overflow-y: auto; }
+.detalhe-aviso { margin: 0; font-size: 12.5px; }
+.detalhe-imagem { max-width: 100%; max-height: 240px; object-fit: contain; border-radius: 10px; border: 1px solid var(--linha); background: var(--afundado); justify-self: start; }
+.detalhe-pedido dl { margin: 0; display: grid; gap: 8px; }
+.detalhe-pedido dt { font-size: 12px; font-weight: 700; color: var(--suave); }
+.detalhe-pedido dd { margin: 1px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 6px 10px; border: 1px solid var(--linha); border-radius: 8px; background: var(--afundado); }
+.detalhe-sub { margin: 0 0 4px; font-size: 13px; }

@@ -4,17 +4,20 @@
 // Em qualquer caso, quem pediu recebe o retorno (push e sino); na rejeição, o RH informa o motivo.
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
+import type { ABAS_COM_APROVACAO } from '../../acessos/api/permissoes.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { avisarNovoComunicado } from '../../avisos/api/index.ts';
 import { avisarPushComunicado, enviarPush } from '../../push/api/index.ts';
 import { corpoObjeto, ErroValidacao, inteiro, texto } from '../../../servidor/src/validar.ts';
 
-export type TipoAprovacao = 'comunicado' | 'rede_social';
+export type TipoAprovacao = 'comunicado' | 'rede_social' | 'banner' | 'documento';
+const ROTULO_TIPO: Record<TipoAprovacao, string> = { comunicado: 'O comunicado', rede_social: 'A publicação', banner: 'O banner', documento: 'O documento' };
+const LINK_TIPO: Record<TipoAprovacao, string> = { comunicado: '/#publicar/comunicados', rede_social: '/#publicar/redes', banner: '/#publicar/banners', documento: '/#publicar/documentos' };
 export const PLATAFORMAS: Record<string, string> = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok', youtube: 'YouTube', whatsapp: 'WhatsApp', outra: 'Outra plataforma' };
 
-/** A pessoa precisa de aprovação para publicar? */
-export const exigeAprovacao = (db: Banco, usuarioId: number) =>
-  !!(db.prepare('SELECT exige_aprovacao FROM usuarios WHERE id = ?').get(usuarioId) as { exige_aprovacao: number } | undefined)?.exige_aprovacao;
+/** A pessoa precisa de aprovação do RH para publicar nesta aba? Vale a permissão `pub.<aba>.aprovacao` (do perfil ou do ajuste do usuário); o administrador nunca precisa. */
+export const exigeAprovacao = (u: { perfil: string; permissoes: string[] }, aba: (typeof ABAS_COM_APROVACAO)[number]) =>
+  u.perfil !== 'admin' && u.permissoes.includes(`pub.${aba}.aprovacao`);
 
 /** Cancela pedidos pendentes do mesmo conteúdo (um novo envio substitui o anterior). */
 export function cancelarPendentes(db: Banco, tipo: TipoAprovacao, registroId: number) {
@@ -39,11 +42,20 @@ export async function rotasAprovacoes(app: FastifyInstance, { db }: { db: Banco;
   /** Prévia do conteúdo para quem decide enxergar o que está aprovando. */
   const previa = (l: Linha) => {
     if (l.tipo === 'comunicado') {
-      const c = db.prepare('SELECT resumo, corpo, categoria, prioridade, imagem FROM comunicados WHERE id = ?').get(l.registro_id) as Record<string, unknown> | undefined;
+      const c = db.prepare('SELECT titulo, resumo, corpo, categoria, prioridade, imagem, exibir_de, exibir_ate, exige_leitura FROM comunicados WHERE id = ?').get(l.registro_id) as Record<string, unknown> | undefined;
       return c ? { ...c, tipo: 'comunicado' } : null;
     }
-    const r = db.prepare('SELECT plataforma, legenda, imagem, link, data_prevista FROM publicacoes_externas WHERE id = ?').get(l.registro_id) as { plataforma: string } & Record<string, unknown> | undefined;
-    return r ? { ...r, tipo: 'rede_social', plataforma_nome: PLATAFORMAS[r.plataforma] ?? r.plataforma } : null;
+    if (l.tipo === 'banner') {
+      const b = db.prepare('SELECT titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, exibir_de, exibir_ate FROM banners WHERE id = ?').get(l.registro_id) as Record<string, unknown> | undefined;
+      return b ? { ...b, tipo: 'banner' } : null;
+    }
+    if (l.tipo === 'documento') {
+      const d = db.prepare('SELECT titulo, resumo, categoria, formato, versao, responsavel, classificacao, origem, link_oficial, revisado_em, exibir_de FROM documentos WHERE id = ?').get(l.registro_id) as Record<string, unknown> | undefined;
+      return d ? { ...d, tipo: 'documento' } : null;
+    }
+    const r = db.prepare('SELECT plataforma, titulo, legenda, imagem, link, data_prevista FROM publicacoes_externas WHERE id = ?').get(l.registro_id) as { plataforma: string } & Record<string, unknown> | undefined;
+    const anexos = db.prepare('SELECT id, nome, tipo, tamanho FROM publicacoes_anexos WHERE publicacao_id = ? ORDER BY id').all(l.registro_id);
+    return r ? { ...r, tipo: 'rede_social', plataforma_nome: PLATAFORMAS[r.plataforma] ?? r.plataforma, anexos } : null;
   };
 
   // Fila e histórico (quem decide).
@@ -71,6 +83,10 @@ export async function rotasAprovacoes(app: FastifyInstance, { db }: { db: Banco;
       db.prepare('UPDATE aprovacoes SET status = ?, motivo = ?, decidido_por = ?, decidido_em = ? WHERE id = ?').run(aprovar ? 'aprovado' : 'rejeitado', motivo, eu.id, agora, id);
       if (l.tipo === 'comunicado') {
         if (aprovar) db.prepare("UPDATE comunicados SET status = 'publicado', publicado_em = COALESCE(publicado_em, ?), atualizado_em = ? WHERE id = ?").run(agora.slice(0, 10), agora, l.registro_id);
+      } else if (l.tipo === 'banner') {
+        if (aprovar) db.prepare('UPDATE banners SET ativo = 1, atualizado_em = ? WHERE id = ?').run(agora, l.registro_id);
+      } else if (l.tipo === 'documento') {
+        if (aprovar) db.prepare('UPDATE documentos SET publicado = 1, atualizado_em = ? WHERE id = ?').run(agora, l.registro_id);
       } else {
         db.prepare('UPDATE publicacoes_externas SET status = ?, motivo = ?, atualizado_em = ? WHERE id = ?').run(aprovar ? 'aprovada' : 'rejeitada', motivo, agora, l.registro_id);
       }
@@ -83,11 +99,12 @@ export async function rotasAprovacoes(app: FastifyInstance, { db }: { db: Banco;
       if (slug) { void avisarNovoComunicado(db, slug, eu.id); void avisarPushComunicado(db, slug); }
     }
     // retorno para quem pediu
-    const onde = l.tipo === 'comunicado' ? 'no portal' : `para ${PLATAFORMAS[l.detalhe ?? ''] ?? 'a rede social'}`;
+    const noPortal = l.tipo !== 'rede_social';
+    const onde = noPortal ? 'no portal' : `para ${PLATAFORMAS[l.detalhe ?? ''] ?? 'a rede social'}`;
     void enviarPush(db, [l.solicitante_id], {
       titulo: aprovar ? 'Publicação aprovada' : 'Publicação rejeitada',
-      corpo: aprovar ? `«${l.titulo}» foi aprovada${l.tipo === 'comunicado' ? ' e já está no portal' : ': pode publicar na plataforma'}.` : `«${l.titulo}» ${onde} foi rejeitada. Motivo: ${motivo}`,
-      url: l.tipo === 'comunicado' ? '/#publicar/comunicados' : '/#publicar/redes', tag: `aprovacao-${id}`,
+      corpo: aprovar ? `«${l.titulo}» foi aprovada${noPortal ? ' e já está no portal' : ': pode publicar na plataforma'}.` : `«${l.titulo}» ${onde} foi rejeitada. Motivo: ${motivo}`,
+      url: LINK_TIPO[l.tipo], tag: `aprovacao-${id}`,
     });
     return { ok: true };
   });

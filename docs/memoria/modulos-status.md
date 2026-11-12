@@ -17,3 +17,5 @@
 | busca global | ✅ | Busca do topo agrupa comunicados, documentos, aplicativos e contatos conforme as permissões |
 
 Testes: 78 (API com banco em memória + contraste + links). Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.
+
+- **Publicar › Aprovações / Redes sociais** (12/11/2026): fila do RH para comunicados, redes, banners e documentos; aprovação definida por aba e por usuário (`pub.<aba>.aprovacao`); anexos nas redes. Ver `estado-e-ponto-de-parada.md`.

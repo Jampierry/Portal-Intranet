@@ -9,6 +9,7 @@ import { ICONES_ESCOLHA } from '../iconesAuto';
 import { Cabecalho } from '../Cabecalho';
 import { dataCurta, MESES_LONGOS, periodoDe, useLista } from '../dados';
 import { ListaPerfis } from './Permissoes';
+import { MudarData } from './MudarData';
 import { Integracoes } from './Integracoes';
 import { DadosExemplo } from './DadosExemplo';
 import { OrigensDocumentos } from './OrigensDocumentos';
@@ -58,6 +59,7 @@ function useLeituras(id: number) {
 
 function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
   const [leituras, setLeituras] = useState<Com | null>(null);
+  const [mudandoData, setMudandoData] = useState<{ r: Com; recarregar: () => void } | null>(null);
   const { dados } = useLista<Com>('/api/gestao/comunicados');
   const categorias = [...new Set((dados ?? []).map((c) => c.categoria))];
   return (
@@ -85,10 +87,11 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
       valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exige_leitura: false, exibir_de: '', exibir_ate: '' }}
       paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
       podeApagar={() => true}
-      acoesExtra={(r, salvar) => {
+      acoesExtra={(r, salvar, recarregar) => {
         const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) };
         return <>
           {r.exige_leitura ? <button className="btn btn-sec btn-pequeno" onClick={() => setLeituras(r)}>Leituras</button> : null}
+          {r.status === 'publicado' && <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
           {r.status === 'publicado'
             ? <button className="btn btn-sec btn-pequeno" onClick={() => void salvar({ ...base, status: 'arquivado' })}>Arquivar</button>
             : (r.aprovacao_status === 'pendente' ? null : <button className="btn btn-verde btn-pequeno" onClick={() => void salvar({ ...base, status: 'publicado' })}>{exigeAprovacao ? 'Enviar para aprovação' : 'Publicar'}</button>)}
@@ -96,6 +99,7 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
       }}
     />
     {leituras && <LeiturasComunicado c={leituras} aoFechar={() => setLeituras(null)} />}
+    {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.exibir_de} url={`/api/gestao/comunicados/${mudandoData.r.id}/data`} campo="exibir_de" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}
     </>
   );
 }
@@ -105,10 +109,12 @@ const POSICOES_BANNER: [string, string][] = [['principal', 'Carrossel da esquerd
 const NOME_POSICAO: Record<string, string> = { principal: 'Esquerda', lateral1: 'Meio', lateral2: 'Direita' };
 const ORDENS: [string, string][] = Array.from({ length: 9 }, (_, i) => [String(i + 1), String(i + 1)]);
 /** Banners do carrossel "Novidades da semana" do Início: imagem, texto, botão e ordem. Sem banner ativo, o Início mostra a faixa padrão. */
-function Banners() {
+function Banners({ exigeAprovacao }: { exigeAprovacao: boolean }) {
+  const [mudandoData, setMudandoData] = useState<{ r: Ban; recarregar: () => void } | null>(null);
   return (
+    <>
     <Crud<Ban> base="/api/gestao/banners" rotuloItem="banner" idDe={(r) => r.id}
-      introducao="O topo do Início tem 3 carrosséis lado a lado que giram juntos: esquerda (maior), meio e direita. Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel da esquerda sem banner mostra a faixa padrão."
+      introducao={(exigeAprovacao ? 'Você precisa de aprovação do RH: o banner só aparece no Início depois de aprovado. ' : '') + "O topo do Início tem 3 carrosséis lado a lado que giram juntos: esquerda (maior), meio e direita. Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel da esquerda sem banner mostra a faixa padrão."}
       campos={[
         { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER },
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
@@ -128,21 +134,26 @@ function Banners() {
         { titulo: 'Imagem', ver: (r) => (r.imagem ? 'Sim' : 'Cor do tema') },
         { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
       ]}
+      acoesExtra={(r, _salvar, recarregar) => (r.ativo ? <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button> : null)}
       valoresNovos={{ posicao: 'principal', titulo: '', subtitulo: '', imagem: '', botao_texto: '', link: '', ordem: '1', ativo: true, exibir_de: '', exibir_ate: '' }}
       paraForm={(r) => ({ posicao: r.posicao, titulo: r.titulo, subtitulo: s(r.subtitulo), imagem: s(r.imagem), botao_texto: s(r.botao_texto), link: s(r.link), ordem: String(r.ordem), ativo: !!r.ativo, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
     />
+    {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.exibir_de} url={`/api/gestao/banners/${mudandoData.r.id}/data`} campo="exibir_de" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}
+    </>
   );
 }
 
 interface OrigemDoc { id: number; nome: string }
-interface Doc { origem_id: number | null; id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null }
-function Documentos() {
+interface Doc { origem_id: number | null; id: number; titulo: string; categoria: string; resumo: string; formato: string; versao: string | null; responsavel: string | null; classificacao: string; origem: string; link_oficial: string | null; revisado_em: string | null; exibir_de: string | null }
+function Documentos({ exigeAprovacao }: { exigeAprovacao: boolean }) {
   const { dados } = useLista<Doc>('/api/gestao/documentos');
   const categorias = [...new Set((dados ?? []).map((d) => d.categoria))];
   const { dados: origens } = useLista<OrigemDoc>('/api/gestao/documentos/origens');
+  const [mudandoData, setMudandoData] = useState<{ r: Doc; recarregar: () => void } | null>(null);
   return (
+    <>
     <Crud<Doc> base="/api/gestao/documentos" rotuloItem="documento" idDe={(r) => r.id}
-      introducao="Escolha de onde vem o documento (link, pasta do portal ou uma pasta do servidor cadastrada pelo administrador) e clique no arquivo. Documento 'restrito' só aparece para editores e administradores."
+      introducao={(exigeAprovacao ? 'Você precisa de aprovação do RH: o documento só aparece para os colaboradores depois de aprovado. ' : '') + "Escolha de onde vem o documento (link, pasta do portal ou uma pasta do servidor cadastrada pelo administrador) e clique no arquivo. Documento 'restrito' só aparece para editores e administradores."}
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
@@ -152,6 +163,7 @@ function Documentos() {
         { chave: 'responsavel', rotulo: 'Responsável', max: 80, metade: true },
         { chave: 'classificacao', rotulo: 'Quem pode ver', tipo: 'select', opcoes: [['interno', 'Todos os logados'], ['publico', 'Público (interno, sem restrição)'], ['restrito', 'Restrito (editores e admin)']], metade: true },
         { chave: 'revisado_em', rotulo: 'Revisado em', tipo: 'data', metade: true },
+        { chave: 'exibir_de', rotulo: 'Publicar a partir de (opcional)', tipo: 'data', metade: true, dica: 'Vazio = aparece assim que for publicado.' },
         { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ...(origens ?? []).map((o): [string, string] => [`s${o.id}`, `Servidor: ${o.nome}`])] },
         { chave: 'link_oficial', rotulo: 'Endereço do documento', tipo: 'documento' },
       ]}
@@ -163,9 +175,12 @@ function Documentos() {
         { titulo: 'Acesso', ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
         { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
       ]}
-      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', origem: 'link', link_oficial: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), origem: r.origem === 'servidor' ? `s${r.origem_id}` : r.origem, link_oficial: s(r.link_oficial) })}
+      acoesExtra={(r, _salvar, recarregar) => <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
+      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', exibir_de: '', origem: 'link', link_oficial: '' }}
+      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), exibir_de: s(r.exibir_de), origem: r.origem === 'servidor' ? `s${r.origem_id}` : r.origem, link_oficial: s(r.link_oficial) })}
     />
+    {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.exibir_de} url={`/api/gestao/documentos/${mudandoData.r.id}/data`} campo="exibir_de" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}
+    </>
   );
 }
 
@@ -284,13 +299,15 @@ function useAbaVisivel(aba?: string) {
   useEffect(() => { document.querySelector('.abas-gestao [aria-selected=true]')?.scrollIntoView({ inline: 'nearest', block: 'nearest' }); }, [aba]);
 }
 
-export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito, exigeAprovacao = false }: {
-  exigeAprovacao?: boolean; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+export function Publicar({ permissoes, perfil, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
+  perfil?: string; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   useAbaVisivel(pedida);
   // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
   const abas = ABAS_PUBLICAR.filter(([id]) => permissoes.includes(`pub.${id === 'aplicacoes' ? 'aplicativos' : id}.ver`));
   const aba: AbaPub = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
+  // O RH define, por aba, quem precisa de aprovação para publicar (o administrador nunca precisa).
+  const exigeAprovacao = (a: string) => perfil !== 'admin' && permissoes.includes(`pub.${a}.aprovacao`);
   return (
     <>
       <Cabecalho titulo="Publicar" sub="Publique comunicados, banners, missão e valores, documentos, colaborador destaque, aniversariantes, novos colaboradores, contatos e aplicativos." />
@@ -299,12 +316,12 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
         <span id="slot-dica-aba" className="slot-dica" />
       </div>
       <PermissoesCtx.Provider value={permissoes}>
-      {aba === 'comunicados' && <Comunicados exigeAprovacao={exigeAprovacao} />}
-      {aba === 'redes' && <RedesSociais exigeAprovacao={exigeAprovacao} />}
+      {aba === 'comunicados' && <Comunicados exigeAprovacao={exigeAprovacao('comunicados')} />}
+      {aba === 'redes' && <RedesSociais exigeAprovacao={exigeAprovacao('redes')} />}
       {aba === 'aprovacoes' && <Aprovacoes />}
-      {aba === 'banners' && <Banners />}
+      {aba === 'banners' && <Banners exigeAprovacao={exigeAprovacao('banners')} />}
       {aba === 'institucional' && <Institucional />}
-      {aba === 'documentos' && <Documentos />}
+      {aba === 'documentos' && <Documentos exigeAprovacao={exigeAprovacao('documentos')} />}
       {aba === 'destaques' && <Destaques />}
       {aba === 'aniversariantes' && <Aniversariantes />}
       {aba === 'novos' && <NovosColaboradores />}
