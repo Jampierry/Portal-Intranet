@@ -27,6 +27,8 @@ Limite de login por login+IP, por IP e por login · CSP, Permissions-Policy e HS
 | Baixa | Dividir arquivos grandes (`pulso/api`, `Gestao.tsx`, `App.tsx`, `Administracao.tsx`) quando forem mexidos | |
 | Baixa | Padronizar `exigirPerm('...')` na própria rota; um teste de permissão e de propriedade por módulo novo | |
 | Baixa | Auditoria manual de acessibilidade (leitor de tela, teclado, pop-ups, carrosséis, cartão de vidro do login) | |
+| Média | **Vídeo nos banners e na tela de entrada** (onde hoje só há foto) | Aceitar MP4/WebM (limite de tamanho, sem som, em laço, pausa com "reduzir animações", imagem de reserva); atenção ao peso no SQLite e ao celular. |
+| Média | **Efeito vitrificado (vidro fosco) da tela de entrada no resto do sistema**, onde fizer sentido | Candidatos: cartões sobre capas/banners, janelas e pop-ups, menus flutuantes, barra superior. Conferir contraste WCAG nos 6 estilos × claro/escuro (`web/test/contraste.test.ts`) e o desempenho em celular fraco (`backdrop-filter`). |
 
 ## Depende de ferramenta ou serviço externo
 - **Recuperação de senha por e-mail** (hoje o administrador redefine): exige SMTP/Zimbra em produção e o e-mail guardado em cada usuário.
