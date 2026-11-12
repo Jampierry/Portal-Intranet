@@ -4,7 +4,7 @@ import { LogoEmpresa, LogoNome, useEmpresa } from './empresa';
 import { Calendario } from './Calendario';
 import { isoDe } from './calendarioTipos';
 
-export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pesquisas' | 'pessoas' | 'ajuda';
+export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pesquisas' | 'pessoas' | 'ajuda' | 'perfil';
 
 // Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];

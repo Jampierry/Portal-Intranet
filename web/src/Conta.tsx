@@ -1,3 +1,4 @@
+import { Icone } from './icones';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from './api';
 import { Avatar, AVATARES_QTD } from './perfil';
@@ -32,7 +33,7 @@ export function FormTrocarSenha({ aoConcluir }: { aoConcluir: () => void }) {
 }
 
 /** Preferência dos avisos de comunicados por e-mail (só aparece com e-mail cadastrado pelo administrador). */
-function AvisosEmailPessoa() {
+export function AvisosEmailPessoa() {
   const [d, setD] = useState<{ email: string | null; avisos_email: number } | null>(null);
   useEffect(() => { api<{ email: string | null; avisos_email: number }>('/api/eu/avisos').then(setD).catch(() => setD(null)); }, []);
   if (!d) return null;
@@ -46,7 +47,7 @@ function AvisosEmailPessoa() {
 }
 
 /** Avisos push neste aparelho: liga/desliga e manda um aviso de teste. */
-function AvisosPush() {
+export function AvisosPush() {
   const [ativo, setAtivo] = useState<boolean | null>(null);
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -73,15 +74,41 @@ interface EventoInstalar extends Event { prompt: () => Promise<void>; userChoice
 let instalador: EventoInstalar | null = null;
 if (typeof window !== 'undefined') {
   addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); instalador = e as EventoInstalar; });
-  addEventListener('appinstalled', () => { instalador = null; });
+  addEventListener('appinstalled', () => { instalador = null; try { localStorage.setItem('portal.app.instalado', '1'); } catch { /* sem armazenamento */ } });
 }
+const lerFlag = (k: string) => { try { return localStorage.getItem(k) === '1'; } catch { return false; } };
+export const instalarDisponivel = () => !!instalador && !emApp();
+/** Mostra o convite até a pessoa instalar o portal ou dizer que não quer. */
+export const conviteInstalar = () => !emApp() && !lerFlag('portal.app.instalado') && !lerFlag('portal.app.dispensado');
+export async function instalarPortal() { if (!instalador) return; await instalador.prompt(); await instalador.userChoice.catch(() => null); instalador = null; }
 const emApp = () => typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
 
-/** Menu da conta (abre ao clicar no avatar, igual ao menu de aparência): dados, avatar, avisos por e-mail, senha, instalar o portal e sair. */
-export function MenuConta({ usuario, avatar, mudarAvatar, sair }: { usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; sair: () => void }) {
+/** Convite para instalar o portal: fica no menu até instalar ou marcar 'não quero'. Sem o aviso do navegador (ex.: sem HTTPS, iPhone), explica o caminho manual. */
+function ConviteInstalar({ aoInstalar }: { aoInstalar: () => void }) {
+  const [, forcar] = useState(0);
+  if (!conviteInstalar()) return null;
+  const dispensar = () => { try { localStorage.setItem('portal.app.dispensado', '1'); } catch { /* vale só nesta sessão */ } forcar((n) => n + 1); };
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return (
+    <>
+      <h3>Aplicativo</h3>
+      <div className="conta-convite">
+      {instalarDisponivel()
+        ? <button className="btn btn-sec btn-pequeno" onClick={() => void instalarPortal().then(() => { forcar((n) => n + 1); aoInstalar(); })}>Instalar o portal neste dispositivo</button>
+        : <p className="suave" style={{ fontSize: 13, margin: "0 0 6px" }}>{ios ? 'Para instalar: toque em Compartilhar e depois em Adicionar à Tela de Início.' : 'Para instalar: no menu do navegador, escolha Instalar aplicativo ou Adicionar à tela inicial (precisa de HTTPS).'}</p>}
+      <button type="button" className="btn btn-sec btn-pequeno" style={{ marginTop: 6 }} onClick={dispensar}>Não quero instalar</button>
+      </div>
+    </>
+  );
+}
+
+/** Menu da conta (abre ao clicar no avatar): dados, botão Meu perfil, avatar, avisos, senha, instalar o portal e sair. */
+export function MenuConta({ usuario, avatar, mudarAvatar, abrirPerfil, sair }: { usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; abrirPerfil: () => void; sair: () => void }) {
   const [aberto, setAberto] = useState(false);
   const [trocando, setTrocando] = useState(false);
   const [feito, setFeito] = useState(false);
+  const [avAberto, setAvAberto] = useState(() => { try { return localStorage.getItem('portal.conta.avatares') === 'aberto'; } catch { return false; } });
+  const alternarAv = () => setAvAberto((v) => { try { localStorage.setItem('portal.conta.avatares', v ? 'fechado' : 'aberto'); } catch { /* só nesta sessão */ } return !v; });
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -91,7 +118,6 @@ export function MenuConta({ usuario, avatar, mudarAvatar, sair }: { usuario: Usu
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', tecla); };
   }, [aberto]);
   useEffect(() => { if (!aberto) { setTrocando(false); setFeito(false); } }, [aberto]);
-  const instalar = async () => { if (!instalador) return; await instalador.prompt(); await instalador.userChoice.catch(() => null); instalador = null; setAberto(false); };
   return (
     <div className="tema-raiz" ref={raiz}>
       <button className="avbtn" onClick={() => setAberto(!aberto)} aria-expanded={aberto} aria-haspopup="dialog" aria-label="Minha conta" title={`${usuario.nome} — minha conta`}>
@@ -106,22 +132,22 @@ export function MenuConta({ usuario, avatar, mudarAvatar, sair }: { usuario: Usu
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
             </button>
           </div>
-          <h3>Avatar</h3>
-          <div className="avgal">
+          <button type="button" className="btn btn-pri conta-perfil-btn" onClick={() => { setAberto(false); abrirPerfil(); }}>Meu perfil</button>
+          <h3 className="conta-recolher"><button type="button" aria-expanded={avAberto} aria-controls="conta-avatares" onClick={alternarAv}><Icone nome="dir" tamanho={14} classe="recolher-seta" />Avatar<span className="recolher-dica">{avAberto ? 'Ocultar' : 'Mostrar'}</span></button></h3>
+          <div className="avgal" id="conta-avatares" hidden={!avAberto}>
             <button type="button" className={`avopt${avatar === null ? ' on' : ''}`} aria-label="Usar as iniciais" onClick={() => mudarAvatar(null)}><Avatar nome={usuario.nome} avatar={null} tamanho={32} /></button>
             {Array.from({ length: AVATARES_QTD }, (_, i) => (
               <button type="button" key={i} className={`avopt${avatar === i ? ' on' : ''}`} aria-label={`Avatar ${i + 1}`} aria-pressed={avatar === i} onClick={() => mudarAvatar(i)}><Avatar nome={usuario.nome} avatar={i} tamanho={32} /></button>
             ))}
           </div>
-          <AvisosEmailPessoa />
-          <AvisosPush />
           <h3>Segurança</h3>
           {feito && <p className="ok" role="status" style={{ margin: '0 0 8px' }}>Senha alterada.</p>}
           {!trocando ? <button className="btn btn-sec btn-pequeno" onClick={() => { setTrocando(true); setFeito(false); }}>Trocar senha</button>
             : <FormTrocarSenha aoConcluir={() => { setTrocando(false); setFeito(true); }} />}
-          {instalador && !emApp() && <><h3>Aplicativo</h3><button className="btn btn-sec btn-pequeno" onClick={() => void instalar()}>Instalar o portal neste dispositivo</button></>}
+          <ConviteInstalar aoInstalar={() => setAberto(false)} />
         </div>
       )}
     </div>
   );
 }
+

@@ -4,7 +4,7 @@ import { JanelaForm } from '../gestao/Crud';
 import { ResultadoCorpo, type Resultado } from '../gestao/ResultadoPesquisa';
 
 /** Resultado divulgado pelo RH (já filtrado pelo servidor: só o que o RH liberou, sem nomes). */
-export interface ItemResultado { id: number; titulo: string; liberado_em: string | null; respostas: number; rodada: number; visto: boolean }
+export interface ItemResultado { id: number; titulo: string; liberado_em: string | null; imagens?: string[]; respostas: number; rodada: number; visto: boolean }
 
 /** Janela com o resultado de uma pesquisa divulgada. Serve ao pop-up de novidade e à tela Pesquisas. Fechar (de qualquer jeito) chama `aoFechar`. */
 export function JanelaResultado({ item, aoFechar, titulo = 'Resultado da pesquisa' }: { item: ItemResultado; aoFechar: () => void; titulo?: string }) {

@@ -11,6 +11,7 @@ import { pode, podeGerir, useSessao, type Usuario } from './sessao';
 import { Publicar, Configuracoes } from './gestao/Gestao';
 import { Pessoas } from './pessoas/Pessoas';
 import { Ajuda } from './ajuda/Ajuda';
+import { MeuPerfil } from './perfil/MeuPerfil';
 import { dataCurta, useLista, type Comunicado } from './dados';
 import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
@@ -37,11 +38,12 @@ const AVISOS: Record<Tela, string> = {
   configuracoes: 'Usuários, perfis e auditoria do portal. Só o administrador acessa.',
   pessoas: 'Quem procurar em cada área da empresa: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
+  perfil: 'Seus dados de contato, contato de emergência, e-mail, avisos e senha. Só você vê o que preenche aqui.',
   pesquisas: 'Resultados das pesquisas que o RH divulgou. Os novos aparecem em um aviso ao entrar; depois, só aqui.',
 };
 // Nome de cada tela, mostrado na barra superior universal (não aparece dentro da janela).
-const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Contatos', ajuda: 'Ajuda', pesquisas: 'Pesquisas' };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'pesquisas', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
+const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Contatos', ajuda: 'Ajuda', pesquisas: 'Pesquisas', perfil: 'Meu perfil' };
+const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'pesquisas', 'publicar', 'configuracoes', 'pessoas', 'ajuda', 'perfil'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
@@ -276,7 +278,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} />
-          <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} />
+          <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} abrirPerfil={() => irPara('perfil')} sair={() => void sair()} />
         </header>
 
         <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
@@ -291,6 +293,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
             {tela === 'pesquisas' && <Pesquisas />}
+            {tela === 'perfil' && <MeuPerfil usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} />}
             {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} perfil={usuario.perfil} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}

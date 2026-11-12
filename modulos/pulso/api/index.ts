@@ -361,12 +361,18 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
   // ----- Colaboradores: resultados que o RH liberou -----
   /** Rodada que os colaboradores veem: a mais recente com o mínimo de respostas (ou null). */
   const rodadaPublica = (id: number) => listaRodadas(db, id).filter((r) => r.respostas >= MINIMO_RESPOSTAS).at(-1) ?? null;
+  /** Até 3 imagens da pesquisa (perguntas e opções), para a miniatura do cartão. */
+  const imagensDaPesquisa = (id: number): string[] => {
+    const qs = db.prepare('SELECT imagem, opcoes FROM pulso_perguntas WHERE pulso_id = ? ORDER BY ordem, id').all(id) as { imagem: string | null; opcoes: string | null }[];
+    const todas = qs.flatMap((q) => [q.imagem, ...(q.opcoes ? (JSON.parse(q.opcoes) as Opcao[]).map((o) => o.imagem) : [])]);
+    return todas.filter((x): x is string => !!x).slice(0, 3);
+  };
   app.get('/api/pulso/resultados', async (req) => {
     const lista = db.prepare('SELECT p.id, p.pergunta AS titulo, p.liberado_em FROM pulsos p WHERE p.resultado_liberado = 1 ORDER BY p.liberado_em DESC, p.id DESC').all() as { id: number; titulo: string; liberado_em: string | null }[];
     const visto = db.prepare('SELECT 1 FROM pulso_resultados_vistos WHERE usuario_id = ? AND pulso_id = ? AND rodada = ?');
     return lista.flatMap((p) => {
       const r = rodadaPublica(p.id);
-      return r ? [{ id: p.id, titulo: p.titulo, liberado_em: p.liberado_em, respostas: r.respostas, rodada: r.rodada, visto: !!visto.get(req.usuario!.id, p.id, r.rodada) }] : [];
+      return r ? [{ id: p.id, titulo: p.titulo, liberado_em: p.liberado_em, imagens: imagensDaPesquisa(p.id), respostas: r.respostas, rodada: r.rodada, visto: !!visto.get(req.usuario!.id, p.id, r.rodada) }] : [];
     });
   });
   app.post<{ Params: { id: string } }>('/api/pulso/resultados/:id/visto', async (req, resp) => {

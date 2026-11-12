@@ -1,3 +1,4 @@
+import { Icone } from './icones';
 import { useEffect, useRef, useState } from 'react';
 
 export type ModoTema = 'auto' | 'claro' | 'escuro';
@@ -63,6 +64,8 @@ export function useTema() {
 export function PainelTema({ config, mudar }: { config: Config; mudar: (p: Partial<Config>) => void }) {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
+  const [estAberto, setEstAberto] = useState(() => { try { return localStorage.getItem('portal.tema.estilos') === 'aberto'; } catch { return false; } });
+  const alternarEst = () => setEstAberto((v) => { try { localStorage.setItem('portal.tema.estilos', v ? 'fechado' : 'aberto'); } catch { /* só nesta sessão */ } return !v; });
   // Durante o arrasto só o valor mostrado muda; a escala é aplicada ao soltar (evita o painel "pular" sob o mouse).
   const [escalaTmp, setEscalaTmp] = useState(config.escala);
   useEffect(() => setEscalaTmp(config.escala), [config.escala]);
@@ -90,8 +93,8 @@ export function PainelTema({ config, mudar }: { config: Config; mudar: (p: Parti
               <button key={id} aria-pressed={config.modo === id} onClick={() => mudar({ modo: id })}>{nome}</button>
             ))}
           </div>
-          <h3>Estilo</h3>
-          <div className="estilos">
+          <h3 className="conta-recolher"><button type="button" aria-expanded={estAberto} aria-controls="tema-estilos" onClick={alternarEst}><Icone nome="dir" tamanho={14} classe="recolher-seta" />Estilo{!estAberto && <span className="recolher-atual">{ESTILOS.find((e) => e.id === config.estilo)?.nome}</span>}<span className="recolher-dica">{estAberto ? 'Ocultar' : 'Mostrar'}</span></button></h3>
+          <div className="estilos" id="tema-estilos" hidden={!estAberto}>
             {ESTILOS.map((e) => (
               <button key={e.id} aria-pressed={config.estilo === e.id} onClick={() => mudar({ estilo: e.id })}>
                 <span className="amostra" aria-hidden="true">
