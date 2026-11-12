@@ -135,7 +135,7 @@ export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
     <div className="ajuda-pagina">
       <header className="ajuda-intro">
         <h2>Como podemos ajudar?</h2>
-        <p className="suave">Respostas rápidas e os manuais completos do sistema.</p>
+        <p className="suave">{aba === 'manuais' ? 'Manuais completos do sistema' : 'Respostas rápidas'}</p>
       </header>
       <div className="pilulas ajuda-abas" role="group" aria-label="Seção da ajuda">
         <button aria-pressed={aba === 'perguntas'} onClick={() => setAba('perguntas')}>Perguntas frequentes</button>
