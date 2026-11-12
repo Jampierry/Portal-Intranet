@@ -1,6 +1,6 @@
 # CSS do layout
 
-O antigo `portal.css` (2.197 linhas) foi dividido **mecanicamente** em `parte-01.css` … `parte-09.css`, cortando só entre blocos de nível raiz, e é importado **na mesma ordem** em `main.tsx`. A cascata ("o último vence") é a mesma de antes: o CSS compilado ficou idêntico byte a byte.
+O antigo `portal.css` (2.197 linhas) foi dividido **mecanicamente** em `parte-01.css` … `parte-10.css`; a `parte-11.css` (efeito vidro) é nova e vem por último, cortando só entre blocos de nível raiz, e é importado **na mesma ordem** em `main.tsx`. A cascata ("o último vence") é a mesma de antes: o CSS compilado ficou idêntico byte a byte.
 
 Regras daqui em diante:
 - Não reordene os imports de `main.tsx`.

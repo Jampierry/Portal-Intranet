@@ -267,3 +267,7 @@
 - **Docs novos:** `docs/pendencias-ti.md` (checklist de 21 itens para a TI) e `docs/melhorias-futuras.md` reorganizado.
 - **Verificação:** lint 0 erros, typecheck, build e 153 testes OK. As telas novas da Ajuda NÃO foram vistas no navegador por mim; o usuário vem conferindo por screenshot.
 - **Próximo:** (1) manuais por perfil (ex.: Marketing) — aguardando o usuário listar os perfis; (2) `enviar` (push); (3) 2FA TOTP; (4) Playwright; (5) imagens fora do SQLite. Dependem de terceiros: TI, LGPD/marca, e-mail, SSO, antivírus.
+
+## 12/11/2026 (madrugada) — repositório da organização e vidro
+- Enviado ao repositório da organização (`Di-Paula-Moda-Esportiva/Portal-Intranet`, conta `jampierry-silva`) um commit único limpo (branch local `org-main`, remoto `org`): sem `origem-manus`, `web/imagens`, CLAUDE.md nem memória. O trabalho segue na `main` (remoto `origin` pessoal) até a TI liberar a homologação; para atualizar a organização, levar as mudanças da `main` para a `org-main` sem os arquivos do Claude.
+- Efeito vidro no sistema: `web/src/css/parte-11.css` (janelas, menus/painéis flutuantes, dicas, barra superior e abas no celular). Falta conferir no navegador. Ideia anotada: vídeo em banners e tela de entrada.

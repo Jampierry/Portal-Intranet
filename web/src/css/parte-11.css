@@ -1,0 +1,49 @@
+/* ===== Vidro (efeito vitrificado) — mesmo visual da tela de entrada, onde há conteúdo por trás para desfocar =====
+   Onde entra: janelas (pop-ups), menus e painéis flutuantes, dicas, barra superior e abas do celular (a página rola por baixo).
+   Onde NÃO entra: cartões e áreas de leitura sobre o fundo liso (nada para desfocar; só perderia contraste).
+   Contraste: o vidro mantém a cor do cartão em 84–90 %, então o texto continua passando no teste de contraste
+   (no pior caso, o fundo contribui com 16 %). Sem suporte a backdrop-filter, ou com "reduzir transparência" no sistema,
+   fica como antes (cor sólida). Só variáveis do tema, nenhuma cor nova. Carregado por último em main.tsx. */
+:root {
+  --vidro-borda: color-mix(in srgb, var(--texto) 16%, transparent);
+  --vidro-brilho: color-mix(in srgb, var(--texto) 10%, transparent);
+  --vidro-desfoque: blur(22px) saturate(1.5);
+  --vidro-desfoque-leve: blur(14px) saturate(1.3);
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  @media not (prefers-reduced-transparency: reduce) {
+    /* Janelas (pop-ups do sistema todo). O fundo atrás fica desfocado e um pouco escurecido. */
+    .janela {
+      background: linear-gradient(150deg, color-mix(in srgb, var(--card) 90%, transparent), color-mix(in srgb, var(--card) 84%, transparent));
+      -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque);
+      border: 1px solid var(--vidro-borda);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .4), inset 0 1px 0 var(--vidro-brilho);
+    }
+    .janela::backdrop { background: rgba(10, 8, 12, .5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .janela header { background: transparent; }
+    .janela footer { background: color-mix(in srgb, var(--fundo) 55%, transparent); }
+
+    /* Menus e painéis que abrem por cima da tela */
+    .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel {
+      background: linear-gradient(150deg, color-mix(in srgb, var(--card) 90%, transparent), color-mix(in srgb, var(--card) 84%, transparent));
+      -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque);
+      border-color: var(--vidro-borda);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .3), inset 0 1px 0 var(--vidro-brilho);
+    }
+    /* Dicas pequenas do menu e da barra de aplicativos (fundo escuro do menu) */
+    .lancador-dica, .lancador-ico .dica {
+      background: color-mix(in srgb, var(--menu) 88%, transparent);
+      -webkit-backdrop-filter: var(--vidro-desfoque-leve); backdrop-filter: var(--vidro-desfoque-leve);
+    }
+
+    /* Celular e tablet: a barra superior e as abas ficam fixas e a página rola por baixo delas */
+    @media (max-width: 860px) {
+      .topo { background: color-mix(in srgb, var(--vinho) 8%, color-mix(in srgb, var(--fundo) 86%, transparent)); -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque); }
+      :root[data-tema=escuro] .topo { background: color-mix(in srgb, var(--vinho) 12%, color-mix(in srgb, var(--fundo) 86%, transparent)); }
+      .abas-mobile { background: color-mix(in srgb, var(--card) 86%, transparent); -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque); border-top-color: var(--vidro-borda); }
+      .cortina-lancador { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+      .lancador.aberto { background: color-mix(in srgb, var(--card) 88%, transparent); -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque); }
+    }
+  }
+}
