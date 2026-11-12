@@ -7,7 +7,10 @@ import { ehVideo, VideoFundo } from './midia';
 /** Configuração da lateral da tela de entrada (vem de /api/entrada; editada em Configurações › Tela de entrada). */
 export interface ConfigEntrada {
   fundo: 'cor' | 'imagem' | 'carrossel';
+  /** Carrossel: várias imagens/vídeos. */
   imagens: string[];
+  /** Imagem ou vídeo fixo (lista própria, no máximo 1). */
+  fixa?: string[];
   intervalo: number;
   escurecer: number;
   linhas: string[];
@@ -15,7 +18,7 @@ export interface ConfigEntrada {
   texto_extra: string;
 }
 export const PADRAO_ENTRADA: ConfigEntrada = {
-  fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '',
+  fundo: 'cor', imagens: [], fixa: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '',
 };
 
 let guardada: ConfigEntrada | null = null;
@@ -36,7 +39,7 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
   const [ant, setAnt] = useState(-1); // imagem que está saindo: mantém o movimento até terminar o fade
   const salva = useEmpresa();
   const empresa = rascunho ?? salva;
-  const imagens = cfg.fundo === 'cor' ? [] : cfg.fundo === 'imagem' ? cfg.imagens.slice(0, 1) : cfg.imagens;
+  const imagens = cfg.fundo === 'cor' ? [] : cfg.fundo === 'imagem' ? (cfg.fixa ?? []).slice(0, 1) : cfg.imagens;
   const [pausado, setPausado] = useState(false);
   useEffect(() => { setI(0); setAnt(-1); }, [cfg.fundo, imagens.length]); // recomeça da primeira imagem só quando a configuração muda
   useEffect(() => {

@@ -58,7 +58,7 @@ test('vídeo de fundo da entrada: só o administrador envia e só é público se
   const { url } = (await app.inject({ method: 'POST', url: '/api/gestao/entrada/videos', headers: { ...adm, 'content-type': 'video/mp4' }, payload: MP4 })).json<{ url: string }>();
   assert.match(url, /^\/api\/publico\/videos\/[a-f0-9]{24}\.mp4$/);
   assert.equal((await app.inject({ url })).statusCode, 404); // ainda fora da configuração
-  const salvo = await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'imagem', imagens: [url] } });
+  const salvo = await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'imagem', fixa: [url] } });
   assert.equal(salvo.statusCode, 200);
   const g = await app.inject({ url: url, headers: { range: 'bytes=0-3' } }); // sem login: é a tela de entrada
   assert.equal(g.statusCode, 206);

@@ -102,3 +102,25 @@ test('tela de entrada: só quem tem permissão altera; imagem só é pública se
   assert.equal(entregue.headers['content-type'], 'image/svg+xml');
   assert.match(String(entregue.headers['content-security-policy']), /sandbox/);
 });
+
+test('entrada: imagem fixa e carrossel têm listas separadas; configuração antiga (fixa dentro de imagens) é migrada', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const sobe = async () => (await app.inject({ method: 'POST', url: '/api/gestao/entrada/imagens', headers: { ...adm, 'content-type': 'image/png' }, payload: PNG })).json<{ url: string }>().url;
+  const [a, b, c] = [await sobe(), await sobe(), await sobe()];
+  // carrossel com duas, fixa com uma: nenhuma mistura
+  const ok = await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'carrossel', imagens: [a, b], fixa: [c] } });
+  assert.equal(ok.statusCode, 200);
+  const e = (await app.inject({ url: '/api/entrada' })).json<{ imagens: string[]; fixa: string[] }>();
+  assert.deepEqual(e.imagens, [a, b]);
+  assert.deepEqual(e.fixa, [c]);
+  // fixa aceita no máximo uma; fixa vazia com fundo "imagem" é recusada
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'imagem', fixa: [a, b] } })).statusCode, 400);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'imagem', imagens: [a], fixa: [] } })).statusCode, 400);
+  // configuração antiga: fundo "imagem" com a imagem em `imagens`
+  db.prepare('INSERT OR REPLACE INTO portal_config (chave, valor, atualizado_em) VALUES (?, ?, ?)').run('entrada', JSON.stringify({ fundo: 'imagem', imagens: [a] }), new Date().toISOString());
+  const velha = (await app.inject({ url: '/api/entrada' })).json<{ imagens: string[]; fixa: string[] }>();
+  assert.deepEqual(velha.fixa, [a]);
+  assert.deepEqual(velha.imagens, []);
+  assert.equal((await app.inject({ url: a })).statusCode, 200); // a imagem fixa continua pública
+});

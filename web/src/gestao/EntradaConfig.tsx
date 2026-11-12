@@ -39,7 +39,10 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
     try { const urls: string[] = []; for (const a of Array.from(arqs)) urls.push(await enviar(a)); aoSubir(urls); }
     catch (e) { setErro((e as Error).message); } finally { setEnviando(false); }
   };
-  const mover = (k: number, d: -1 | 1) => { const l = [...cfg.imagens]; const j = k + d; if (j < 0 || j >= l.length) return; [l[k], l[j]] = [l[j], l[k]]; set({ imagens: l }); };
+  // Cada tipo de fundo tem a sua própria lista: o que está no carrossel não aparece na imagem fixa, e vice-versa.
+  const lista = (cfg.fundo === 'imagem' ? cfg.fixa : cfg.imagens) ?? [];
+  const mudarLista = (l: string[]) => set(cfg.fundo === 'imagem' ? { fixa: l.slice(0, 1) } : { imagens: l.slice(0, 8) });
+  const mover = (k: number, d: -1 | 1) => { const l = [...lista]; const j = k + d; if (j < 0 || j >= l.length) return; [l[k], l[j]] = [l[j], l[k]]; mudarLista(l); };
   const salvar = async () => {
     setErro(''); setAviso('');
     try { const r = await api<ConfigEntrada>('/api/gestao/entrada', cfg, 'PUT'); setCfg({ ...PADRAO_ENTRADA, ...r }); setSalvo(JSON.stringify({ ...PADRAO_ENTRADA, ...r })); setAviso('Tela de entrada salva. Vale para a próxima vez que alguém abrir o login.'); }
@@ -68,22 +71,22 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
             {comImagem && (
               <>
                 <div className="entcfg-imgs">
-                  {cfg.imagens.map((u, k) => (
+                  {lista.map((u, k) => (
                     <div key={u} className="entcfg-img">
                       {ehVideo(u) ? <video src={u} muted loop playsInline autoPlay aria-label={`Vídeo ${k + 1}`} /> : <img src={u} alt={`Imagem ${k + 1}`} />}
                       {edita && (
                         <span className="entcfg-img-acoes">
                           {cfg.fundo === 'carrossel' && <><button type="button" aria-label="Mover para antes" disabled={k === 0} onClick={() => mover(k, -1)}><Icone nome="esq" tamanho={12} /></button>
-                            <button type="button" aria-label="Mover para depois" disabled={k === cfg.imagens.length - 1} onClick={() => mover(k, 1)}><Icone nome="dir" tamanho={12} /></button></>}
-                          <button type="button" aria-label="Remover imagem" onClick={() => set({ imagens: cfg.imagens.filter((x) => x !== u) })}>×</button>
+                            <button type="button" aria-label="Mover para depois" disabled={k === lista.length - 1} onClick={() => mover(k, 1)}><Icone nome="dir" tamanho={12} /></button></>}
+                          <button type="button" aria-label="Remover imagem" onClick={() => mudarLista(lista.filter((x) => x !== u))}>×</button>
                         </span>
                       )}
                     </div>
                   ))}
-                  {edita && (cfg.fundo === 'carrossel' ? cfg.imagens.length < 8 : cfg.imagens.length < 1) && (
+                  {edita && (cfg.fundo === 'carrossel' ? lista.length < 8 : lista.length < 1) && (
                     <label className="entcfg-add">{enviando ? 'Enviando…' : '+ Adicionar imagem ou vídeo'}
                       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple={cfg.fundo === 'carrossel'} className="so-leitor" disabled={enviando}
-                        onChange={(e) => { void subir(e.target.files, (urls) => set({ imagens: cfg.fundo === 'carrossel' ? [...cfg.imagens, ...urls].slice(0, 8) : urls.slice(0, 1) })); e.target.value = ''; }} />
+                        onChange={(e) => { void subir(e.target.files, (urls) => mudarLista(cfg.fundo === 'carrossel' ? [...lista, ...urls] : urls)); e.target.value = ''; }} />
                     </label>
                   )}
                 </div>

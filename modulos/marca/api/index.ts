@@ -27,7 +27,10 @@ export interface ConfigEmpresa {
 }
 export interface ConfigEntrada {
   fundo: 'cor' | 'imagem' | 'carrossel';
+  /** Carrossel: várias imagens/vídeos, na ordem. */
   imagens: string[];
+  /** Imagem ou vídeo fixo (no máximo 1). Lista própria: não se mistura com a do carrossel. */
+  fixa: string[];
   intervalo: number;
   escurecer: number;
   linhas: string[];
@@ -40,7 +43,7 @@ export const PADRAO_EMPRESA: ConfigEmpresa = {
   lema: ['SONHAR', 'FAZ PARTE', 'DO NOSSO', 'MOVIMENTO'], rotulo_destaque: 'DESTAQUE', lema_destaque: ['PESSOAS', 'MOVIMENTO', 'RESULTADOS', 'SEMPRE'],
   logo: null, logo_nome: null, logo_nome_escuro: null, feriados_municipais: [], fundacao: null,
 };
-export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
+export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], fixa: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
 
 const URL_IMAGEM = /^\/api\/publico\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/;
 /** Fundo da tela de entrada: imagem ou vídeo curto (MP4/WebM). */
@@ -56,7 +59,14 @@ function gravar(db: Banco, chave: string, valor: unknown) {
     .run(chave, JSON.stringify(valor), new Date().toISOString());
 }
 export const lerEmpresa = (db: Banco) => ler(db, 'empresa', PADRAO_EMPRESA);
-export const lerEntrada = (db: Banco) => ler(db, 'entrada', PADRAO_ENTRADA);
+/** Configurações antigas guardavam a imagem fixa dentro de `imagens`; passa para a lista própria da fixa. */
+export const lerEntrada = (db: Banco): ConfigEntrada => {
+  const e = ler(db, 'entrada', PADRAO_ENTRADA);
+  if (!Array.isArray(e.fixa)) e.fixa = [];
+  if (e.fundo === 'imagem' && e.fixa.length === 0 && e.imagens.length > 0) { e.fixa = e.imagens.slice(0, 1); e.imagens = []; }
+  return e;
+};
+const urlsDaEntrada = (db: Banco) => { const e = lerEntrada(db); return [...e.imagens, ...e.fixa]; };
 
 const curto = (v: unknown, rotulo: string, max: number, obrigatorio = false) => {
   const s = String(v ?? '').trim();
@@ -94,13 +104,16 @@ function validarEntrada(c: Record<string, unknown>): ConfigEntrada {
   const fundo = String(c.fundo ?? 'cor');
   if (!['cor', 'imagem', 'carrossel'].includes(fundo)) throw new ErroValidacao('Fundo: escolha cor, imagem ou carrossel.');
   const imagens = Array.isArray(c.imagens) ? c.imagens.map(String) : [];
-  if (imagens.length > 8) throw new ErroValidacao('Imagens: no máximo 8.');
-  if (imagens.some((u) => !URL_FUNDO.test(u))) throw new ErroValidacao('Imagens: use só imagens ou vídeos enviados por esta tela.');
-  if (fundo !== 'cor' && imagens.length === 0) throw new ErroValidacao('Envie ao menos uma imagem ou vídeo, ou escolha o fundo em cor.');
+  const fixa = Array.isArray(c.fixa) ? c.fixa.map(String) : [];
+  if (imagens.length > 8) throw new ErroValidacao('Carrossel: no máximo 8 imagens ou vídeos.');
+  if (fixa.length > 1) throw new ErroValidacao('Imagem fixa: apenas uma imagem ou vídeo.');
+  if ([...imagens, ...fixa].some((u) => !URL_FUNDO.test(u))) throw new ErroValidacao('Imagens: use só imagens ou vídeos enviados por esta tela.');
+  if (fundo === 'imagem' && fixa.length === 0) throw new ErroValidacao('Envie a imagem ou o vídeo fixo, ou escolha outro tipo de fundo.');
+  if (fundo === 'carrossel' && imagens.length === 0) throw new ErroValidacao('Envie ao menos uma imagem ou vídeo para o carrossel, ou escolha outro tipo de fundo.');
   const intervalo = Number(c.intervalo ?? 6), escurecer = Number(c.escurecer ?? 35);
   if (!Number.isInteger(intervalo) || intervalo < 3 || intervalo > 30) throw new ErroValidacao('Tempo de troca: entre 3 e 30 segundos.');
   if (!Number.isInteger(escurecer) || escurecer < 0 || escurecer > 80) throw new ErroValidacao('Escurecer a imagem: entre 0 e 80.');
-  return { fundo: fundo as ConfigEntrada['fundo'], imagens, intervalo, escurecer, linhas: listaDeLinhas(c.linhas, 'Frase'), rodape: curto(c.rodape, 'Texto pequeno', 60), texto_extra: curto(c.texto_extra, 'Texto extra', 200) };
+  return { fundo: fundo as ConfigEntrada['fundo'], imagens, fixa, intervalo, escurecer, linhas: listaDeLinhas(c.linhas, 'Frase'), rodape: curto(c.rodape, 'Texto pequeno', 60), texto_extra: curto(c.texto_extra, 'Texto extra', 200) };
 }
 
 export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
@@ -111,7 +124,7 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
   app.get<{ Params: { nome: string } }>('/api/publico/imagens/:nome', async (req, resp) => {
     const m = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/.exec(req.params.nome);
     const url = `/api/publico/imagens/${req.params.nome}`;
-    const emp = lerEmpresa(db), usada = lerEntrada(db).imagens.includes(url) || emp.logo === url || emp.logo_nome === url || emp.logo_nome_escuro === url;
+    const emp = lerEmpresa(db), usada = urlsDaEntrada(db).includes(url) || emp.logo === url || emp.logo_nome === url || emp.logo_nome_escuro === url;
     const img = m && usada ? lerImagem(db, req.params.nome) : null;
     if (!img) return resp.code(404).send({ erro: 'Imagem não encontrada.' });
     return enviarImagem(resp, img, true);
@@ -119,7 +132,7 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
 
   // Vídeo de fundo da entrada: só entrega o que a configuração usa (o login aparece antes de entrar).
   app.get<{ Params: { nome: string } }>('/api/publico/videos/:nome', async (req, resp) => {
-    const usado = lerEntrada(db).imagens.includes(`/api/publico/videos/${req.params.nome}`);
+    const usado = urlsDaEntrada(db).includes(`/api/publico/videos/${req.params.nome}`);
     if (!usado || !enviarVideo(db, req, resp, req.params.nome, true)) return resp.code(404).send({ erro: 'Vídeo não encontrado.' });
     return resp;
   });
@@ -153,7 +166,7 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
   app.put('/api/gestao/entrada', { preHandler: exigirPerm('cfg.entrada.editar') }, async (req) => {
     const nova = validarEntrada(corpoObjeto(req.body));
     gravar(db, 'entrada', nova);
-    auditar(db, req.usuario!.id, 'entrada_alterada', { fundo: nova.fundo, imagens: nova.imagens.length });
+    auditar(db, req.usuario!.id, 'entrada_alterada', { fundo: nova.fundo, imagens: nova.imagens.length, fixa: nova.fixa.length });
     return nova;
   });
 }
