@@ -262,7 +262,7 @@ export function ativarExemplo(db: Banco, opcoes: { producao?: boolean; hoje?: Da
     const colegas: number[] = [];
     for (let k = 1; k <= 30; k++) {
       const login = `colega${String(k).padStart(2, '0')}.demo`;
-      colegas.push(unico('usuarios', 'SELECT id FROM usuarios WHERE login = ?', [login], 'INSERT INTO usuarios (login, nome, senha_hash, perfil, criado_em) VALUES (?, ?, ?, ?, ?)',
+      colegas.push(unico('usuarios', 'SELECT id FROM usuarios WHERE login = ?', [login], 'INSERT INTO usuarios (login, nome, senha_hash, perfil, ativo, criado_em) VALUES (?, ?, ?, ?, 0, ?)',
         [login, `Colaborador ${String(k).padStart(2, '0')} (exemplo)`, hashSenha(randomBytes(18).toString('hex')), 'consulta', agora]) as number);
     }
     let semente = 12345;
