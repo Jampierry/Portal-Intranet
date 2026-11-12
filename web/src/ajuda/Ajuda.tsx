@@ -132,7 +132,11 @@ export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
   const termo = q.trim().toLocaleLowerCase('pt-BR');
   const lista = TOPICOS.filter((t) => (grupo === 'Todos' || t.grupo === grupo) && (!termo || t.titulo.toLocaleLowerCase('pt-BR').includes(termo)));
   return (
-    <>
+    <div className="ajuda-pagina">
+      <header className="ajuda-intro">
+        <h2>Como podemos ajudar?</h2>
+        <p className="suave">Respostas rápidas e os manuais completos do sistema.</p>
+      </header>
       <div className="pilulas ajuda-abas" role="group" aria-label="Seção da ajuda">
         <button aria-pressed={aba === 'perguntas'} onClick={() => setAba('perguntas')}>Perguntas frequentes</button>
         <button aria-pressed={aba === 'manuais'} onClick={() => setAba('manuais')}>Manuais do sistema</button>
@@ -159,6 +163,6 @@ export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
       </div>
       <p className="suave">Não achou o que procurava? <button className="link-ver" onClick={() => irPara('pessoas')}>Veja os contatos por área <Icone nome="seta" tamanho={15} /></button> ou leia os <button className="link-ver" onClick={() => setAba('manuais')}>manuais do sistema <Icone nome="seta" tamanho={15} /></button></p>
       </>}
-    </>
+    </div>
   );
 }
