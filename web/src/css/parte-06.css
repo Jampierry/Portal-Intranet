@@ -1,0 +1,246 @@
+/* Logo sobre o menu / lateral do login: versão por cor do menu (data-menu), não pelo tema */
+:root[data-menu=claro] .logo-menu-escuro, :root:not([data-menu=claro]) .logo-menu-claro { display: none; }
+
+/* Calendário do menu quando o menu é CLARO: cartão branco com borda, dia selecionado na cor de destaque e pontos em tons escuros (os pastéis só funcionam sobre fundo escuro) */
+:root[data-menu=claro] .cal-menu { background: #fff; border: 1px solid var(--menu-linha); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+:root[data-menu=claro] .cal-sem { opacity: .8; }
+:root[data-menu=claro] .cal-dia:hover, :root[data-menu=claro] .cal-nav:hover { background: rgba(var(--menu-veu), .07); }
+:root[data-menu=claro] .cal-dia.sel { background: var(--vinho); color: var(--sobre-acento); }
+:root[data-menu=claro] .cal-dia.sel .cal-pontos i { box-shadow: 0 0 0 1px #fff; }
+:root[data-menu=claro] .cal-menu .k-feriado { --c: #cf222e; } :root[data-menu=claro] .cal-menu .k-municipal { --c: #0969da; } :root[data-menu=claro] .cal-menu .k-facultativo { --c: #bf3989; } :root[data-menu=claro] .cal-menu .k-evento { --c: #1a7f37; }
+:root[data-menu=claro] .cal-menu .k-ag0 { --c: #0969da; } :root[data-menu=claro] .cal-menu .k-ag1 { --c: #9a6700; } :root[data-menu=claro] .cal-menu .k-ag2 { --c: #1a7f37; } :root[data-menu=claro] .cal-menu .k-ag3 { --c: #bf3989; }
+:root[data-menu=claro] .cal-legenda { background: #fff; box-shadow: 0 6px 18px rgba(0, 0, 0, .15); }
+/* dias do calendário do menu: círculo (não oval) para o destaque do dia atual e do selecionado */
+.cal-dia { width: 24px; justify-self: center; }
+@media (max-height: 800px) and (min-width: 861px) { .cal-dia { width: 20px; } }
+@media (max-height: 640px) and (min-width: 861px) { .cal-dia { width: 17px; } }
+
+/* Menu recolhido: o dia de hoje em miniatura, na base do menu */
+.dia-mini { margin-top: auto; align-self: center; width: 40px; padding: 4px 0 5px; border-radius: 12px; border: 1px solid var(--menu-linha); background: rgba(var(--menu-veu), .06); color: var(--menu-texto); font: inherit; cursor: pointer; display: grid; justify-items: center; gap: 0; transition: background .15s, border-color .15s; }
+.dia-mini:hover { background: rgba(var(--menu-veu), .12); border-color: var(--coral); }
+.dia-mini:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+.dia-mini-mes { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; color: var(--coral); line-height: 1.2; }
+.dia-mini b { font-size: 16px; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+.dia-mini-hora { font-size: 9.5px; font-weight: 600; line-height: 1.3; color: var(--menu-suave); font-variant-numeric: tabular-nums; }
+:root[data-menu=claro] .dia-mini { background: #fff; }
+
+/* Barra superior: dica da tela no "i" e faixa com o comunicado urgente (o espaço central antes era um texto fixo) */
+.dica-tela { position: relative; display: inline-flex; margin-left: -6px; }
+.dica-tela-btn { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--suave); display: grid; place-items: center; cursor: pointer; }
+.dica-tela-btn:hover, .dica-tela-btn[aria-expanded=true] { color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 14%, transparent); }
+.dica-tela-painel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: max-content; max-width: min(340px, 80vw); padding: 10px 12px; border-radius: 12px; background: var(--card); color: var(--texto); border: 1px solid var(--linha); box-shadow: 0 10px 28px rgba(0, 0, 0, .22); font-size: 12.5px; line-height: 1.4; font-weight: 500; white-space: normal; }
+.faixa-espaco { flex: 1; min-width: 0; }
+@media (max-width: 860px) { .faixa-espaco { display: none; } }
+
+/* Início: aniversariantes do mês e novos colaboradores (cadastro do RH em Publicar) */
+.pessoas-mes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: stretch; }
+.pm-card .pessoa.pm-hoje .pessoa-periodo { background: var(--coral); }
+.destaques.compacto.pm-card .pessoa .area { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pm-col { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.pm-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; flex: 0 0 100%; min-width: 0; }
+.pm-janela { overflow: hidden; min-width: 0; min-height: 204px; }   /* altura de 3 linhas: os três blocos ficam alinhados */
+.pm-trilho { display: flex; transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
+.pm-col .sec-topo { align-items: center; }
+.pm-col .sec-topo h2 { font-size: 16px; }
+.pm-setas { display: inline-flex; gap: 6px; margin-left: auto; }
+.pm-setas .seta-car { width: 26px; height: 26px; box-shadow: none; }
+.pm-col .pontos { margin-top: 4px; }
+.pm-lista li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; min-height: 62px; border-radius: 12px; border: 1px solid var(--linha-suave); }
+.pm-lista li.pm-hoje { border-color: var(--coral); background: color-mix(in srgb, var(--coral) 10%, transparent); }
+.pm-lista li > div { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.pm-lista b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-lista small { color: var(--suave); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-lista em { color: var(--suave); font-size: 11.5px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-data { flex: none; font-size: 12px; font-weight: 700; color: var(--vinho-texto); }
+.pm-hoje .pm-data { color: var(--coral); text-transform: uppercase; letter-spacing: .06em; }
+.pm-avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: color-mix(in srgb, var(--vinho) 22%, var(--card)); color: var(--vinho-texto); font-weight: 800; font-size: 13px; }
+.pm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Celular/tablet: o cartão de documentos não pode colapsar (flex-basis 0 só vale na coluna da direita do desktop) */
+@media (max-width: 1180px) {
+  .inicio-lateral > .cartao-sec:last-child { flex: 1 1 300px; min-height: 0; }
+  .inicio-lateral > .cartao-sec:last-child .mini-lista { flex: none; max-height: none; overflow: visible; }
+}
+
+/* Confirmação de leitura de comunicado */
+.leitura-pede { margin-top: 18px; padding: 14px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--coral) 55%, transparent); background: color-mix(in srgb, var(--coral) 10%, var(--card)); display: grid; gap: 10px; justify-items: start; }
+.leitura-pede p { margin: 0; }
+.leitura-ok { margin: 18px 0 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 99px; background: var(--ok-fundo); color: var(--ok); font-weight: 700; font-size: 13px; }
+.leitura-rel { display: grid; gap: 12px; }
+.leitura-barra { height: 10px; border-radius: 99px; background: var(--afundado); overflow: hidden; }
+.leitura-barra > i { display: block; height: 100%; background: var(--ok); }
+.leitura-listas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.leitura-listas ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+.leitura-listas li { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: var(--afundado); }
+
+/* Aniversário da empresa (contagem regressiva) */
+.aniv-empresa { margin: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--raio); border: 1px solid var(--linha-suave); background: color-mix(in srgb, var(--vinho) 10%, var(--card)); color: var(--texto); }
+.aniv-empresa svg { flex: none; color: var(--vinho-texto); }
+.aniv-empresa.hoje { background: color-mix(in srgb, var(--coral) 16%, var(--card)); border-color: var(--coral); font-size: 15px; }
+
+/* Pesquisa de pulso (Início e resultado em Publicar) */
+.pulso-card { display: grid; gap: 12px; }
+/* Pop-up da pesquisa de pulso: sobre todo o app */
+.pulso-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(8, 6, 12, .55); }
+.pulso-modal { position: relative; display: grid; gap: 12px; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--card); color: var(--texto); border: 1px solid var(--linha); border-radius: var(--raio); padding: 20px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); outline: none; }
+.pulso-modal .sec-topo { margin: 0; padding-right: 30px; }
+.pulso-fechar { position: absolute; top: 10px; right: 12px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: var(--suave); font-size: 22px; line-height: 1; cursor: pointer; }
+.pulso-fechar:hover { background: var(--hover); color: var(--texto); }
+.pulso-modal .pulso-notas, .pulso-modal .pulso-coment-campo { max-width: none; }
+.pulso-acoes { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.pulso-obrigado { margin: 0; padding-right: 30px; display: flex; align-items: center; gap: 8px; }
+.pulso-card .sec-topo { margin: 0; }
+.pulso-pergunta { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.pulso-notas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; max-width: 520px; }
+.pulso-notas button { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+.pulso-notas button span { font-size: 26px; line-height: 1.1; }
+.pulso-notas button small { font-size: 11px; color: var(--suave); }
+.pulso-notas button:hover { background: var(--hover); }
+.pulso-notas button.on { border-color: var(--vinho); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--vinho) 40%, transparent); }
+.pulso-coment-campo { display: grid; gap: 4px; font-weight: 600; font-size: 13px; max-width: 520px; }
+.pulso-coment-campo textarea { font-weight: 400; resize: vertical; }
+.pulso-res { display: grid; gap: 10px; }
+.pulso-barras { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pulso-barras li { display: grid; grid-template-columns: 26px 14px minmax(0, 1fr) 28px; gap: 8px; align-items: center; }
+.pulso-barra { height: 12px; border-radius: 99px; background: var(--afundado); overflow: hidden; }
+.pulso-barra i { display: block; height: 100%; background: var(--vinho); border-radius: 99px; }
+.pulso-coment { margin: 0; padding-left: 18px; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
+@media (max-width: 520px) { .pulso-notas small { display: none; } }
+
+/* Menu da conta (abre como o menu de aparência) */
+.conta-painel { width: 340px; max-height: calc((100vh / var(--zoom, 1)) - 90px); overflow-y: auto; }
+.conta-topo { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--linha-suave); }
+.conta-quem { display: grid; min-width: 0; flex: 1; line-height: 1.25; }
+.conta-quem b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conta-sair { flex: none; color: var(--erro); }
+.conta-sair:hover { background: var(--erro-fundo); }
+.conta-painel .avgal { grid-template-columns: repeat(auto-fill, 40px); gap: 6px; }
+.conta-painel .entrar-campos { gap: 6px; }
+.conta-painel .entrar-campos input { height: 34px; font-size: 13px; }
+@media (max-width: 860px) { .conta-painel { right: -8px; width: min(340px, calc((100vw / var(--zoom, 1)) - 24px)); } }
+
+/* Entrada: a imagem preenche toda a lateral esquerda (altura da tela inteira, sem bordas de desfoque nem de zoom) */
+.entrar { min-height: 100vh; min-height: 100dvh; align-items: stretch; }
+.entrar-marca { align-self: stretch; min-height: 100vh; min-height: 100dvh; }
+.entrar-marca .entrar-fundo-img { inset: -16px; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.entrar-marca.previa { min-height: 320px; }
+@media (max-width: 860px) { .entrar-marca { min-height: 260px; } }
+
+/* Comunicados (computador): cards menores numa área própria com rolagem fina; filtros e painel da marca ficam fixos ao lado, terminando na mesma linha de baixo. */
+@media (min-width: 1181px) {
+  /* ocupa o que sobra da janela, como o Início: o rodapé fica no fim com o mesmo espaçamento */
+  .conteudo > .com-layout { flex: 1 1 0; height: auto; min-height: 380px; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .com-principal { overflow: hidden; min-height: 0; }
+  .com-lateral { min-height: 0; }
+  .com-lateral .painel-marca { flex: none; min-height: 120px; }
+  .com-lateral .painel-lateral { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+}
+.grade-com:not(.linha) { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 9px; }
+.grade-com:not(.linha) .capa-card { height: 56px; }
+.grade-com:not(.linha) .cartao-com-corpo { padding: 7px 9px 6px; gap: 2px; }
+.grade-com:not(.linha) .cartao-com h3 { font-size: 12px; line-height: 1.2; }
+.grade-com:not(.linha) .cartao-com p { font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.grade-com:not(.linha) .cartao-com .cat { font-size: 9.5px; }
+.grade-com:not(.linha) .cartao-com footer { font-size: 10.5px; padding-top: 4px; }
+
+/* Limite inferior padrão de todas as telas (computador): o rodapé fica sempre colado no fim da janela, com o mesmo respiro embaixo,
+   e as telas que rolam terminam nele depois do conteúdo. O calendário também mostra o rodapé. */
+@media (min-width: 861px) {
+  .conteudo { padding-bottom: 14px; }
+  .conteudo > .rodape-portal { flex: none; margin-top: auto; padding: 8px 0 0; font-size: 11px; line-height: 1.3; }
+}
+
+/* Painel de Temas: o título fica fixo e só a lista de temas rola (barra fina) */
+@media (min-width: 1181px) {
+  .com-lateral .painel-lateral { display: flex; flex-direction: column; overflow: hidden; }
+  .com-lateral .painel-lateral h2 { flex: none; }
+  .com-lateral .painel-lateral .temas { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .com-lateral .painel-lateral .temas::-webkit-scrollbar { width: 6px; }
+  .com-lateral .painel-lateral .temas::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+}
+
+/* Telas com abas e tabela (Publicar e Configurações), computador: cabeçalho, abas e barra de ações ficam fixos; só a tabela rola (barra fina, títulos das colunas fixos).
+   O limite inferior e o rodapé seguem o padrão das outras telas. */
+@media (min-width: 861px) and (min-height: 560px) {
+  .meio:has(.conteudo > .crud:not(.integracoes) .rolagem) { overflow: hidden; scrollbar-gutter: auto; }
+  .conteudo:has(> .crud:not(.integracoes) .rolagem) { overflow: hidden; }
+  .conteudo > .crud:not(.integracoes):has(.rolagem) { flex: 1 1 0; min-height: 0; }
+  .conteudo > .crud:not(.integracoes) .rolagem { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .crud .rolagem::-webkit-scrollbar { width: 6px; height: 6px; }
+  .crud .rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .crud .rolagem::-webkit-scrollbar-track { background: transparent; }
+  .crud .dados th { position: sticky; top: 0; z-index: 2; }
+}
+
+/* Abas de Publicar e Configurações com cara de aba: a aberta se junta ao conteúdo; as outras ficam mais apagadas. */
+.abas-gestao { gap: 3px; padding: 0 2px; border-bottom: 1px solid var(--linha); align-items: flex-end; }
+.abas-gestao button {
+  margin-bottom: -1px; padding: 9px 16px 8px; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0;
+  background: color-mix(in srgb, var(--afundado) 70%, transparent); color: var(--suave); font: 600 13px var(--fonte); cursor: pointer; transition: background .15s, color .15s;
+}
+.abas-gestao button:hover { background: var(--hover); color: var(--texto); }
+.abas-gestao button[aria-selected=true] {
+  background: var(--card); color: var(--vinho-texto); font-weight: 700; border-color: var(--linha); border-top: 3px solid var(--vinho);
+  padding-top: 7px; position: relative; box-shadow: 0 1px 0 var(--card);
+}
+.abas-gestao button:focus-visible { outline: 2px solid var(--vinho); outline-offset: -2px; }
+
+/* Telas estreitas e celular: as abas continuam em formato de pasta, uma fileira sobre a outra, mais compactas; cada fileira se estica para ocupar toda a largura. */
+@media (max-width: 860px) {
+  .abas-gestao { flex-wrap: wrap; gap: 3px 2px; padding: 0 2px; }
+  .abas-gestao button { flex: 1 1 auto; max-width: calc(50% - 2px); padding: 7px 8px 6px; font-size: 12px; line-height: 1.15; white-space: nowrap; text-align: center; }
+  .abas-gestao button[aria-selected=true] { padding: 5px 8px 6px; }
+  .abas-gestao .slot-dica { flex: none; padding: 0 2px 0 4px; }
+  .abas-gestao .slot-dica:empty { display: none; }
+}
+@container (max-width: 760px) {
+  .abas-gestao { flex-wrap: wrap; gap: 3px 2px; padding: 0 2px; }
+  .abas-gestao button { flex: 1 1 auto; max-width: calc(50% - 2px); padding: 7px 8px 6px; font-size: 12px; line-height: 1.15; white-space: nowrap; text-align: center; }
+  .abas-gestao button[aria-selected=true] { padding: 5px 8px 6px; }
+  .abas-gestao .slot-dica { flex: none; padding: 0 2px 0 4px; }
+  .abas-gestao .slot-dica:empty { display: none; }
+}
+
+/* Comunicados (computador): o destaque e o título "Mais comunicados" ficam fixos; só a lista de cards rola (barra fina). */
+@media (min-width: 1181px) {
+  .com-principal .com-mais { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .com-principal .com-mais .barra { flex: none; }
+  .com-rolagem { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 8px 6px 2px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .com-rolagem::-webkit-scrollbar { width: 6px; }
+  .com-rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .com-rolagem::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+}
+.com-principal > .destaque-com { flex: none; }
+
+/* Todas as telas (computador): a janela não rola. Topo, abas e rodapé ficam sempre visíveis; a barra de rolagem fica dentro da tela (área de conteúdo). */
+.coluna-tela { display: contents; }
+@media (min-width: 861px) {
+  .corpo .meio { overflow: hidden; scrollbar-gutter: auto; }
+  .meio .coluna-tela { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+  .meio .coluna-tela > .conteudo { flex: 1 1 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-bottom: 14px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .coluna-tela > .conteudo::-webkit-scrollbar { width: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+  .coluna-tela > .rodape-portal { flex: none; margin: 0 20px; padding: 8px 0 10px; font-size: 11px; line-height: 1.3; }
+  /* abas fixas no alto da área rolável */
+  .conteudo > .abas-gestao { position: sticky; top: 0; z-index: 5; background: var(--fundo); padding-top: 4px; }
+}
+
+/* Comunicados (computador): grade de 6 colunas e 3 linhas visíveis; cada card tem 1/3 da altura da área, o resto rola. */
+@media (min-width: 1181px) {
+  .com-rolagem { container-type: size; }
+  .com-rolagem .grade-com:not(.linha) { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: max(128px, calc((100cqh - 8px - 18px) / 3)); gap: 9px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com { min-height: 0; }
+  .com-rolagem .grade-com:not(.linha) .capa-card { flex: 1 1 0; height: auto; min-height: 30px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com-corpo { flex: none; padding: 6px 9px 5px; gap: 1px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com p { -webkit-line-clamp: 1; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com footer { padding-top: 2px; }
+}
+
+/* Abas fixas: nada do conteúdo aparece acima ou atrás delas (sem folga de padding no alto da área rolável; a faixa das abas tem fundo próprio). */
+@media (min-width: 861px) {
+  .meio .coluna-tela > .conteudo { padding-top: 0; }
+  .conteudo > .abas-gestao { padding-top: 8px; margin-bottom: 4px; background: var(--fundo); box-shadow: 0 -8px 0 var(--fundo); }
+  .conteudo > :first-child:not(.abas-gestao) { margin-top: 8px; }
+}
+

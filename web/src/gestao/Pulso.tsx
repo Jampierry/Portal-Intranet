@@ -53,6 +53,7 @@ function ResultadoPulso({ p, aoFechar }: { p: Pulso; aoFechar: () => void }) {
           </select>
         </label>
       )}
+      {!previa && real?.liberado && <p><a className="btn btn-sec btn-pequeno" href={`/api/gestao/pulso/${p.id}/exportar${rodada ? `?rodada=${rodada}` : real.rodada ? `?rodada=${real.rodada}` : ''}`} download>Exportar CSV (Excel)</a></p>}
       {r && !r.liberado && <>
         <p className="suave" role="status">{r.respostas} de {r.minimo} respostas. Para proteger o anonimato, o resultado só aparece a partir de {r.minimo} respostas.</p>
         <button type="button" className="btn btn-sec btn-pequeno" onClick={() => setPrevia(true)}>Ver prévia com dados de exemplo</button>

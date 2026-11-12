@@ -1,5 +1,6 @@
 // Entrega do site compilado (web/dist) pelo próprio servidor, para produção: sem Vite, sem dependência extra.
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 
@@ -30,4 +31,12 @@ export function servirSite(app: FastifyInstance, pasta: string): boolean {
     return resp.header('Content-Type', TIPOS[extname(final).toLowerCase()] ?? 'application/octet-stream').header('Cache-Control', cache).send(createReadStream(final));
   });
   return true;
+}
+
+/** Hashes (SHA-256, base64) dos scripts inline do index.html, para a política de conteúdo (CSP) permitir só eles. */
+export function hashesDeScriptsInline(pasta: string): string[] {
+  try {
+    const html = readFileSync(join(pasta, 'index.html'), 'utf8');
+    return [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => createHash('sha256').update(m[1]).digest('base64'));
+  } catch { return []; }
 }

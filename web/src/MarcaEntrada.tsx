@@ -42,7 +42,7 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
     if (cfg.fundo !== 'carrossel' || imagens.length < 2 || pausado) return;
     const t = setInterval(() => setI((x) => { setAnt(x); return (x + 1) % imagens.length; }), cfg.intervalo * 1000);
     return () => clearInterval(t);
-  }, [cfg.fundo, cfg.intervalo, imagens.length, pausado]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cfg.fundo, cfg.intervalo, imagens.length, pausado]);  
   const veu = cfg.escurecer / 100;
   return (
     <section className={`entrar-marca${previa ? ' previa' : ''}${imagens.length ? ' com-imagem' : ''}`} aria-hidden="true" onMouseEnter={() => setPausado(true)} onMouseLeave={() => setPausado(false)}>

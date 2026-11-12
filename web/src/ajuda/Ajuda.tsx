@@ -8,14 +8,14 @@ const TOPICOS: { grupo: Grupo; titulo: string; icone: string; corpo: ReactNode }
     grupo: 'Acesso', titulo: 'Como entro no portal e troco minha senha?', icone: 'chave',
     corpo: <>
       <p>Use o login e a senha que o administrador do portal criou para você. No primeiro acesso a senha é provisória: o portal pede que você crie uma senha só sua.</p>
-      <p>Para trocar depois, clique no seu avatar (canto superior direito) › <b>Minha conta</b> › <b>Trocar senha</b>. Use no mínimo 8 caracteres.</p>
+      <p>Para trocar depois, clique no seu avatar (canto superior direito) › <b>Meu perfil</b> › <b>Acesso e segurança</b>. A senha precisa ter no mínimo 8 caracteres, com pelo menos um número ou símbolo, e não pode ser uma senha comum (como “senha123”) nem igual ao seu login.</p>
     </>,
   },
   {
     grupo: 'Acesso', titulo: 'Esqueci a senha ou o login foi bloqueado', icone: 'info',
     corpo: <>
-      <p>Depois de 5 tentativas erradas o login fica bloqueado por 15 minutos. Passado esse tempo, tente de novo.</p>
-      <p>Se esqueceu a senha, peça ao administrador do portal para redefinir. Você receberá uma senha provisória e criará a nova no próximo acesso.</p>
+      <p>Depois de 5 tentativas erradas, neste aparelho, o login fica bloqueado por 15 minutos. Passado esse tempo, tente de novo.</p>
+      <p>Se esqueceu a senha, use <b>Esqueci minha senha</b> na tela de entrada: o administrador recebe o aviso, redefine e passa uma senha provisória. Você criará a nova no próximo acesso.</p>
     </>,
   },
   {
@@ -38,10 +38,46 @@ const TOPICOS: { grupo: Grupo; titulo: string; icone: string; corpo: ReactNode }
     corpo: <p>Veja a tela <b>Contatos</b>: ela lista o canal de cada área (e-mail, ramal ou ferramenta de chamados). Se não achar a área, use a busca no topo.</p>,
   },
   {
+    grupo: 'Usar o portal', titulo: 'Como respondo às pesquisas e vejo os resultados?', icone: 'pesquisas',
+    corpo: <>
+      <p>Quando há pesquisa aberta para você, um <b>pop-up em passos</b> aparece ao entrar. Responda na hora ou feche e responda depois na tela <b>Pesquisas</b>.</p>
+      <p>Pesquisas <b>anônimas</b> (o padrão) não ligam a resposta ao seu nome; as <b>identificadas</b> avisam isso antes. Quando o RH divulga o resultado, um pop-up aparece uma vez e depois ele fica na tela <b>Pesquisas</b>.</p>
+    </>,
+  },
+  {
+    grupo: 'Usar o portal', titulo: 'Para que serve o sino e como recebo avisos por e-mail ou no celular?', icone: 'sino',
+    corpo: <>
+      <p>O <b>sino</b> reúne comunicados urgentes, pedidos de autorização de edição, respostas de aprovação e outros avisos. O que você abre ou limpa vale em qualquer aparelho.</p>
+      <p>Em <b>Meu perfil › Avisos</b> você escolhe receber também por <b>e-mail</b> e por <b>notificação push</b> neste aparelho (o push exige que o portal esteja em HTTPS).</p>
+    </>,
+  },
+  {
+    grupo: 'Usar o portal', titulo: 'O que tem em “Meu perfil”?', icone: 'perfil',
+    corpo: <>
+      <p>Abra pelo avatar › <b>Meu perfil</b>. Lá você cuida do seu <b>contato</b>, da <b>foto ou avatar</b>, do <b>contato de emergência</b> (opcional), do <b>e-mail</b>, da <b>senha</b> e dos <b>avisos</b>.</p>
+      <p>O contato de emergência e a observação de saúde são opcionais. O RH e o administrador só consultam quando necessário e <b>cada consulta fica registrada</b>. Nome, login e perfil de acesso só o administrador altera.</p>
+    </>,
+  },
+  {
+    grupo: 'Usar o portal', titulo: 'Onde vejo as datas importantes e feriados?', icone: 'calendario',
+    corpo: <p>No <b>Calendário</b> (menu à esquerda): datas importantes, feriados e compromissos da empresa. O mini-calendário do menu mostra o dia de hoje e abre o calendário completo.</p>,
+  },
+  {
+    grupo: 'Regras', titulo: 'Quero editar ou apagar algo que outra pessoa publicou', icone: 'escudo',
+    corpo: <>
+      <p>Só o <b>administrador</b> apaga o que outra pessoa publicou. Para <b>editar</b> o conteúdo de outra pessoa, use <b>Pedir autorização</b>: o pedido vai para o autor e para o administrador (aparece no sino). Quando um deles autoriza, a permissão vale por <b>24 horas</b>.</p>
+    </>,
+  },
+  {
+    grupo: 'Regras', titulo: 'Como funciona a aprovação do RH ao publicar?', icone: 'comunicados',
+    corpo: <p>Alguns conteúdos publicados por editores passam pela <b>aprovação do RH</b> antes de aparecerem para todos. Você acompanha o andamento pelo sino: ele avisa quando o conteúdo é aprovado ou quando precisa de ajustes.</p>,
+  },
+  {
     grupo: 'Regras', titulo: 'O que cada perfil pode fazer?', icone: 'gestao',
     corpo: <ul>
-      <li><b>Consulta:</b> lê comunicados, documentos, aplicações e contatos.</li>
+      <li><b>Consulta:</b> lê comunicados, documentos, aplicações e contatos, responde às pesquisas e cuida do próprio perfil.</li>
       <li><b>Editor:</b> também publica comunicados, documentos, contatos e colaborador destaque pela tela <b>Publicar</b>, onde fica o catálogo de aplicativos.</li>
+      <li><b>RH:</b> perfil de exemplo que aprova publicações e gerencia as pesquisas (resultados, liberação e exportação).</li>
       <li><b>Administrador:</b> tudo isso, mais usuários, perfis e a auditoria (registro de quem alterou o quê) na tela <b>Configurações</b>, além do cadastro de aplicativos.</li>
     </ul>,
   },

@@ -8,11 +8,11 @@ TypeScript · React 19 + Vite (`web/`) · Fastify + SQLite nativo `node:sqlite` 
 ## Comandos
 - `npm install` · `npm run dev` (API 3100 + site http://localhost:5174, o Vite repassa `/api`) · `npm run typecheck` · `npm run build` · `npm test`
 - Banco: `npm run banco:migrar` · `npm run banco:seed` (admin/admin123, só dev). Migrações em `infra/migracoes/NNN-nome.sql`; banco em `dados-privados/portal.db` (fora do Git).
-- Antes de dizer "pronto": rodar `typecheck` (web + servidor), `build` e `test` e conferir a saída.
+- Antes de dizer "pronto": rodar `lint`, `typecheck` (web + servidor), `build` e `test` e conferir a saída (`npm run publicar` faz tudo; o CI no GitHub repete).
 - Primeiro administrador: `npm run admin:criar -- <login> "<Nome>"`. Produção: definir `ORIGENS_PERMITIDAS` (endereço público do portal) e `NODE_ENV=production`.
 
 ## Estrutura
-- `web/src/<modulo>/` = telas de cada módulo (`inicio`, `comunicados`, `aplicacoes` — catálogo dentro de Publicar e barra da direita —, `documentos`, `gestao`, `pessoas`, `ajuda`); `web/src/` raiz = shell (`App.tsx`, `Menu.tsx`), `tema.tsx`, `temas-dados.ts`, `estilo.css` (tokens dos temas), `portal.css` (layout, modo compacto), `perfil.tsx` (avatar e perfil local), `Capa.tsx`, `Cabecalho.tsx`, `icones.tsx`, `api.ts`, `dados.ts`, `links.ts`. `web/test/` = testes (inclui contraste WCAG dos temas).
+- `web/src/<modulo>/` = telas de cada módulo (`inicio`, `comunicados`, `aplicacoes` — catálogo dentro de Publicar e barra da direita —, `documentos`, `gestao`, `pessoas`, `ajuda`); `web/src/` raiz = shell (`App.tsx`, `Menu.tsx`), `tema.tsx`, `temas-dados.ts`, `estilo.css` (tokens dos temas), `css/parte-01…09.css` (layout e modo compacto; ex-`portal.css`, importados em ordem por `main.tsx`, ver `web/src/css/LEIA-ME.md`), `perfil.tsx` (avatar e perfil local), `Capa.tsx`, `Cabecalho.tsx`, `icones.tsx`, `api.ts`, `dados.ts`, `links.ts`. `web/test/` = testes (inclui contraste WCAG dos temas).
 - `modulos/<nome>/api/` = rotas da API de cada módulo (registradas em `servidor/src/app.ts`); `modulos/<nome>/data/` = dados fictícios usados pelo seed; `modulos/<nome>/tests/`.
 - `servidor/` = Fastify, `config.ts`, `db.ts`, CLIs `migrar`/`seed`. `infra/migracoes/` = SQL versionado.
 - **Um módulo por vez**: não mexer em outro módulo sem pedir. Ordem/status: `docs/roteiro-modulos.md`.

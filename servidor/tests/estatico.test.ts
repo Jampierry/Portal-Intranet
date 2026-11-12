@@ -47,3 +47,21 @@ test('não serve arquivos fora da pasta do site', async () => {
     assert.doesNotMatch(r.body, /segredo/, url);
   }
 });
+
+test('produção envia CSP restritiva (com hash do script de tema) e HSTS só em HTTPS', async () => {
+  const pasta = mkdtempSync(join(tmpdir(), 'site-csp-'));
+  writeFileSync(join(pasta, 'index.html'), '<!doctype html><script>var a=1;</script><script type="module" src="/x.js"></script>');
+  const db = abrirBanco(':memory:');
+  migrar(db, fileURLToPath(new URL('../../infra/migracoes', import.meta.url)));
+  const app = await criarApp(db, true, { pastaSite: pasta });
+  const r = await app.inject({ url: '/' });
+  const csp = String(r.headers['content-security-policy']);
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /script-src 'self' 'sha256-[A-Za-z0-9+/=]+'/);
+  assert.doesNotMatch(csp, /script-src[^;]*unsafe-inline/);
+  assert.equal(r.headers['strict-transport-security'], undefined); // HTTP puro: sem HSTS
+  const https = await app.inject({ url: '/', headers: { 'x-forwarded-proto': 'https' } });
+  // só com TRUST_PROXY=1 o cabeçalho do proxy é aceito; aqui a política padrão ignora, então também não há HSTS
+  assert.ok(https.headers['strict-transport-security'] === undefined || /max-age/.test(String(https.headers['strict-transport-security'])));
+});

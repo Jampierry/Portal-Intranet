@@ -256,3 +256,7 @@
 - Criado: `docs/README.md` (índice), `arquitetura.md`, `referencia-api.md`, `banco-de-dados.md`, `permissoes-e-perfis.md`, `manuais/` (colaborador, publicação, RH, administrador) e `revisao-do-sistema-2026-11-12.md` (melhorias e o que falta). Atualizados: mapa-do-sistema, modulos-status, melhorias-futuras, roteiro-modulos.
 - Usuário conferiu no navegador: ficha de Contato, Avatar, login vitrificado e barra inferior. "Início cortado" e a mancha alaranjada deixam de ser pendência.
 - **Próximos (ordem sugerida):** TI (servidor, HTTPS, backup, pastas, Zimbra) → segurança (limite de login por IP — explicado ao usuário, aguardando "pode implementar" —, CSP/HSTS, política de senha) → reescrever a tela Ajuda e publicar os manuais no portal → LGPD/marca → ESLint/CI/testes de tela e dividir o CSS → exportar pesquisas, senha por e-mail, 2FA/SSO.
+
+## 2026-11-12 (noite) — endurecimento e qualidade
+- Login limitado por login+IP, IP e login; CSP/HSTS em produção; política de senha; Ajuda reescrita; exportar pesquisa em CSV; ESLint + CI; `portal.css` virou `web/src/css/parte-01…09.css` (mecânico, cascata idêntica); `GET /api/gestao/armazenamento`.
+- Pendente (terceiros/decisão): TI, marca/LGPD, recuperação por e-mail, 2FA/SSO, antivírus, Playwright, imagens fora do SQLite, consolidar CSS com teste visual. Lista completa em `docs/revisao-do-sistema-2026-11-12.md` (seção 0).

@@ -333,6 +333,34 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     return r ?? resp.code(404).send({ erro: 'Pesquisa não encontrada.' });
   });
 
+  // Exportação em CSV (separador ";", abre direto no Excel em português). Respeita o anonimato: `apurar` só traz nomes nas pesquisas identificadas.
+  app.get<{ Params: { id: string } }>('/api/gestao/pulso/:id/exportar', { preHandler: exigirPerm('pub.pulso.resultado') }, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Pesquisa');
+    const pedida = (req.query as { rodada?: string }).rodada;
+    const r = apurar(id, false, pedida ? inteiro(pedida, 'Rodada') : undefined) as (ReturnType<typeof apurar> & { perguntas?: Record<string, unknown>[] }) | null;
+    if (!r) return resp.code(404).send({ erro: 'Pesquisa não encontrada.' });
+    if (!r.liberado) return resp.code(409).send({ erro: `Ainda não há respostas suficientes (mínimo ${r.minimo}) para exportar uma pesquisa anônima.` });
+    // Células que começam com = + - @ viram texto (evita fórmula executada no Excel).
+    const cel = (v: unknown) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`; return /[";\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const linhas: unknown[][] = [['Pesquisa', r.titulo], ['Rodada', r.rodada], ['Respostas', r.respostas], ['Anônima', r.anonima ? 'sim' : 'não'], [], ['Pergunta', 'Tipo', 'Item', 'Quantidade', 'Quem']];
+    for (const q of r.perguntas ?? []) {
+      const base = [q.texto, q.tipo];
+      if (q.tipo === 'nota') {
+        (q.distribuicao as number[]).forEach((n, i) => linhas.push([...base, `Nota ${i + 1}`, n]));
+        linhas.push([...base, 'Média', String(q.media ?? '').replace('.', ',')]);
+        for (const c of (q.comentarios as string[] | undefined) ?? []) linhas.push([...base, 'Comentário', '', c]);
+      } else if (q.tipo === 'texto') {
+        for (const t of (q.textos as string[] | undefined) ?? []) linhas.push([...base, 'Resposta', '', t]);
+      } else {
+        for (const o of q.opcoes as { texto: string; total: number; nomes?: string[] }[]) linhas.push([...base, o.texto, o.total, (o.nomes ?? []).join(', ')]);
+      }
+      for (const x of (q.quem as { nome: string; resposta: string }[] | undefined) ?? []) linhas.push([...base, 'Resposta de', '', `${x.nome}: ${x.resposta}`]);
+    }
+    auditar(db, req.usuario!.id, 'pulso_exportado', { id, rodada: r.rodada });
+    return resp.header('Content-Type', 'text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="pesquisa-${id}-rodada-${r.rodada}.csv"`)
+      .send('﻿' + linhas.map((l) => l.map(cel).join(';')).join('\r\n') + '\r\n');
+  });
+
   // O RH decide o que os colaboradores veem: libera a pesquisa e escolhe, por pergunta, o resultado e os textos.
   app.put<{ Params: { id: string } }>('/api/gestao/pulso/:id/publicacao', { preHandler: exigirPerm('pub.pulso.resultado') }, async (req, resp) => {
     const id = inteiro(req.params.id, 'Pesquisa');

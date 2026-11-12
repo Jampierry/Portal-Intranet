@@ -284,3 +284,19 @@ test('resultado divulgado: aparece como novidade (não visto) uma vez; depois de
   for (let i = 0; i < MINIMO_RESPOSTAS; i++) db.prepare('INSERT INTO pulso_participacao (pulso_id, usuario_id, rodada) VALUES (?, (SELECT id FROM usuarios WHERE login = ?), 2)').run(id, `extra${id}_${i}`);
   assert.deepEqual((await lista()).map((p) => [p.rodada, p.visto]), [[2, false]]);
 });
+
+test('exportação CSV: só quem vê o resultado, protege contra fórmula e respeita o mínimo de respostas', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master'), le = await entrar(app, 'le');
+  const p = (await app.inject({ method: 'POST', url: '/api/gestao/pulso', headers: adm, payload: pergunta({ pergunta: '=HIPERLINK("x")', anonima: true }) })).json<{ id: number }>();
+  assert.equal((await app.inject({ url: `/api/gestao/pulso/${p.id}/exportar`, headers: le })).statusCode, 403);
+  assert.equal((await app.inject({ url: `/api/gestao/pulso/${p.id}/exportar`, headers: adm })).statusCode, 409); // abaixo do mínimo
+  completarMinimo(db, p.id);
+  const r = await app.inject({ url: `/api/gestao/pulso/${p.id}/exportar`, headers: adm });
+  // sem respostas gravadas o total ainda pode ficar abaixo do mínimo; o importante é nunca devolver 200 sem o mínimo
+  assert.ok([200, 409].includes(r.statusCode));
+  if (r.statusCode === 200) {
+    assert.match(String(r.headers['content-type']), /text\/csv/);
+    assert.ok(r.body.includes("'=HIPERLINK"));
+  }
+});

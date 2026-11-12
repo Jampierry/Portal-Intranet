@@ -47,7 +47,8 @@ const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'pes
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
-  let [t, slug] = location.hash.slice(1).split('/');
+  const [t0, slug] = location.hash.slice(1).split('/');
+  let t = t0;
   // Endereços antigos (#gestao/...) levam à tela nova correspondente.
   if (t === 'gestao') t = ['usuarios', 'auditoria'].includes(slug) ? 'configuracoes' : 'publicar';
   return TELAS.includes(t as Tela) ? { tela: t as Tela, slug: slug ? decodeURIComponent(slug) : undefined } : { tela: 'inicio' };
@@ -191,7 +192,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     void lerEdicoes(); const t = setInterval(() => void lerEdicoes(), 60_000);
     window.addEventListener('pedidos-edicao', lerEdicoes);
     return () => { clearInterval(t); window.removeEventListener('pedidos-edicao', lerEdicoes); };
-  }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tela]);  
   // Avisos que a pessoa já abriu ou limpou (guardados no servidor: valem no celular e no computador).
   const [lidos, setLidos] = useState<Set<string>>(new Set());
   useEffect(() => { api<{ chaves: string[] }>('/api/avisos/lidos').then((r) => setLidos(new Set(r.chaves))).catch(() => { /* sem aviso */ }); }, []);
@@ -213,7 +214,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     void lerAprov(); const t = setInterval(() => void lerAprov(), 60_000);
     window.addEventListener('aprovacoes', lerAprov);
     return () => { clearInterval(t); window.removeEventListener('aprovacoes', lerAprov); };
-  }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tela]);  
   const decidirEdicao = async (id: number, aprovar: boolean) => { try { await api(`/api/pedidos-edicao/${id}/decidir`, { aprovar }); } finally { void lerEdicoes(); } };
 
   // Mede a altura do cabeçalho de cada tabela com rolagem (.rolagem) e das abas de cada tela para a barra de rolagem começar logo abaixo deles.

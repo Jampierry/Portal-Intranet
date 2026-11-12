@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import type { Banco } from './db.ts';
 import { config } from './config.ts';
-import { servirSite } from './estatico.ts';
+import { hashesDeScriptsInline, servirSite } from './estatico.ts';
 import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
@@ -54,9 +54,20 @@ export async function criarApp(db: Banco, producao = false, opcoes: { pastaSite?
   const app = Fastify({ logger: producao, trustProxy: config.confiarProxy });
   await app.register(cookie);
   if (producao) {
-    // Cabeçalhos de segurança básicos em todas as respostas (HTTPS/HSTS e CSP ficam por conta do proxy reverso).
-    app.addHook('onSend', async (_req, resp) => {
-      resp.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'same-origin');
+    // Política de conteúdo: só código do próprio portal. O único script inline (tema antes da pintura) entra pelo hash do index.html.
+    const hashes = hashesDeScriptsInline(opcoes.pastaSite ?? config.pastaSite).map((h) => `'sha256-${h}'`).join(' ');
+    const csp = [
+      "default-src 'self'", `script-src 'self' ${hashes}`.trim(), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com data:",
+      "img-src 'self' data: blob: https:", "media-src 'self' blob:", "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'",
+      "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+    ].join('; ');
+    app.addHook('onSend', async (req, resp) => {
+      resp.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'same-origin')
+        .header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()').header('Cross-Origin-Opener-Policy', 'same-origin');
+      // Anexos SVG já saem com CSP própria (sandbox) e não podem perder essa regra.
+      if (!resp.hasHeader('Content-Security-Policy')) resp.header('Content-Security-Policy', csp);
+      // HSTS só vale (e só é obedecido) em HTTPS; atrás do proxy, o cabeçalho X-Forwarded-Proto indica isso.
+      if (req.protocol === 'https') resp.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     });
   }
   // Quem abrir a porta da API no navegador é levado ao site (em desenvolvimento, o Vite na 5174).

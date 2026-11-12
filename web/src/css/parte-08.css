@@ -1,0 +1,253 @@
+/* Calendário: faixa de legendas minimizável. */
+.calp-legenda { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; flex-wrap: wrap; min-width: 0; }
+.calp-legenda .calp-filtros { flex: 1 1 0; min-width: 0; }
+.calp-legenda-botao .gira { transform: rotate(180deg); }
+.calp-barra > .calp-legenda { flex: 1 1 260px; }
+
+/* Telas baixas (calendário sem a lista de datas): o calendário sobe e fica 10px abaixo do último item do menu (Configurações);
+   o rodapé "Juntos vamos mais longe" fica no fim. */
+@media (max-height: 800px) and (min-width: 861px) {
+  .menu nav { flex: 0 1 auto; }
+  .menu > .cal-menu { margin-top: 10px; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .menu > .cal-menu > * { flex: none; }
+  /* detalhes da agenda do dia: ocupam o espaço que sobra e rolam por dentro */
+  .menu > .cal-menu > .cal-lista { display: grid; align-content: start; flex: 1 1 0; min-height: 70px; overflow-y: auto; scrollbar-width: thin; }
+  .menu .sbfoot { margin-top: 0; }
+}
+
+/* Pesquisas com várias perguntas (editor do RH, resposta e resultado) */
+.pq-editor { display: grid; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.pq-editor legend { font-weight: 700; padding: 0; margin-bottom: 6px; }
+.pq-cartao { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--linha); border-radius: var(--raio); background: var(--afundado); }
+.pq-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pq-topo-acoes { display: flex; gap: 6px; }
+.pq-imagem { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pq-imagem img { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--linha); }
+.pq-imagem-peq img { width: 40px; height: 40px; }
+.pq-opcoes { display: grid; gap: 8px; }
+.pq-opcao { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.pq-resp { display: grid; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.pq-resp legend { padding: 0; margin-bottom: 8px; }
+.pq-resp-img, .pq-res-img { max-width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid var(--linha); }
+.pq-opcoes-resp { display: grid; gap: 8px; }
+.pq-opcao-resp { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); cursor: pointer; }
+.pq-opcao-resp:hover { background: var(--hover); }
+.pq-opcao-resp.on { border-color: var(--vinho); background: color-mix(in srgb, var(--vinho) 14%, var(--card)); }
+.pq-opcao-resp img { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; }
+.pq-res { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--linha); }
+.pq-res h3 { margin: 0; font-size: 14px; }
+.pulso-barra-linha { display: grid; grid-template-columns: minmax(80px, 40%) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.pulso-barra-rotulo { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.pq-mini { width: 32px; height: 24px; object-fit: cover; border-radius: 4px; }
+
+/* Janela larga das pesquisas e editor de perguntas em cartões */
+.janela-extra { width: min(1080px, calc((100vw / var(--zoom, 1)) - 24px)); }
+.pq-linha { display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(0, 1fr); gap: 12px 18px; align-items: end; }
+.pq-linha > label { margin: 0; }
+.pq-linha .pq-imagem { justify-content: flex-end; }
+.pq-opcoes-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.pq-opcao { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; padding: 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); }
+.pq-opcao-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pq-opcao textarea { width: 100%; resize: vertical; }
+.pq-imagem-cartao { display: grid; gap: 6px; justify-items: stretch; }
+.pq-imagem-cartao img, .pq-imagem-cartao .pq-sem-foto { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--linha); }
+.pq-sem-foto { display: grid; place-items: center; background: var(--afundado); color: var(--suave); font-size: 12px; }
+.pq-imagem-cartao .btn { justify-self: start; }
+.pq-opcao-nova { min-height: 150px; border: 2px dashed var(--linha); border-radius: 12px; background: transparent; color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
+.pq-opcao-nova:hover { background: var(--hover); }
+@media (max-width: 720px) { .pq-linha { grid-template-columns: minmax(0, 1fr); } .pq-linha .pq-imagem { justify-content: flex-start; } }
+
+/* Cabeçalho da pesquisa: título, tipo e situação à esquerda; explicação à direita, na altura dos três */
+.grade2.grade-pesq { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grade-pesq > .gp-2 { grid-column: span 2; }
+.grade-pesq > .gp-1 { grid-column: span 1; }
+.grade-pesq > .gp-alto { grid-column: 3 / span 2; grid-row: 1 / span 2; display: flex; }
+.grade-pesq > .gp-alto > label { display: flex; flex-direction: column; flex: 1; }
+.grade-pesq > .gp-alto textarea { flex: 1; min-height: 70px; resize: vertical; }
+@media (max-width: 720px) {
+  .grade2.grade-pesq { grid-template-columns: minmax(0, 1fr); }
+  .grade-pesq > .gp-2, .grade-pesq > .gp-1, .grade-pesq > .gp-alto { grid-column: 1 / -1; grid-row: auto; }
+}
+
+/* Perguntas compactas; a rolagem fica só na lista de perguntas */
+.janela-extra form { height: calc((100vh / var(--zoom, 1)) - 48px); }
+.janela-extra .janela-corpo { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.janela-extra .grade2.grade-pesq { flex: 0 0 auto; }
+.grade-pesq > .cheia { align-self: stretch; display: flex; flex-direction: column; }
+.pq-editor { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.pq-editor > p, .pq-editor .pq-add { flex: 0 0 auto; align-self: flex-start; }
+.pq-titulo { flex: 0 0 auto; font-weight: 700; }
+.pq-sem-caixa { display: contents; border: 0; padding: 0; margin: 0; }
+.pq-lista { display: grid; gap: 8px; flex: 0 0 auto; padding-right: 2px; align-content: start; }
+.pq-cartao { gap: 6px; padding: 8px 10px; align-content: start; }
+.pq-topo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.pq-num { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--vinho); color: var(--sobre-acento); font-size: 12px; }
+.pq-topo input { margin: 0; }
+.pq-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.pq-linha select { width: auto; min-width: 180px; max-width: 100%; margin: 0; }
+.pq-linha > label { margin: 0; }
+.pq-linha .pq-imagem { margin-left: 0; justify-content: flex-start; }
+.pq-opcoes { gap: 6px; }
+.pq-opcoes-grade { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+.pq-opcao { padding: 8px; gap: 6px; }
+.pq-opcao { grid-template-columns: 76px minmax(0, 1fr); align-items: stretch; gap: 4px 8px; }
+.pq-opcao-topo { grid-column: 1 / -1; }
+.pq-imagem-cartao { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 4px; }
+.pq-imagem-cartao img, .pq-imagem-cartao .pq-sem-foto { width: 76px; height: 54px; }
+.pq-imagem-cartao .btn { justify-self: stretch; padding-inline: 4px; font-size: 11px; text-align: center; }
+.pq-opcao textarea { min-height: 0; height: 100%; min-height: 64px; resize: none; }
+.pq-opcao-nova { min-height: 0; }
+
+.pq-num { border: 0; padding: 0; cursor: pointer; font-weight: 700; }
+.pq-num:hover { filter: brightness(1.15); }
+
+/* Pesquisa em passos: bolinhas numeradas no topo e opções com foto ao lado do texto */
+.pq-passos { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.pq-passo { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.pq-passo.atual { border-color: var(--vinho); background: var(--vinho); color: var(--sobre-acento); }
+.pq-passo.feito { border-color: var(--ok); background: var(--ok); color: var(--sobre-acento); }
+.pq-passo:disabled { opacity: .5; cursor: not-allowed; }
+.pulso-modal .pq-opcao-resp { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; text-align: left; margin: 0; }
+.pulso-modal .pq-opcao-resp input { flex: 0 0 auto; width: auto; margin: 0; }
+.pulso-modal .pq-opcao-resp img { flex: 0 0 auto; width: 96px; height: 72px; }
+.pulso-modal .pq-opcao-resp span { flex: 1 1 auto; text-align: left; font-weight: 600; }
+.pulso-modal .pq-opcao-resp input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pulso-modal .pq-opcao-resp { position: relative; }
+.pulso-modal .pq-opcao-resp:focus-within { outline: 2px solid var(--vinho); outline-offset: 2px; }
+
+/* Fogos de comemoração ao enviar a pesquisa (sem piscar; só dura ~3 s) */
+.pq-fogos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; min-height: 150px; }
+.pq-fogo { position: absolute; width: 0; height: 0; }
+.pq-fogo i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--c); opacity: 0; transform: rotate(var(--a)) translateX(0); animation: pq-estourar 1.4s ease-out both; }
+@keyframes pq-estourar {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(0) scale(.6); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) translateY(14px) scale(1); }
+}
+.pulso-modal .pulso-obrigado { position: relative; z-index: 1; margin-block: 56px; }
+.aviso-previa { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 8px 10px; border: 1px dashed var(--laranja); border-radius: 10px; background: var(--afundado); }
+
+/* Resultado da pesquisa: resumo em números, perguntas em cartões lado a lado, barras com o texto em cima e a barra embaixo */
+.pr-resumo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.pr-resumo li { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--afundado); }
+.pr-resumo b { font-size: 22px; line-height: 1.1; }
+.pr-resumo span { font-size: 12px; color: var(--suave); }
+.pr-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; align-items: start; }
+.pr-grade .pq-res { padding: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); align-content: start; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { grid-column: 1; grid-row: 1; font-weight: 600; overflow-wrap: anywhere; }
+.pulso-barras .pulso-barra-linha small { grid-column: 2; grid-row: 1; white-space: nowrap; }
+.pulso-barras .pulso-barra-linha .pulso-barra { grid-column: 1 / -1; grid-row: 2; }
+@media (max-width: 720px) { .pr-grade { grid-template-columns: minmax(0, 1fr); } }
+
+/* Resultado compacto: números em faixa fina, barras em uma linha (texto | barra | valor), listas de nomes em colunas */
+.pulso-res { gap: 8px; }
+.pr-resumo { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pr-resumo li { grid-template-columns: auto 1fr; align-items: baseline; gap: 0 8px; padding: 6px 10px; border-radius: 10px; }
+.pr-resumo b { font-size: 17px; }
+.pr-resumo span { font-size: 11px; }
+.pr-grade { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px; }
+.pr-grade .pq-res { gap: 6px; padding: 8px 10px; border-top-width: 1px; }
+.pr-grade .pq-res h3 { font-size: 13px; }
+.pr-grade .pulso-barras { gap: 3px; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(70px, 36%) minmax(0, 1fr) 58px; gap: 8px; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { grid-column: 1; grid-row: 1; font-size: 12px; font-weight: 600; }
+.pulso-barras .pulso-barra-linha .pulso-barra { grid-column: 2; grid-row: 1; height: 10px; }
+.pulso-barras .pulso-barra-linha small { grid-column: 3; grid-row: 1; text-align: right; font-size: 11px; }
+.pr-grade .pulso-coment { max-height: none; overflow: visible; columns: 2 150px; column-gap: 16px; font-size: 12px; display: block; }
+.pr-grade .pulso-coment li { break-inside: avoid; margin-bottom: 2px; }
+.pr-grade .pq-res > b { font-size: 12px; }
+@media (max-width: 720px) { .pr-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pr-grade { align-items: stretch; }
+
+/* Cartões de tamanho estável: barras e listas têm altura máxima e rolam por dentro (barra fina), em vez de crescer o cartão */
+.pr-grade { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.pr-grade .pulso-barras { max-height: 150px; overflow-y: auto; padding-right: 4px; }
+.pr-grade .pulso-coment { columns: auto; display: grid; max-height: 120px; overflow-y: auto; padding-right: 4px; }
+.pulso-barras .pulso-barra-linha { grid-template-columns: minmax(60px, 40%) minmax(0, 1fr) 54px; }
+
+/* Aproveita a altura da janela e evita quebra de linha: texto da opção numa linha (reticências, completo na dica), barra embaixo */
+.pr-grade { --alt: calc((100vh / var(--zoom, 1)) - 330px); }
+.pr-grade .pulso-barras { max-height: calc(var(--alt) * .55); min-height: 60px; }
+.pr-grade .pulso-coment { max-height: calc(var(--alt) * .45); min-height: 60px; font-size: 12px; }
+.pr-grade .pulso-coment li { white-space: normal; }
+.pulso-barras .pulso-barra-linha:not(.curta) { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; }
+.pulso-barras .pulso-barra-linha:not(.curta) .pulso-barra-rotulo { grid-column: 1; grid-row: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.pulso-barras .pulso-barra-linha:not(.curta) small { grid-column: 2; grid-row: 1; }
+.pulso-barras .pulso-barra-linha:not(.curta) .pulso-barra { grid-column: 1 / -1; grid-row: 2; }
+.pulso-barras .pulso-barra-linha.curta { grid-template-columns: 70px minmax(0, 1fr) 54px; }
+.pulso-barras .pulso-barra-linha .pulso-barra-rotulo { overflow-wrap: normal; }
+.pr-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .pr-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .pr-grade { grid-template-columns: minmax(0, 1fr); } }
+
+/* Liberação do resultado aos colaboradores (RH) */
+.pr-liberar { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--vinho); border-radius: 10px; background: var(--afundado); }
+.pr-rh { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--linha); font-size: 12px; }
+.pr-rh label { margin: 0; }
+.pq-res-oculta > :not(.pr-rh):not(h3) { opacity: .45; }
+button.mini-item { width: 100%; text-align: left; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
+.pr-rh { display: grid; gap: 2px; font-size: 12px; font-weight: 600; }
+.pr-rh select, .pr-todas select { width: 100%; margin: 0; font-weight: 400; }
+.pr-todas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; font-weight: 600; }
+.pr-todas select { width: auto; min-width: 260px; }
+
+/* Faixa de liberação compacta: chave à esquerda, "mostrar em todas" à direita, aviso embaixo em letra pequena */
+.pr-liberar { grid-template-columns: 1fr auto; align-items: center; gap: 2px 16px; padding: 6px 10px; }
+.pr-liberar-chave { margin: 0; }
+.pr-todas { display: flex; align-items: center; gap: 4px 14px; flex-wrap: wrap; border: 0; padding: 0; margin: 0; min-width: 0; font-size: 12px; }
+.pr-todas legend { float: left; padding: 0; margin-right: 6px; font-weight: 600; }
+.pr-todas label { margin: 0; }
+.pr-liberar-nota { grid-column: 1 / -1; font-size: 11px; }
+.pr-rh { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; font-weight: 600; }
+.pr-rh label { margin: 0; font-weight: 400; }
+@media (max-width: 720px) { .pr-liberar { grid-template-columns: 1fr; } }
+.pr-rh { padding: 5px 8px; border: 1px solid var(--vinho); border-radius: 8px; background: var(--afundado); }
+.pq-res-oculta > :not(.pr-rh):not(h3) { opacity: .4; }
+.pr-vencedora { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--ok); border-radius: 10px; background: var(--ok-fundo); }
+.pr-vencedora p { display: flex; align-items: center; gap: 8px; margin: 0; }
+.pr-vencedora p span { margin-left: auto; font-size: 12px; color: var(--suave); }
+
+/* Pesquisa: período lado a lado sob o tipo e a situação; a explicação ocupa as três linhas */
+.grade-pesq > .gp-alto { grid-row: 1 / span 3; }
+.grade-pesq input[type="datetime-local"] { max-width: 100%; }
+.pr-reenvio-datas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 4px; }
+.pr-publico { display: grid; gap: 8px; border: 0; padding: 0; margin: 10px 0 0; }
+.pr-publico legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
+.pr-publico label { align-items: flex-start; margin: 0; }
+.pr-rodada { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-weight: 600; }
+.pr-rodada select { width: auto; min-width: 280px; margin: 0; font-weight: 400; }
+.janela .pr-rodada { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; align-self: flex-start; width: auto; text-align: left; gap: 8px; }
+.janela .pr-rodada select { width: auto; max-width: 100%; }
+
+.painel-avisos .avisos-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.painel-avisos .avisos-topo h3 { margin: 0; }
+
+/* Tela Pesquisas: histórico dos resultados divulgados */
+.pesq-hist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.pesq-hist-item { position: relative; display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--texto); background: var(--card); border: 1px solid var(--linha-suave); border-radius: 12px; cursor: pointer; }
+.pesq-hist-item:hover { background: var(--hover); }
+.pesq-hist-item:focus-visible { outline: 2px solid var(--foco, currentColor); outline-offset: 2px; }
+.pesq-hist-item .texto { display: grid; gap: 2px; padding: 10px 12px 12px; min-width: 0; }
+.pesq-hist-item .texto b { font-size: 0.92rem; line-height: 1.25; }
+.pesq-capa { position: relative; display: grid; place-items: center; height: 84px; background: var(--hover); overflow: hidden; }
+.pesq-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pesq-capa.sem-img { color: var(--texto-suave, var(--texto)); }
+.pesq-mais { position: absolute; right: 6px; bottom: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: var(--card); color: var(--texto); border: 1px solid var(--linha-suave); }
+.pesq-hist-item > .selo-novo { position: absolute; top: 6px; left: 6px; }
+.selo-novo { margin-left: 8px; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; background: var(--coral); color: var(--sobre-coral); vertical-align: 1px; }
+
+/* Aprovações e redes sociais */
+.motivo-rej { display: block; margin-top: 2px; color: var(--erro); font-size: 12px; }
+.aprov-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; align-items: start; }
+.aprov-cartao { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 12px; font-size: 13px; background: var(--card); }
+.aprov-cartao header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.aprov-cartao h3 { margin: 0; font-size: 14px; line-height: 1.25; }
+.aprov-cartao small { font-size: 11.5px; line-height: 1.3; }
+.aprov-tipo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
+.aprov-previa { display: flex; gap: 8px; padding: 6px; border: 1px dashed var(--linha); border-radius: 10px; background: var(--afundado); }
+.aprov-previa img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; }
+.aprov-previa p { margin: 0 0 2px; font-size: 12.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.aprov-texto { white-space: pre-wrap; max-height: 84px; overflow-y: auto; }
+.aprov-cartao footer { display: flex; gap: 6px; margin-top: 2px; justify-content: center; }
+

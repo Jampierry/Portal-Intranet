@@ -1,0 +1,244 @@
+/* Configurações › Calendário: as agendas ficam fixas no alto (compactas, em colunas iguais); só a tabela de datas rola, com os títulos das colunas fixos. */
+.calcfg-agendas { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 8px; }
+.calcfg-agendas label.calcfg-op { min-width: 0; border-radius: 10px; }
+.calcfg-agendas label.calcfg-op span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 861px) and (min-height: 560px) {
+  .conteudo > .calcfg { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+  .calcfg > .calcfg-card { flex: none; }
+  .calcfg-agendas { max-height: 92px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .calcfg > .calcfg-card:has(.rolagem) { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .calcfg-card .rolagem { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .calcfg-card .rolagem::-webkit-scrollbar { width: 6px; height: 6px; }
+  .calcfg-card .rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 6px; }
+  .calcfg-card .dados th { position: sticky; top: 0; z-index: 2; }
+}
+
+/* Ícone "!" de ajuda (explicações curtas que antes ocupavam uma linha da tela). Fica no canto direito da barra de abas. */
+.dica-ajuda { position: relative; display: inline-flex; }
+.dica-ajuda-btn { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--suave); background: transparent; color: var(--suave); font: 800 13px/1 var(--fonte); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.dica-ajuda-btn:hover, .dica-ajuda-btn[aria-expanded=true] { color: var(--vinho-texto); border-color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 14%, transparent); }
+.dica-ajuda-btn:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }
+.dica-ajuda-painel { position: absolute; top: calc(100% + 8px); z-index: 60; width: max-content; max-width: min(380px, 85vw); padding: 11px 14px; border-radius: 12px; background: var(--card); color: var(--texto); border: 1px solid var(--linha); box-shadow: 0 10px 28px rgba(0, 0, 0, .28); font: 500 12.5px/1.45 var(--fonte); white-space: normal; text-align: left; }
+.dica-ajuda-painel.esq { left: 0; } .dica-ajuda-painel.dir { right: 0; }
+.slot-dica { margin-left: auto; align-self: center; display: inline-flex; padding: 0 4px 4px 0; }
+.slot-dica:empty { display: none; }
+.barra-fim { justify-content: flex-end; }
+.crud > .barra-fim { margin-bottom: 0; }
+
+/* Tabelas (todas): a barra de rolagem começa ABAIXO do cabeçalho das colunas. A barra nativa fica só ao lado das linhas
+   (a trilha começa depois da altura do cabeçalho, medida por App.tsx em --cab-h). */
+.rolagem { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+.rolagem::-webkit-scrollbar { width: 8px; height: 8px; }
+.rolagem::-webkit-scrollbar-track { background: transparent; margin-top: var(--cab-h, 38px); }
+.rolagem::-webkit-scrollbar-corner { background: transparent; }
+.rolagem::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+.rolagem::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+
+/* Ícone "!" de ajuda: pequeno e discreto, no tamanho do "i" do título da tela */
+.dica-ajuda-btn { width: 18px; height: 18px; border-width: 1.2px; font-size: 11px; font-weight: 700; }
+.slot-dica { padding: 0 6px 6px 0; }
+.dica-ajuda-painel { top: calc(100% + 6px); }
+
+/* Cabeçalho da tabela: célula "Ações" volta a ser célula de tabela (com display:flex quebrava a linha de títulos e o cabeçalho fixo ao rolar). */
+.dados th.col-acoes { display: table-cell; text-align: right; }
+.dados thead th { position: sticky; top: 0; z-index: 3; background: var(--afundado); background-clip: padding-box; box-shadow: 0 -2px 0 var(--afundado), 0 1px 0 var(--linha); }
+.rolagem { border-radius: 10px; }
+.rolagem > .dados { border-collapse: separate; border-spacing: 0; width: 100%; }
+
+/* "!" de ajuda: ícone vetorial pequeno (16px), sem caixa; fica ao lado do botão de ação da tela (ou no fim da barra de abas) */
+.dica-ajuda-btn { width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: var(--suave); padding: 0; display: grid; place-items: center; font-size: 0; }
+.dica-ajuda-btn svg { display: block; width: 16px; height: 16px; }
+.dica-ajuda-btn:hover, .dica-ajuda-btn[aria-expanded=true] { color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 14%, transparent); border: 0; }
+.barra-fim { align-items: center; gap: 8px; }
+
+/* Computador: a janela nunca rola (a rolagem é só dentro de cada tela). Evita a barra de rolagem da página inteira à direita da barra de atalhos
+   (o zoom do tema deixava a altura alguns pixels acima da janela). */
+@media (min-width: 861px) {
+  html, body { height: 100%; overflow: hidden; }
+}
+
+/* O "!" dentro da barra de abas não herda o visual de aba (fundo, borda e preenchimento): é só o ícone. */
+.abas-gestao .dica-ajuda-btn { margin: 0; padding: 0; width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; transition: none; }
+.abas-gestao .dica-ajuda-btn:hover, .abas-gestao .dica-ajuda-btn[aria-expanded=true] { background: color-mix(in srgb, var(--vinho) 14%, transparent); color: var(--vinho-texto); }
+.abas-gestao .slot-dica { align-self: center; padding: 0 4px 0 0; margin-bottom: 2px; }
+
+/* Telas com abas (computador): a barra de rolagem da tela começa abaixo das abas (--abas-h é medida em App.tsx). */
+@media (min-width: 861px) {
+  .meio .coluna-tela > .conteudo { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+  .coluna-tela > .conteudo::-webkit-scrollbar { width: 8px; height: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-track { background: transparent; margin-top: var(--abas-h, 0px); }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 45%, transparent); border-radius: 8px; }
+  .coluna-tela > .conteudo::-webkit-scrollbar-thumb:hover { background: var(--suave); }
+}
+
+/* Cabeçalho da tabela até a borda direita: a faixa da barra de rolagem ao lado dos títulos recebe a mesma cor do cabeçalho. */
+.rolagem { background-image: linear-gradient(var(--afundado), var(--afundado)); background-repeat: no-repeat; background-position: right top; background-size: 8px var(--cab-h, 38px); background-origin: border-box; background-clip: border-box; }
+.rolagem::-webkit-scrollbar-track { border-radius: 0; }
+.rolagem { background-image: linear-gradient(var(--linha), var(--linha)), linear-gradient(var(--afundado), var(--afundado)); background-position: right calc(var(--cab-h, 38px) - 1px), right top; background-size: 8px 1px, 8px var(--cab-h, 38px); }
+
+/* Tela de entrada (Configurações): em tela larga, Fundo e Frase/textos ficam lado a lado para tudo caber sem rolagem. */
+@media (min-width: 1181px) {
+  .entcfg-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
+  .entcfg-form > .entcfg-rodape { grid-column: 1 / -1; }
+  .entcfg-form .calcfg-card { padding-top: 10px; gap: 8px; }
+  .entcfg-form .entcfg-campo textarea { min-height: 0; }
+}
+
+/* Barras de rolagem de TODAS as telas: finas (6px) e discretas (translucidas; aparecem mais ao passar o mouse). */
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-corner { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--suave) 38%, transparent); border-radius: 6px; }
+  *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--suave) 70%, transparent); }
+  .rolagem::-webkit-scrollbar, .coluna-tela > .conteudo::-webkit-scrollbar { width: 6px; height: 6px; }
+  .rolagem::-webkit-scrollbar-track { margin-top: var(--cab-h, 38px); }
+  .coluna-tela > .conteudo::-webkit-scrollbar-track { margin-top: var(--abas-h, 0px); }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 38%, transparent) transparent; }
+}
+.rolagem { background-size: 6px 1px, 6px var(--cab-h, 38px); }
+
+/* Faixa do cabeçalho ao lado da barra de rolagem: a regra ".crud .rolagem" (com "background:" abreviado) apagava a imagem de fundo, então reforço aqui para todas as tabelas. */
+@media (min-width: 861px) {
+.rolagem, .conteudo .rolagem, .crud .rolagem, .calcfg-card .rolagem {
+  background-image: linear-gradient(var(--linha), var(--linha)), linear-gradient(var(--afundado), var(--afundado)) !important;
+  background-repeat: no-repeat !important;
+  background-position: right calc(var(--cab-h, 38px) - 1px), right top !important;
+  background-size: 6px 1px, 6px var(--cab-h, 38px) !important;
+  background-origin: border-box !important;
+  background-clip: border-box !important;
+}
+}
+
+/* Entrada em tela pequena/celular: a faixa com a imagem (ou carrossel) ocupa a tela inteira, por trás do cartão de login. */
+@media (max-width: 860px) {
+  .entrar { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
+  .entrar > .entrar-marca:not(.previa) { position: absolute; inset: 0; z-index: 0; min-height: 0; padding: 28px 24px; justify-content: flex-start; gap: 22px; }
+  .entrar > .entrar-form { position: relative; z-index: 1; min-height: 100vh; min-height: 100dvh; justify-content: flex-end; padding: 24px 16px 18px; max-width: 520px; }
+  .entrar > .entrar-form .entrar-card { background: color-mix(in srgb, var(--card) 55%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.15); backdrop-filter: blur(16px) saturate(1.15); border-color: color-mix(in srgb, var(--texto) 16%, transparent); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); padding: 24px 20px 20px; }
+  .entrar > .entrar-form .entrar-card input:not([type=checkbox]) { background: color-mix(in srgb, var(--fundo) 45%, transparent); }
+  .entrar > .entrar-form .entrar-rodape { display: none; }   /* o nome da empresa já aparece na frase de rodapé da faixa */
+  /* Título no alto; a frase "Bem-vindo(a)…" e o texto de rodapé descem para o pé da tela; o cartão de login sobe para dar espaço a eles. */
+  .entrar-marca:not(.previa) > .entrar-frase { display: contents; }
+  .entrar-marca:not(.previa) .entrar-frase > .entrar-extra, .entrar-marca:not(.previa) .entrar-frase > .lema, .entrar-marca:not(.previa) .entrar-frase > small { position: relative; z-index: 1; }
+  .entrar-marca:not(.previa) .entrar-frase > .entrar-extra { max-width: 24ch; font-size: clamp(22px, 6.4vw, 30px); }
+  .entrar-marca:not(.previa) .entrar-frase > .lema { margin-top: auto; }
+  .entrar-marca:not(.previa) .entrar-frase > small { margin-top: 6px; }
+  /* Compacta o cartão para caber tudo (título no alto, cartão no meio, frase no pé) em telas como a do iPhone 14. */
+  /* 158px = altura da logo + título (~144) + 14 de respiro; 134px = altura da frase do rodapé (~120) + 14: o cartão fica com o mesmo espaço em cima e embaixo. */
+  .entrar > .entrar-form { padding: 158px 16px 134px; justify-content: center; }
+  .entrar-marca:not(.previa) .entrar-frase > .lema { font-size: 11px; letter-spacing: .2em; line-height: 1.6; }
+  .entrar-marca:not(.previa) .entrar-frase > small { font-size: 9.5px; }
+  .entrar > .entrar-form .entrar-card { padding: 16px 16px 14px; border-radius: 16px; gap: 2px; }
+  .entrar > .entrar-form .entrar-card .entrar-eyebrow { font-size: 10px; }
+  .entrar > .entrar-form .entrar-card h1 { font-size: 22px; margin: 0; }
+  .entrar > .entrar-form .entrar-card > p { margin: 2px 0 8px; font-size: 12.5px; line-height: 1.35; }
+  .entrar > .entrar-form .entrar-card .entrar-campos { gap: 8px; }
+  .entrar > .entrar-form .entrar-card .entrar-campos label { gap: 4px; font-size: 12.5px; }
+  .entrar > .entrar-form .entrar-card input:not([type=checkbox]) { height: 40px; font-size: 16px; }   /* 16px: o Safari do iPhone não dá zoom ao tocar no campo */
+  .entrar > .entrar-form .entrar-card .entrar-botao { min-height: 42px; margin-top: 4px; font-size: 15px; }
+  .entrar > .entrar-form .entrar-esqueci { margin-top: 2px; }
+  .entrar > .entrar-form .entrar-esqueci .entrar-link { font-size: 12.5px; }
+  .entrar > .entrar-form .entrar-esqueci small { font-size: 11px; }
+}
+@media (max-width: 860px) and (max-height: 640px) {   /* telas muito baixas: ainda mais justo */
+  .entrar > .entrar-form { padding-top: 150px; padding-bottom: 126px; }
+  .entrar > .entrar-form .entrar-card > p { font-size: 11.5px; margin-bottom: 4px; }
+  .entrar > .entrar-form .entrar-card input:not([type=checkbox]) { height: 40px; }
+}
+
+/* Celular: cartões de pessoas (Colaborador Destaque e os três do mural) mostram 3 por página, com as setas visíveis.
+   Antes, as regras de celular escondiam as setas e deixavam a grade em 3 colunas (26px | 1fr | 26px): o conteúdo caía na coluna de 26px e sumia. */
+@media (max-width: 860px) {
+  .destaques.compacto .pessoas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .destaques.compacto .pessoas .pessoa:nth-child(3) { display: flex; }
+  .destaques.compacto .carrossel { grid-template-columns: 26px minmax(0, 1fr) 26px; gap: 4px; }
+  .destaques.compacto .seta-car { display: grid; width: 26px; height: 26px; }
+  .destaques.compacto .pessoa-periodo { font-size: 10px; padding: 1px 6px; }
+  html, body, .corpo { overflow-x: clip; }   /* nada passa da largura da tela nem permite arrastar a página para os lados */
+}
+
+/* Celular pequeno: a barra do topo cabe numa linha só (a busca encolhe, em vez de empurrar o avatar para uma segunda linha). */
+@media (max-width: 520px) {
+  .topo { gap: 8px; padding: 10px 14px; }
+  .busca-topo { flex: 1 1 60px; min-width: 60px; }
+}
+@media (max-width: 520px) {   /* título do banner menor: cabe com o botão sem os pontos do carrossel ficarem sobre ele */
+  .hero.novidades .slide-texto h2 { font-size: clamp(20px, 6.2vw, 26px); line-height: 1.08; }
+}
+
+/* Carrossel de pessoas: foto redonda, nome e área centralizados embaixo. */
+.pessoa { align-items: center; text-align: center; }
+.pessoa > div:last-child { width: 100%; min-width: 0; }
+.pessoa .capa-pessoa,
+.destaques.compacto .pessoa .capa-pessoa { flex: none; width: min(100%, 132px); height: auto; min-height: 0; aspect-ratio: 1; border-radius: 50%; margin-inline: auto; overflow: hidden; }
+.destaques .pessoa .capa-pessoa { flex: none; height: auto; }
+.pessoa-periodo { left: 50%; right: auto; transform: translateX(-50%); top: 2px; max-width: 90%; }
+
+/* Busca dentro da página (Documentos e Comunicados). */
+.busca-pagina { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; margin-bottom: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); color: var(--suave); min-width: 0; }
+.busca-pagina:focus-within { outline: 2px solid var(--rosa); outline-offset: 1px; }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { flex: 1; min-width: 0; border: 0; background: none; height: 100%; padding: 0; font-size: 16px; outline: 0; }
+
+/* Comunicados: título grande, ferramentas em linha, cartões maiores com categoria em pílula. */
+.com-topo { margin-bottom: 14px; }
+.com-topo h1 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; letter-spacing: -.035em; font-weight: 800; }
+.com-topo > p { margin: 4px 0 14px; font-size: 15px; color: var(--suave); }
+.com-ferramentas { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; }
+.com-ferramentas .busca-pagina { margin: 0; height: 40px; }
+.com-ferramentas select { height: 40px; border-radius: 10px; min-width: 150px; }
+@media (max-width: 640px) { .com-ferramentas { grid-template-columns: 1fr 1fr; } .com-ferramentas .busca-pagina { grid-column: 1 / -1; } .com-ferramentas select { min-width: 0; } }
+.destaque-com { border-radius: 18px; }
+.destaque-com .btn-pri { border-radius: 99px; }
+.com-mais .barra h2 { font-size: 18px; }
+.com-rolagem .cartao-com { border-radius: 14px; }
+.com-rolagem .cartao-com .capa-card { border-radius: 0; }
+.com-rolagem .cartao-com .cat { align-self: flex-start; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--vinho) 80%, #000); color: #fff; letter-spacing: .06em; }
+@media (min-width: 1181px) {
+  .com-rolagem .grade-com:not(.linha) { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: max(190px, calc((100cqh - 8px - 12px) / 2)); gap: 12px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com h3 { font-size: 14px; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com p { font-size: 12px; -webkit-line-clamp: 2; }
+  .com-rolagem .grade-com:not(.linha) .cartao-com-corpo { padding: 9px 12px 8px; gap: 3px; }
+}
+
+/* Campos de busca e filtro das páginas seguem o padrão da busca do topo: pílula compacta, borda fina, fonte pequena. */
+.busca-pagina, .com-ferramentas .busca-pagina { height: 32px; padding: 0 13px; gap: 7px; border-radius: 99px; border: 1px solid var(--linha); background: var(--card); }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { font-size: 13px; }
+.busca-pagina svg { width: 14px; height: 14px; flex: none; }
+.com-ferramentas select { height: 32px; border-radius: 99px; padding: 0 12px; font-size: 13px; min-width: 140px; }
+.com-ferramentas { gap: 8px; }
+@media (max-width: 640px) { .busca-pagina input:not([type=checkbox]):not([type=radio]) { font-size: 16px; } }
+
+/* Busca da página: ícone no início, dentro do campo, na mesma linha do texto (o label global é uma coluna). */
+label.busca-pagina { flex-direction: row; align-items: center; font-weight: 500; }
+.busca-pagina input:not([type=checkbox]):not([type=radio]) { width: auto; flex: 1 1 0; }
+.busca-pagina input[type=search]::-webkit-search-cancel-button { appearance: none; }
+
+/* Ajuda: perguntas em duas colunas no computador (uma só no celular); só uma aberta por vez. */
+.faq { max-width: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; margin-bottom: 14px; }
+@media (max-width: 900px) { .faq { grid-template-columns: minmax(0, 1fr); } }
+.mvv-corpo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 1181px) and (max-width: 1500px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+.calp-lado h3::first-letter { text-transform: uppercase; }
+
+/* Calendário do menu: botão de recolher (a seta vira para cima quando está aberto). */
+.cal-recolher .gira { transform: rotate(180deg); }
+.cal-topo { gap: 2px; }
+.cal-topo b { white-space: nowrap; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.cal-topo .cal-nav { width: 22px; height: 22px; flex: none; }
+
+/* Comunicados no celular: o painel Temas vira um botão à direita, abaixo do banner, com menu flutuante. */
+.temas-flutuante { display: none; }
+@media (max-width: 860px) {
+  .com-lateral .painel-lateral { display: none; }
+  .temas-flutuante { display: flex; justify-content: flex-end; position: relative; z-index: 30; }
+  .temas-botao { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: 600 13px var(--fonte); max-width: 100%; }
+  .temas-botao .gira { transform: rotate(180deg); }
+  .temas-fundo { position: fixed; inset: 0; z-index: 1; border: 0; background: rgba(0, 0, 0, .35); padding: 0; }
+  .temas-menu { position: absolute; z-index: 2; top: calc(100% + 6px); right: 0; width: min(280px, 88vw); max-height: 42vh; overflow-y: auto; background: var(--card); border: 1px solid var(--linha); border-radius: 14px; box-shadow: 0 14px 32px rgba(0, 0, 0, .35); padding: 6px 12px; }
+}
+

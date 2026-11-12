@@ -22,6 +22,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/perfis` | cfg.perfis.criar |
 | PUT | `/api/perfis/:codigo` | cfg.perfis.editar |
 | DELETE | `/api/perfis/:codigo` | cfg.perfis.excluir |
+| GET | `/api/gestao/armazenamento` | cfg.auditoria.ver (tamanho do banco, imagens e anexos) |
 | GET | `/api/auditoria` | cfg.auditoria.ver |
 
 ## aplicacoes
@@ -219,6 +220,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/gestao/pulso` | pub.pulso.criar |
 | PUT | `/api/gestao/pulso/:id` | pub.pulso.editar |
 | POST | `/api/gestao/pulso/:id/reenviar` | pub.pulso.editar |
+| GET | `/api/gestao/pulso/:id/exportar` | pub.pulso.resultado (CSV; `?rodada=`) |
 | DELETE | `/api/gestao/pulso/:id` | pub.pulso.excluir |
 | GET | `/api/gestao/pulso/:id/resultado` | pub.pulso.resultado |
 | PUT | `/api/gestao/pulso/:id/publicacao` | pub.pulso.resultado |

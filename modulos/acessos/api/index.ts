@@ -8,9 +8,13 @@ import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfi
 
 const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
-const MAX_FALHAS = 5;
+const MAX_FALHAS = 5; // por pessoa a partir do mesmo aparelho/IP
+const MAX_FALHAS_IP = 20; // varredura de vários logins a partir de um IP
+const MAX_FALHAS_LOGIN = 30; // ataque distribuído contra um login (limite alto: quem só sabe o login não consegue travar a conta com facilidade)
 const JANELA_MIN = 15;
 const SENHA_MIN = 8;
+// Senhas mais usadas (sem pontuação, minúsculas). Lista curta e local: bloqueia o óbvio sem depender de serviço externo.
+const SENHAS_COMUNS = new Set(['12345678', '123456789', '1234567890', '123123123', '11111111', '00000000', 'password', 'password1', 'senha123', 'senha1234', 'senhasenha', 'mudar123', 'mudar1234', 'trocar123', 'abc12345', 'abcd1234', 'qwerty123', 'qwertyuiop', 'qwerty12', 'q1w2e3r4', 'admin123', 'admin1234', 'administrador', 'dipaula123', 'dipaula2024', 'dipaula2025', 'dipaula2026', 'portal123', 'portal1234', 'bemvindo1', 'bemvindo123', 'brasil123', 'iloveyou', 'letmein1', 'welcome1', 'welcome123', 'mudaragora', 'minhasenha', 'minhasenha1']);
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
@@ -43,6 +47,9 @@ function validarSenhaNova(s: string, login?: string) {
   if (s.length > 128) throw new ErroValidacao('Senha: máximo de 128 caracteres.');
   if (login && s.toLowerCase() === login.toLowerCase()) throw new ErroValidacao('Senha: não use o próprio login.');
   if (/^(.)\1+$/.test(s)) throw new ErroValidacao('Senha: muito simples.');
+  if (SENHAS_COMUNS.has(s.toLowerCase().replace(/[^a-z0-9]/g, ''))) throw new ErroValidacao('Senha: é muito comum. Escolha outra (misture palavras, números e símbolos).');
+  if (new Set(s).size < 4) throw new ErroValidacao('Senha: use mais variedade de caracteres.');
+  if (!/\d/.test(s) && !/[^A-Za-z0-9]/.test(s)) throw new ErroValidacao('Senha: inclua pelo menos um número ou símbolo.');
 }
 
 export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db: Banco; producao: boolean }) {
@@ -80,20 +87,25 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const login = String(texto(c, 'login', 'Login', { max: 64 })).toLowerCase();
     const senha = String(texto(c, 'senha', 'Senha', { max: 128 }));
     const desde = new Date(Date.now() - JANELA_MIN * 60_000).toISOString();
-    const { n } = db.prepare('SELECT COUNT(*) n FROM tentativas_login WHERE chave = ? AND quando > ?').get(login, desde) as { n: number };
-    if (n >= MAX_FALHAS) {
-      auditar(db, null, 'login_bloqueado', { login });
+    // O bloqueio vale para o PAR login+IP (quem só conhece o login de alguém não trava a conta dela de outro lugar),
+    // para o IP (varredura de muitos logins) e, com limite bem maior, para o login (ataque vindo de muitos IPs).
+    const chavePar = `par:${login}|${req.ip}`, chaveIp = `ip:${req.ip}`;
+    const falhas = (chave: string) => (db.prepare('SELECT COUNT(*) n FROM tentativas_login WHERE chave = ? AND quando > ?').get(chave, desde) as { n: number }).n;
+    if (falhas(chavePar) >= MAX_FALHAS || falhas(chaveIp) >= MAX_FALHAS_IP || falhas(login) >= MAX_FALHAS_LOGIN) {
+      auditar(db, null, 'login_bloqueado', { login, ip: req.ip });
       return resp.code(429).send({ erro: `Muitas tentativas. Aguarde ${JANELA_MIN} minutos e tente de novo.` });
     }
     const u = db.prepare('SELECT id, login, nome, perfil, senha_hash, trocar_senha, ativo, permissoes FROM usuarios WHERE login = ?').get(login) as
       | { id: number; login: string; nome: string; perfil: string; senha_hash: string; trocar_senha: number; ativo: number; permissoes: string | null } | undefined;
     const ok = confereSenha(senha, u?.senha_hash ?? HASH_FALSO) && !!u && u.ativo === 1;
     if (!ok || !u) {
-      db.prepare('INSERT INTO tentativas_login (chave, quando) VALUES (?, ?)').run(login, new Date().toISOString());
+      const agora = new Date().toISOString();
+      for (const chave of [chavePar, chaveIp, login]) db.prepare('INSERT INTO tentativas_login (chave, quando) VALUES (?, ?)').run(chave, agora);
+      db.prepare('DELETE FROM tentativas_login WHERE quando < ?').run(desde); // limpeza das tentativas antigas
       auditar(db, u?.id ?? null, 'login_falhou', { login });
       return resp.code(401).send({ erro: 'Login ou senha inválidos.' });
     }
-    db.prepare('DELETE FROM tentativas_login WHERE chave = ?').run(login);
+    db.prepare('DELETE FROM tentativas_login WHERE chave IN (?, ?)').run(login, chavePar);
     db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(new Date().toISOString(), u.id);
     const token = criarSessao(db, u.id);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: HORAS_SESSAO * 3600 });
@@ -194,7 +206,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     validarSenhaNova(senha, u.login);
     db.prepare('UPDATE usuarios SET senha_hash = ?, trocar_senha = 1 WHERE id = ?').run(hashSenha(senha), id);
     db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
-    db.prepare('DELETE FROM tentativas_login WHERE chave = ?').run(u.login);
+    db.prepare("DELETE FROM tentativas_login WHERE chave = ? OR chave LIKE ?").run(u.login, `par:${u.login}|%`);
     db.prepare('UPDATE pedidos_senha SET resolvido_em = ?, resolvido_por = ? WHERE usuario_id = ? AND resolvido_em IS NULL').run(new Date().toISOString(), req.usuario!.id, id);
     auditar(db, req.usuario!.id, 'senha_redefinida', { id });
     return { ok: true };
@@ -275,6 +287,20 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     db.prepare('DELETE FROM perfis_permissoes WHERE perfil = ?').run(codigo);
     auditar(db, req.usuario!.id, 'perfil_apagado', { perfil: codigo, nome: p.nome });
     return { ok: true };
+  });
+
+  // Monitoramento do tamanho do banco: imagens, fotos e anexos ficam dentro do SQLite e o backup cresce junto.
+  app.get('/api/gestao/armazenamento', aAuditoria, async () => {
+    const um = (sql: string) => (db.prepare(sql).get() as { n: number }).n;
+    const pagina = um('SELECT page_size AS n FROM pragma_page_size'), paginas = um('SELECT page_count AS n FROM pragma_page_count');
+    const soma = (tabela: string, coluna: string) => { try { return um(`SELECT COALESCE(SUM(LENGTH(${coluna})), 0) AS n FROM ${tabela}`); } catch { return 0; } };
+    return {
+      banco_bytes: pagina * paginas,
+      imagens_bytes: soma('imagens_arquivo', 'dados'),
+      anexos_bytes: soma('publicacoes_anexos', 'dados'),
+      auditoria_linhas: um('SELECT COUNT(*) AS n FROM auditoria'),
+      aviso: pagina * paginas > 1_000_000_000 ? 'O banco passou de 1 GB: avalie mover imagens e anexos para o disco e revisar o backup.' : null,
+    };
   });
 
   app.get('/api/auditoria', aAuditoria, async () =>

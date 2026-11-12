@@ -2,7 +2,15 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { ConfirmarHost } from './Confirmar.tsx';
 import './estilo.css';
-import './portal.css';
+import './css/parte-01.css';
+import './css/parte-02.css';
+import './css/parte-03.css';
+import './css/parte-04.css';
+import './css/parte-05.css';
+import './css/parte-06.css';
+import './css/parte-07.css';
+import './css/parte-08.css';
+import './css/parte-09.css';
 
 createRoot(document.getElementById('raiz')!).render(<><App /><ConfirmarHost /></>);
 

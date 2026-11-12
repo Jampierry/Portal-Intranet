@@ -16,7 +16,7 @@ Portal interno responsivo (computador e celular) da Di Paula: comunicados, aplic
 ## Pastas
 ```
 web/src/<modulo>/      telas de cada módulo (inicio, comunicados, documentos, pessoas, ajuda, pesquisas, perfil, aplicacoes, gestao)
-web/src/               shell: App.tsx, Menu.tsx, Login.tsx, tema.tsx, estilo.css (tokens), portal.css (layout)
+web/src/               shell: App.tsx, Menu.tsx, Login.tsx, tema.tsx, estilo.css (tokens), css/parte-NN.css (layout)
 modulos/<nome>/api/    rotas da API de cada módulo (registradas em servidor/src/app.ts)
 modulos/<nome>/data/   dados fictícios do seed/demonstração
 modulos/<nome>/tests/  testes do módulo

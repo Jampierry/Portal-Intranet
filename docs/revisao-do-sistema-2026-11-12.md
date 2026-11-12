@@ -2,6 +2,10 @@
 
 Revisão feita sobre o código e a documentação do repositório (`main`). Verificações rodadas: `npm run typecheck`, `npm run build`, `npm test` (**147 testes, todos passando**) e `npm audit --omit=dev` (**0 vulnerabilidades**). **Limite da revisão:** as telas não foram percorridas num navegador nesta revisão, então os itens visuais abaixo vêm de relatos e do código, não de teste visual.
 
+## 0. Andamento (atualizado em 12/11/2026, à noite)
+**Feito no código:** (1) bloqueio de login por login+IP, por IP e por login (limite alto), sem travar a conta de quem só tem o login visado; (2) CSP restritiva (com hash do script de tema), `Permissions-Policy`, COOP e HSTS quando a requisição chega por HTTPS; (3) política de senha (comum, variedade, número/símbolo); (4) Ajuda reescrita (Pesquisas, Meu perfil, sino, aprovação, propriedade, calendário); (5) exportar resultados das pesquisas em CSV (botão no Resultado; respeita anonimato, mínimo de respostas e protege contra fórmula); (6) ESLint (`npm run lint`) e CI no GitHub (`.github/workflows/ci.yml`); (7) `portal.css` dividido em 9 partes, mantendo a cascata (CSS compilado idêntico); (8) monitoramento do tamanho do banco (`GET /api/gestao/armazenamento`, só com permissão de auditoria).
+**Não feito (depende de terceiros ou de decisão):** itens de TI (2.1), marca/LGPD (2.2), recuperação de senha por e-mail (exige SMTP/Zimbra em produção), 2FA/SSO (exige escolha do provedor), antivírus nos anexos (exige o antivírus da TI), testes de tela com Playwright, mover imagens/anexos do SQLite para o disco, consolidar regras CSS repetidas (exige teste visual), atraso progressivo no login e aviso de expiração da sessão.
+
 ## 1. Resumo
 O portal está **funcionalmente completo para a fase de dados fictícios**: 21 módulos de API (~160 rotas), 47 migrações, login local com perfis e permissões por tela e aba, publicação com aprovação do RH, pesquisas com resultado liberável, avisos (sino, e-mail, push), calendário, Meu perfil, 6 estilos de tema e experiência em computador e celular.
 

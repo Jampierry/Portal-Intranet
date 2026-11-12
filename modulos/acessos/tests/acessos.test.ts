@@ -126,3 +126,33 @@ test('o site do portal (origem permitida, mesmo atrás do proxy) consegue entrar
   const r = await app.inject({ method: 'POST', url: '/api/login', headers: { origin: 'http://localhost:5174', host: '127.0.0.1:3100' }, payload: { login: 'le', senha: SENHA } });
   assert.equal(r.statusCode, 200);
 });
+
+test('bloqueio é por login+IP: outro IP não é travado pelo atacante, mas o IP que varre muitos logins é barrado', async () => {
+  const { app } = await criarAppTeste();
+  const tentar = (login: string, senha: string, ip: string) => app.inject({ method: 'POST', url: '/api/login', remoteAddress: ip, payload: { login, senha } });
+  for (let i = 0; i < 5; i++) await tentar('le', 'errada-errada', '10.0.0.1'); // atacante trava só o par le+10.0.0.1
+  assert.equal((await tentar('le', SENHA, '10.0.0.1')).statusCode, 429);
+  assert.equal((await tentar('le', SENHA, '10.0.0.2')).statusCode, 200); // a pessoa de verdade entra do outro IP
+  for (let i = 0; i < 20; i++) await tentar(`fulano${i}`, 'errada-errada', '10.0.0.9'); // varredura de logins
+  assert.equal((await tentar('master', SENHA, '10.0.0.9')).statusCode, 429);
+});
+
+test('política de senha: recusa senha comum, sem variedade ou só letras; aceita senha boa', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const criar = (senha: string, n: number) => app.inject({ method: 'POST', url: '/api/usuarios', headers: adm, payload: { login: `novo${n}`, nome: 'Novo Usuário', perfil: 'consulta', senha } });
+  assert.equal((await criar('Senha@123'.slice(0, 7), 0)).statusCode, 400); // curta
+  assert.equal((await criar('password1', 1)).statusCode, 400); // comum
+  assert.equal((await criar('Admin-123', 2)).statusCode, 400); // comum ignorando pontuação e caixa
+  assert.equal((await criar('somenteletras', 3)).statusCode, 400); // sem número nem símbolo
+  assert.equal((await criar('abababab1', 4)).statusCode, 400); // pouca variedade
+  assert.equal((await criar('cafe-com-leite-7', 5)).statusCode, 201);
+});
+
+test('armazenamento: só quem vê a auditoria consulta o tamanho do banco', async () => {
+  const { app } = await criarAppTeste();
+  assert.equal((await app.inject({ url: '/api/gestao/armazenamento', headers: await entrar(app, 'le') })).statusCode, 403);
+  const r = await app.inject({ url: '/api/gestao/armazenamento', headers: await entrar(app, 'master') });
+  assert.equal(r.statusCode, 200);
+  assert.ok(r.json<{ banco_bytes: number }>().banco_bytes > 0);
+});

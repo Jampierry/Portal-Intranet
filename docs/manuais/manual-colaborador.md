@@ -4,8 +4,8 @@ Para todas as pessoas que usam o portal, no computador ou no celular.
 
 ## 1. Entrar
 1. Abra o endereço do portal e informe o **login** e a **senha** que o administrador criou para você.
-2. No primeiro acesso a senha é provisória: o portal pede que você crie uma senha só sua (mínimo de 8 caracteres).
-3. Depois de **5 tentativas erradas** o login fica bloqueado por **15 minutos**.
+2. No primeiro acesso a senha é provisória: o portal pede que você crie uma senha só sua (mínimo de 8 caracteres, com número ou símbolo; senhas comuns como "senha123" são recusadas).
+3. Depois de **5 tentativas erradas** neste aparelho o login fica bloqueado por **15 minutos** (o bloqueio vale para o seu login naquele endereço, não trava você em outro lugar).
 4. **Esqueci a senha:** na tela de entrada use "Esqueci minha senha". O administrador recebe o aviso, redefine e passa uma senha provisória.
 5. A sessão dura 12 horas; depois disso é preciso entrar de novo.
 
