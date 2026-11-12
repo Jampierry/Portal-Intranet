@@ -34,3 +34,15 @@
 .ajuda-pagina .faq, .ajuda-pagina .manual-lista, .ajuda-pagina .manual-leitor { max-width: none; margin-left: 0; margin-right: 0; }
 .ajuda-pagina > p.suave { text-align: center; margin-top: 18px; }
 @media (max-width: 520px) { .ajuda-abas button { padding: 0 10px; font-size: 12.5px; } }
+
+/* Ajuda no computador: a página não rola; só o cartão das perguntas / do manual tem a própria barra de rolagem. */
+@media (min-width: 861px) {
+  .meio .coluna-tela > .conteudo:has(> .ajuda-pagina) { overflow: hidden; }
+  .conteudo > .ajuda-pagina { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
+  .ajuda-pagina > * { flex: none; }
+  .ajuda-pagina > .faq, .ajuda-pagina > .manual-lista, .ajuda-pagina > .manual-leitor { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .ajuda-pagina > .faq, .ajuda-pagina > .manual-lista { padding-right: 6px; margin-bottom: 0; }
+  .ajuda-pagina > .manual-leitor { display: flex; flex-direction: column; overflow: hidden; }
+  .ajuda-pagina > .manual-leitor > .manual-texto { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--suave) 45%, transparent) transparent; }
+  .ajuda-pagina > p.suave { margin: 10px 0 0; }
+}
