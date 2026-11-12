@@ -1,6 +1,6 @@
 /* ===== Vidro (efeito vitrificado) — mesmo visual da tela de entrada, onde há conteúdo por trás para desfocar =====
    Onde entra: janelas (pop-ups), menus e painéis flutuantes, dicas, barra superior e abas do celular (a página rola por baixo).
-   Onde NÃO entra: cartões e áreas de leitura sobre o fundo liso (nada para desfocar; só perderia contraste).
+   Os cartões das telas também são vidro leve, sobre o fundo ambiente (manchas de cor atrás de tudo). Tabelas e formulários continuam sólidos (leitura).
    Contraste: o desfoque forte (26px) deixa o que está atrás ilegível, então o texto continua com contraste
    (o vidro mantém 62–74 % da cor do cartão; o desfoque forte apaga o que está atrás). Sem suporte a backdrop-filter, ou com "reduzir transparência" no sistema,
    fica como antes (cor sólida). Só variáveis do tema, nenhuma cor nova. Carregado por último em main.tsx. */
@@ -10,6 +10,13 @@
   --vidro-desfoque: blur(26px) saturate(1.7);
   --vidro-desfoque-leve: blur(16px) saturate(1.4);
 }
+
+/* ===== Fundo ambiente: as mesmas manchas de cor da tela de entrada, paradas, atrás de todo o sistema.
+   Sem elas o fundo é liso e o vidro não tem o que desfocar. ===== */
+body::before, body::after { content: ""; position: fixed; z-index: -1; border-radius: 50%; filter: blur(80px); opacity: .42; pointer-events: none; }
+body::before { width: 52vmin; height: 52vmin; top: 4%; left: 14%; background: radial-gradient(circle at 30% 30%, var(--vinho), transparent 70%); }
+body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: radial-gradient(circle at 60% 60%, var(--coral), transparent 70%); }
+:root[data-tema=claro] body::before, :root[data-tema=claro] body::after { opacity: .3; }
 
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   @media all {
@@ -23,6 +30,15 @@
     .janela::backdrop { background: rgba(10, 8, 12, .42); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
     .janela header { background: transparent; }
     .janela footer { background: color-mix(in srgb, var(--fundo) 55%, transparent); }
+
+
+    /* Cartões e blocos das telas: vidro leve sobre o fundo ambiente */
+    .cartao, .cartao-sec, .cartao-com, .painel-lateral, .cartao-app, .cartao-doc, .lancador {
+      background: linear-gradient(150deg, color-mix(in srgb, var(--card) 78%, transparent), color-mix(in srgb, var(--card) 66%, transparent));
+      -webkit-backdrop-filter: var(--vidro-desfoque-leve); backdrop-filter: var(--vidro-desfoque-leve);
+      border-color: var(--vidro-borda);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .12), inset 0 1px 0 var(--vidro-brilho);
+    }
 
     /* Menus e painéis que abrem por cima da tela */
     .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel {
@@ -51,7 +67,7 @@
 /* Quem pediu menos transparência no sistema (Windows › Acessibilidade › Efeitos de transparência desligado)
    recebe tudo sólido, como antes. Fica DEPOIS do vidro de propósito (não use "not (…)": navegador que não conhece a regra descartaria o vidro). */
 @media (prefers-reduced-transparency: reduce) {
-  .janela, .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .cartao, .cartao-sec, .cartao-com, .painel-lateral, .cartao-app, .cartao-doc, .lancador, .janela, .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .janela::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(10, 8, 12, .6); }
   .janela footer { background: var(--fundo); }
   .lancador-dica, .lancador-ico .dica { background: var(--menu); -webkit-backdrop-filter: none; backdrop-filter: none; }
