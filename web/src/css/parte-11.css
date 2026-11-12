@@ -78,8 +78,8 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 @media (min-width: 861px) {
   .entrar { position: relative; }
   .entrar::after {
-    content: ""; position: absolute; z-index: 5; top: 0; bottom: 0; left: 50%; width: 84px; transform: translateX(-50%); pointer-events: none;
-    -webkit-backdrop-filter: blur(7px) saturate(1.1); backdrop-filter: blur(7px) saturate(1.1);
+    content: ""; position: absolute; z-index: 5; top: 0; bottom: 0; left: calc(50% + 6px); width: 44px; transform: translateX(-50%); pointer-events: none;
+    -webkit-backdrop-filter: blur(5px) saturate(1.1); backdrop-filter: blur(5px) saturate(1.1);
     -webkit-mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent); mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent);
   }
 }
