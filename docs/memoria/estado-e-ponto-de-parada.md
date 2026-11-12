@@ -243,3 +243,10 @@
 ## Contatos com ramal e celular (07/11/2026)
 - Migração 014: `contatos.ramal` e `contatos.celular` (opcionais, corporativos). Canal (e-mail/link) deixou de ser obrigatório: basta informar canal, ramal ou celular.
 - Publicar › Contatos ganhou os campos e as colunas Ramal e Celular; a tela Pessoas mostra "Ramal 2400" e o celular como link `tel:`. Validação no servidor (ramal só números; celular com DDD). 79 testes passam.
+
+## Sessão de 12/11/2026 (tarde) — fechamento do Meu perfil (NÃO enviado)
+- Foto de perfil (migração 047, `POST/DELETE /api/eu/foto`, `Avatar` aceita `foto`); ficha de contato/emergência para admin ou quem tiver `cfg.usuarios.emergencia` (`GET /api/usuarios/:id/ficha`, botão "Contato" em Configurações › Usuários, auditada). RH NÃO ganha isso sozinho (teste garante que RH não vê usuários): dar "Ver a aba" + emergência em Perfis.
+- Aba "Dados de exemplo" some em produção (sem exemplo ligado nem liberação); celular: telas com busca própria escondem a busca do topo. Security-review do diff e `npm audit`: sem achados. 147 testes, typecheck e build OK.
+- Resultado das pesquisas aos colaboradores: já estava pronto. "Feirão Outlet repetido" é dado do banco dev (não está no código). "Início cortado" não reproduzido sem navegador. Telas novas não conferidas visualmente.
+- Esclarecido pelo usuário (12/11): "Feirão Outlet repetido" NÃO é defeito — o compromisso se repete em vários dias na agenda. Tela de entrada: altura corrigida com `--zoom` e cartão de vidro. Resta só a parte da TI.
+- Também nesta sessão: janela "Contato" redesenhada (cartões, telefones clicáveis, um só botão Fechar) e bloco Avatar de Meu perfil alinhado. Ponto de parada salvo; **nada enviado ainda** (falta "enviar"). Pendente só: TI (servidor, HTTPS, nome interno, backup, leitura nas pastas, firewall 5174) e conferir as telas novas no navegador.
