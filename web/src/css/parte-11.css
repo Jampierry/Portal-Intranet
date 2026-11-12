@@ -79,7 +79,7 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
   .entrar { position: relative; }
   .entrar::after {
     content: ""; position: absolute; z-index: 5; top: 0; bottom: 0; left: 50%; width: 84px; transform: translateX(-50%); pointer-events: none;
-    -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(7px) saturate(1.1); backdrop-filter: blur(7px) saturate(1.1);
     -webkit-mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent); mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent);
   }
 }
