@@ -3,19 +3,21 @@ import { api } from '../api';
 import { Icone } from '../icones';
 import { MarcaEntrada, PADRAO_ENTRADA, type ConfigEntrada } from '../MarcaEntrada';
 import { DicaAba } from '../Dica';
+import { ehVideo } from '../midia';
 
-/** Envia uma imagem para a tela de entrada e devolve o endereço público dela. */
+/** Envia uma imagem ou um vídeo curto para a tela de entrada e devolve o endereço público dele. */
 async function enviar(arq: File): Promise<string> {
-  if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem PNG, JPG, WebP ou GIF.');
-  if (arq.size > 5 * 1024 * 1024) throw new Error('A imagem passa de 5 MB. Escolha uma menor.');
-  const r = await fetch('/api/gestao/entrada/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
+  const eVideo = /^video\/(mp4|webm)$/.test(arq.type);
+  if (!eVideo && !/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem (PNG, JPG, WebP, GIF) ou um vídeo MP4 ou WebM.');
+  if (eVideo ? arq.size > 20 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) throw new Error(eVideo ? 'O vídeo passa de 20 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
+  const r = await fetch(eVideo ? '/api/gestao/entrada/videos' : '/api/gestao/entrada/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
   const j = await r.json().catch(() => ({})) as { url?: string; erro?: string };
   if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
   return j.url;
 }
 
 const FUNDOS: [ConfigEntrada['fundo'], string, string][] = [
-  ['cor', 'Cor sólida', 'O degradê do tema, como hoje.'], ['imagem', 'Imagem fixa', 'Uma imagem sempre igual.'], ['carrossel', 'Carrossel', 'Várias imagens que se alternam.'],
+  ['cor', 'Cor sólida', 'O degradê do tema, como hoje.'], ['imagem', 'Imagem ou vídeo fixo', 'Uma imagem ou um vídeo sempre igual.'], ['carrossel', 'Carrossel', 'Várias imagens ou vídeos que se alternam.'],
 ];
 
 /** Configurações › Tela de entrada: lateral da tela de login (fundo, ícone, título, frase e textos), com prévia ao vivo. */
@@ -68,7 +70,7 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
                 <div className="entcfg-imgs">
                   {cfg.imagens.map((u, k) => (
                     <div key={u} className="entcfg-img">
-                      <img src={u} alt={`Imagem ${k + 1}`} />
+                      {ehVideo(u) ? <video src={u} muted loop playsInline autoPlay aria-label={`Vídeo ${k + 1}`} /> : <img src={u} alt={`Imagem ${k + 1}`} />}
                       {edita && (
                         <span className="entcfg-img-acoes">
                           {cfg.fundo === 'carrossel' && <><button type="button" aria-label="Mover para antes" disabled={k === 0} onClick={() => mover(k, -1)}><Icone nome="esq" tamanho={12} /></button>
@@ -79,13 +81,13 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
                     </div>
                   ))}
                   {edita && (cfg.fundo === 'carrossel' ? cfg.imagens.length < 8 : cfg.imagens.length < 1) && (
-                    <label className="entcfg-add">{enviando ? 'Enviando…' : '+ Adicionar imagem'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple={cfg.fundo === 'carrossel'} className="so-leitor" disabled={enviando}
+                    <label className="entcfg-add">{enviando ? 'Enviando…' : '+ Adicionar imagem ou vídeo'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple={cfg.fundo === 'carrossel'} className="so-leitor" disabled={enviando}
                         onChange={(e) => { void subir(e.target.files, (urls) => set({ imagens: cfg.fundo === 'carrossel' ? [...cfg.imagens, ...urls].slice(0, 8) : urls.slice(0, 1) })); e.target.value = ''; }} />
                     </label>
                   )}
                 </div>
-                <small className="suave">Use imagens largas (por exemplo 1200 × 1400 px), PNG, JPG, WebP ou GIF, até 5 MB cada{cfg.fundo === 'carrossel' ? '; no máximo 8, na ordem mostrada' : ''}.</small>
+                <small className="suave">Use imagens largas (por exemplo 1200 × 1400 px), PNG, JPG, WebP ou GIF, até 5 MB cada, ou vídeos curtos MP4/WebM de até 20 MB (tocam sem som, em laço; prefira 10 a 20 segundos, 1280 px de largura){cfg.fundo === 'carrossel' ? '; no máximo 8, na ordem mostrada' : ''}.</small>
                 <label className="entcfg-campo">Escurecer a imagem: {cfg.escurecer}%
                   <input type="range" min={0} max={80} step={5} value={cfg.escurecer} disabled={!edita} onChange={(e) => set({ escurecer: Number(e.target.value) })} />
                   <small className="suave">Ajuda a ler o texto sobre fotos claras.</small>

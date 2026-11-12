@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { corpoObjeto, dataIso, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
-import { enviarImagem, guardarImagem, lerImagem } from '../../imagens/api/index.ts';
+import { enviarImagem, enviarVideo, guardarImagem, guardarVideo, LIMITE_VIDEO, lerImagem } from '../../imagens/api/index.ts';
 
 export interface FeriadoMunicipal { titulo: string; dia: number; mes: number }
 export interface ConfigEmpresa {
@@ -43,6 +43,8 @@ export const PADRAO_EMPRESA: ConfigEmpresa = {
 export const PADRAO_ENTRADA: ConfigEntrada = { fundo: 'cor', imagens: [], intervalo: 6, escurecer: 35, linhas: [], rodape: '', texto_extra: '' };
 
 const URL_IMAGEM = /^\/api\/publico\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/;
+/** Fundo da tela de entrada: imagem ou vídeo curto (MP4/WebM). */
+const URL_FUNDO = /^\/api\/publico\/(imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)|videos\/[a-f0-9]{24}\.(mp4|webm))$/;
 
 function ler<T>(db: Banco, chave: string, padrao: T): T {
   const r = db.prepare('SELECT valor FROM portal_config WHERE chave = ?').get(chave) as { valor: string } | undefined;
@@ -93,8 +95,8 @@ function validarEntrada(c: Record<string, unknown>): ConfigEntrada {
   if (!['cor', 'imagem', 'carrossel'].includes(fundo)) throw new ErroValidacao('Fundo: escolha cor, imagem ou carrossel.');
   const imagens = Array.isArray(c.imagens) ? c.imagens.map(String) : [];
   if (imagens.length > 8) throw new ErroValidacao('Imagens: no máximo 8.');
-  if (imagens.some((u) => !URL_IMAGEM.test(u))) throw new ErroValidacao('Imagens: use só imagens enviadas por esta tela.');
-  if (fundo !== 'cor' && imagens.length === 0) throw new ErroValidacao('Envie ao menos uma imagem ou escolha o fundo em cor.');
+  if (imagens.some((u) => !URL_FUNDO.test(u))) throw new ErroValidacao('Imagens: use só imagens ou vídeos enviados por esta tela.');
+  if (fundo !== 'cor' && imagens.length === 0) throw new ErroValidacao('Envie ao menos uma imagem ou vídeo, ou escolha o fundo em cor.');
   const intervalo = Number(c.intervalo ?? 6), escurecer = Number(c.escurecer ?? 35);
   if (!Number.isInteger(intervalo) || intervalo < 3 || intervalo > 30) throw new ErroValidacao('Tempo de troca: entre 3 e 30 segundos.');
   if (!Number.isInteger(escurecer) || escurecer < 0 || escurecer > 80) throw new ErroValidacao('Escurecer a imagem: entre 0 e 80.');
@@ -113,6 +115,21 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
     const img = m && usada ? lerImagem(db, req.params.nome) : null;
     if (!img) return resp.code(404).send({ erro: 'Imagem não encontrada.' });
     return enviarImagem(resp, img, true);
+  });
+
+  // Vídeo de fundo da entrada: só entrega o que a configuração usa (o login aparece antes de entrar).
+  app.get<{ Params: { nome: string } }>('/api/publico/videos/:nome', async (req, resp) => {
+    const usado = lerEntrada(db).imagens.includes(`/api/publico/videos/${req.params.nome}`);
+    if (!usado || !enviarVideo(db, req, resp, req.params.nome, true)) return resp.code(404).send({ erro: 'Vídeo não encontrado.' });
+    return resp;
+  });
+  app.post('/api/gestao/entrada/videos', { preHandler: exigirPerm('cfg.entrada.editar'), bodyLimit: LIMITE_VIDEO }, async (req, resp) => {
+    const corpo = req.body;
+    if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha um vídeo MP4 ou WebM.' });
+    const salvo = guardarVideo(db, corpo);
+    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como vídeo MP4 ou WebM (até 20 MB).' });
+    auditar(db, req.usuario!.id, 'entrada_video_enviado', { nome: salvo.nome, bytes: corpo.length });
+    return resp.code(201).send({ url: `/api/publico/videos/${salvo.nome}` });
   });
 
   app.addContentTypeParser('image/svg+xml', { parseAs: 'buffer', bodyLimit: 1024 * 1024 }, (_req, corpo, feito) => feito(null, corpo));

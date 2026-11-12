@@ -119,7 +119,7 @@ function Banners({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER },
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
         { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel da esquerda)', max: 160 },
-        { chave: 'imagem', rotulo: 'Imagem do banner', tipo: 'imagem', dica: 'Formato largo: esquerda ≈ 1000 × 330 px; meio e direita ≈ 700 × 330 px. PNG, JPG, WebP ou GIF, até 5 MB. Sem imagem = fundo em cor do tema.' },
+        { chave: 'imagem', rotulo: 'Imagem ou vídeo do banner', tipo: 'imagem', video: true, dica: 'Formato largo: esquerda ≈ 1000 × 330 px; meio e direita ≈ 700 × 330 px. Imagem PNG, JPG, WebP ou GIF (até 5 MB) ou vídeo curto MP4/WebM (até 20 MB; toca sem som, em laço). Sem imagem = fundo em cor do tema.' },
         { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
         { chave: 'link', rotulo: 'Link do botão', tipo: 'link', max: 300, dica: 'Escolha um comunicado ou página do portal, ou use um endereço externo. Preencha também o texto do botão.', metade: true },
         { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
@@ -131,7 +131,7 @@ function Banners({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { titulo: 'Carrossel', ver: (r) => NOME_POSICAO[r.posicao] ?? r.posicao },
         { titulo: 'Ordem', ver: (r) => r.ordem },
         { titulo: 'Título', ver: (r) => r.titulo },
-        { titulo: 'Imagem', ver: (r) => (r.imagem ? 'Sim' : 'Cor do tema') },
+        { titulo: 'Imagem', ver: (r) => (r.imagem ? (/.(mp4|webm)$/i.test(r.imagem) ? 'Vídeo' : 'Sim') : 'Cor do tema') },
         { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
       ]}
       acoesExtra={(r, _salvar, recarregar) => (r.ativo ? <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button> : null)}

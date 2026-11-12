@@ -9,14 +9,14 @@ const VISIVEL = "ativo = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','lo
 const POSICOES = ['principal', 'lateral1', 'lateral2'] as const;
 const CAMPOS = 'id, titulo, subtitulo, imagem, botao_texto, link, posicao, ordem, ativo, exibir_de, exibir_ate';
 
-/** Imagem: guardada pelo portal (ou imagem de demonstração em /demo). Vazio = fundo em cor do tema. */
-const IMAGEM_OK = /^\/(api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)|demo\/[a-z0-9._-]+)$/i;
+/** Imagem ou vídeo curto (MP4/WebM): guardado pelo portal (ou imagem de demonstração em /demo). Vazio = fundo em cor do tema. */
+const IMAGEM_OK = /^\/(api\/imagens\/[a-f0-9]{24}\.(png|jpg|webp|gif|ico)|api\/videos\/[a-f0-9]{24}\.(mp4|webm)|demo\/[a-z0-9._-]+)$/i;
 /** Link: página do portal (#comunicados/slug) ou endereço http(s). */
 const LINK_INTERNO = /^#[a-z0-9/_-]{1,80}$/i;
 
 function ler(c: Record<string, unknown>) {
   const imagem = texto(c, 'imagem', 'Imagem', { max: 120, opcional: true });
-  if (imagem && !IMAGEM_OK.test(imagem)) throw new ErroValidacao('Imagem: use "Escolher imagem" para enviar o arquivo.');
+  if (imagem && !IMAGEM_OK.test(imagem)) throw new ErroValidacao('Imagem: use "Escolher imagem ou vídeo" para enviar o arquivo.');
   const link = texto(c, 'link', 'Link', { max: 300, opcional: true });
   if (link && !LINK_INTERNO.test(link)) {
     try { if (!['http:', 'https:'].includes(new URL(link).protocol)) throw new Error(); }

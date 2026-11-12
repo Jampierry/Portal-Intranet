@@ -75,7 +75,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       if (origem && !mesmoSite && !config.origensPermitidas.includes(origem)) return resp.code(403).send({ erro: 'Origem não permitida.' });
     }
     req.usuario = usuarioDaSessao(db, req.cookies[COOKIE_SESSAO]);
-    if (ROTAS_PUBLICAS.has(caminho) || caminho === '/api/entrada' || caminho === '/api/empresa' || caminho.startsWith('/api/publico/imagens/')) return; // identidade e tela de entrada: aparecem antes do login
+    if (ROTAS_PUBLICAS.has(caminho) || caminho === '/api/entrada' || caminho === '/api/empresa' || caminho.startsWith('/api/publico/imagens/') || caminho.startsWith('/api/publico/videos/')) return; // identidade e tela de entrada: aparecem antes do login
     if (!req.usuario) return resp.code(401).send({ erro: 'Faça login para continuar.' });
     if (req.usuario.trocar_senha && !ROTAS_COM_SENHA_PENDENTE.has(caminho)) {
       return resp.code(403).send({ erro: 'Troque a senha provisória para continuar.', codigo: 'trocar_senha' });

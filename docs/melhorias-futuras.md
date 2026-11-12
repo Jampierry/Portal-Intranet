@@ -3,7 +3,7 @@
 Atualizada em 12/11/2026 (gatilho: "registre nas melhorias futuras"). O que **a TI** precisa fazer está em [pendências da TI](pendencias-ti.md). O histórico da análise está em [revisão do sistema](revisao-do-sistema-2026-11-12.md).
 
 ## Já feito (para não repetir)
-Limite de login por login+IP, por IP e por login · CSP, Permissions-Policy e HSTS em produção · política de senha · Ajuda reescrita, com **manuais dentro do portal** · exportar resultados de pesquisas em CSV · ESLint e CI (`.github/workflows/ci.yml`) · `portal.css` dividido em `web/src/css/parte-NN.css` · monitoramento do tamanho do banco · notificações, confirmação de leitura, Pessoas (Contatos) e Ajuda. · efeito vitrificado (vidro) em janelas, menus e painéis flutuantes, dicas e, no celular, barra superior e abas (`web/src/css/parte-11.css`; fica opaco sem suporte ou com "reduzir transparência"); falta conferir no navegador (6 estilos × claro/escuro)
+Limite de login por login+IP, por IP e por login · CSP, Permissions-Policy e HSTS em produção · política de senha · Ajuda reescrita, com **manuais dentro do portal** · exportar resultados de pesquisas em CSV · ESLint e CI (`.github/workflows/ci.yml`) · `portal.css` dividido em `web/src/css/parte-NN.css` · monitoramento do tamanho do banco · notificações, confirmação de leitura, Pessoas (Contatos) e Ajuda. · efeito vitrificado (vidro) em janelas, menus e painéis flutuantes, dicas e, no celular, barra superior e abas (`web/src/css/parte-11.css`; fica opaco sem suporte ou com "reduzir transparência"); falta conferir no navegador (6 estilos × claro/escuro) · vídeo (MP4/WebM, até 20 MB, sem som, em laço) nos banners e no fundo da tela de entrada (tabela `videos_arquivo`, entrega por Range)
 
 ## Código (podemos fazer)
 | Prioridade | Melhoria | Observação |
@@ -27,7 +27,6 @@ Limite de login por login+IP, por IP e por login · CSP, Permissions-Policy e HS
 | Baixa | Dividir arquivos grandes (`pulso/api`, `Gestao.tsx`, `App.tsx`, `Administracao.tsx`) quando forem mexidos | |
 | Baixa | Padronizar `exigirPerm('...')` na própria rota; um teste de permissão e de propriedade por módulo novo | |
 | Baixa | Auditoria manual de acessibilidade (leitor de tela, teclado, pop-ups, carrosséis, cartão de vidro do login) | |
-| Média | **Vídeo nos banners e na tela de entrada** (onde hoje só há foto) | Aceitar MP4/WebM (limite de tamanho, sem som, em laço, pausa com "reduzir animações", imagem de reserva); atenção ao peso no SQLite e ao celular. |
 
 ## Depende de ferramenta ou serviço externo
 - **Recuperação de senha por e-mail** (hoje o administrador redefine): exige SMTP/Zimbra em produção e o e-mail guardado em cada usuário.

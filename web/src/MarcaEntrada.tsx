@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Lema } from './Capa';
 import { IconeSistema } from './icones';
 import { LogoEmpresa, LogoNome, useEmpresa, type ConfigEmpresa } from './empresa';
+import { ehVideo, VideoFundo } from './midia';
 
 /** Configuração da lateral da tela de entrada (vem de /api/entrada; editada em Configurações › Tela de entrada). */
 export interface ConfigEntrada {
@@ -46,7 +47,9 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
   const veu = cfg.escurecer / 100;
   return (
     <section className={`entrar-marca${previa ? ' previa' : ''}${imagens.length ? ' com-imagem' : ''}`} aria-hidden="true" onMouseEnter={() => setPausado(true)} onMouseLeave={() => setPausado(false)}>
-      {imagens.map((u, k) => <div key={u} className={`entrar-fundo-img kb${k % 4}${k === i ? ' ativa' : ''}${k === ant && k !== i ? ' saindo' : ''}`} style={{ backgroundImage: `url(${u})`, ['--dur' as string]: `${cfg.intervalo + 3}s` }} />)}
+      {imagens.map((u, k) => ehVideo(u)
+        ? <div key={u} className={`entrar-fundo-img entrar-fundo-video${k === i ? ' ativa' : ''}${k === ant && k !== i ? ' saindo' : ''}`}><VideoFundo src={u} tocando={k === i || k === ant} /></div>
+        : <div key={u} className={`entrar-fundo-img kb${k % 4}${k === i ? ' ativa' : ''}${k === ant && k !== i ? ' saindo' : ''}`} style={{ backgroundImage: `url(${u})`, ['--dur' as string]: `${cfg.intervalo + 3}s` }} />)}
       {imagens.length > 0 && <div className="entrar-fundo-veu" style={{ background: `linear-gradient(180deg, rgba(0,0,0,${veu * 0.55}) 0%, rgba(0,0,0,${veu}) 100%)` }} />}
       <div className="entrar-logo">
         {rascunho ? (rascunho.logo ? <img className="entrar-logo-img" src={rascunho.logo} alt="" width={34} height={34} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={34} />) : <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />}

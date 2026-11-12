@@ -15,7 +15,7 @@ Atualizada em 12/11/2026. Idioma: português do Brasil. **Todos os dados do port
 |---|---|
 | [Visão geral e arquitetura](arquitetura.md) | pilha, pastas, fluxo de uma requisição, regras do domínio, segurança |
 | [Referência da API](referencia-api.md) | todas as rotas, com a permissão exigida |
-| [Banco de dados](banco-de-dados.md) | tabelas e histórico das 47 migrações |
+| [Banco de dados](banco-de-dados.md) | tabelas e histórico das 48 migrações |
 | [Permissões e perfis](permissoes-e-perfis.md) | catálogo de permissões e como o perfil e o ajuste por pessoa se combinam |
 | [**Pendências da TI**](pendencias-ti.md) | **checklist do que a TI precisa fazer para ir à produção** |
 | [Implantação](implantacao.md) | ambientes, `.env`, instalação, atualização, rollback e backup |

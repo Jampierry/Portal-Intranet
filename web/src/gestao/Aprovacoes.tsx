@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { avisar, confirmar } from '../Confirmar';
 import { JanelaForm, Selo, usePermissoes } from './Crud';
+import { ehVideo } from '../midia';
 import { dataCurta } from '../dados';
 import { ListaAnexos, type Anexo } from './Anexos';
 import { DetalhePedido } from './DetalhePedido';
@@ -65,7 +66,7 @@ export function Aprovacoes() {
               <small className="suave">Enviado por {p.solicitante} · {dataCurta(p.criado_em)}{p.decisor ? ` · decidido por ${p.decisor}${p.decidido_em ? ` em ${dataCurta(p.decidido_em)}` : ''}` : ''}</small>
               {v && (
                 <div className="aprov-previa">
-                  {v.imagem && <img src={v.imagem} alt="" />}
+                  {v.imagem && (ehVideo(v.imagem) ? <video src={v.imagem} muted loop playsInline autoPlay aria-hidden="true" /> : <img src={v.imagem} alt="" />)}
                   <div>
                     {v.tipo === 'comunicado' ? (<>
                       <p><b>{v.categoria}</b>{v.prioridade === 'urgente' ? ' · urgente' : ''}</p>

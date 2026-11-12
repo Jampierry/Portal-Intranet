@@ -238,3 +238,22 @@
 .entrar-marca.previa .entrar-extra { font-size: 19px; }
 .entrar-extra + .lema .traco { display: none; }
 
+
+/* Vídeo no fundo da entrada (e prévias): ocupa o espaço como a imagem */
+.entrar-fundo-video { background: none; }
+.entrar-fundo-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.entcfg-img video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Prévia da Empresa ("Como vai aparecer"): nada passa da borda do cartão; o rodapé fica em coluna, legível */
+.empcfg-previa { min-width: 0; gap: 8px; }
+.empcfg-previa .prev-rotulo { margin-top: 8px; }
+.empcfg-previa .prev-rotulo:first-of-type { margin-top: 2px; }
+.empcfg-previa .prev-menu-real.menu { min-width: 0; overflow: hidden; }
+.empcfg-previa .prev-menu-real .sbtop { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
+.empcfg-previa .prev-menu-real .appbtn { flex: none; }
+.empcfg-previa .prev-menu-real .brandtxt { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.empcfg-previa .prev-menu-real .empnome-img { max-width: 100%; height: auto; max-height: 30px; }
+.empcfg-previa .prev-menu-real .empnome, .empcfg-previa .prev-menu-real .brandtxt > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empcfg-previa .prev-rodape-real { display: grid; gap: 4px; justify-content: stretch; text-align: left; margin: 0; padding: 10px 12px; border: 1px solid var(--vinho-linha, var(--linha-suave)); border-radius: 12px; background: color-mix(in srgb, var(--card) 70%, transparent); font-size: 12px; line-height: 1.4; }
+.empcfg-previa .prev-rodape-real > span { min-width: 0; overflow-wrap: anywhere; }
+.empcfg-previa .prev-rodape-real > span:last-child { color: var(--suave); font-size: 11px; }

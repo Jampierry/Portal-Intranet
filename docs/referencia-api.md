@@ -127,6 +127,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 |---|---|---|
 | POST | `/api/gestao/imagens` | ...PUB_QUE_ENVIAM_IMAGEM |
 | GET | `/api/imagens/:nome` | — |
+| POST | `/api/gestao/videos` | pub.banners.criar ou editar (MP4/WebM, até 20 MB) |
+| GET | `/api/videos/:nome` | login; aceita Range |
 
 ## inicio
 | Método | Rota | Permissão |
@@ -165,6 +167,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | GET | `/api/empresa` | — |
 | GET | `/api/entrada` | — |
 | GET | `/api/publico/imagens/:nome` | — |
+| GET | `/api/publico/videos/:nome` | — (só o que a tela de entrada usa; aceita Range) |
+| POST | `/api/gestao/entrada/videos` | cfg.entrada.editar |
 | POST | `/api/gestao/` | — |
 | PUT | `/api/gestao/empresa` | cfg.empresa.editar |
 | PUT | `/api/gestao/entrada` | cfg.entrada.editar |

@@ -3,12 +3,13 @@ import { Icone } from '../icones';
 import { LinkApp } from '../aplicacoes/LinkApp';
 import type { Banner } from '../dados';
 import type { Tela } from '../Menu';
+import { ehVideo, VideoFundo } from '../midia';
 
 const TELAS_LINK = ['inicio', 'comunicados', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
 
 /** Um carrossel (grande ou menor). Todos recebem o mesmo "tick" e por isso giram juntos; setas e pontos só deslocam este carrossel. */
-function Carrossel({ lista, tick, irPara, menor, titulo, pausa }: {
-  lista: Banner[]; tick: number; irPara: (t: Tela, slug?: string) => void; menor?: boolean; titulo: string;
+function Carrossel({ lista, tick, irPara, menor, titulo, pausa, parado }: {
+  lista: Banner[]; tick: number; irPara: (t: Tela, slug?: string) => void; menor?: boolean; titulo: string; /** Botão de pausa apertado: vídeos também param. */ parado?: boolean;
   pausa?: { parado: boolean; alternar: () => void; reduzido: boolean };
 }) {
   const n = lista.length;
@@ -22,7 +23,7 @@ function Carrossel({ lista, tick, irPara, menor, titulo, pausa }: {
     <section className={`hero novidades${menor ? ' menor' : ''}`} aria-roledescription="carrossel" aria-label={titulo}>
       {lista.map((b, k) => (
         <div key={b.id} className={`slide${k === atual ? ' ativo' : ''}`} role="group" aria-roledescription="slide" aria-label={`${k + 1} de ${n}`} aria-hidden={k !== atual}>
-          {b.imagem ? <img className="slide-fundo" src={b.imagem} alt="" /> : <span className="slide-fundo slide-cor" />}
+          {b.imagem ? (ehVideo(b.imagem) ? <VideoFundo className="slide-fundo" src={b.imagem} tocando={k === atual && !parado} /> : <img className="slide-fundo" src={b.imagem} alt="" />) : <span className="slide-fundo slide-cor" />}
           <span className="slide-veu" />
           <div className="slide-texto">
             {!menor && <small className="eyebrow">NOVIDADES DA SEMANA</small>}
@@ -93,7 +94,7 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
   if (movel && unico.length > 0) {
     return (
       <div className="novidades-grade so-principal" onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)}>
-        <Carrossel lista={unico} tick={tick} irPara={irPara} titulo="Novidades" pausa={comPausa(0)} />
+        <Carrossel lista={unico} tick={tick} irPara={irPara} titulo="Novidades" pausa={comPausa(0)} parado={parado} />
       </div>
     );
   }
@@ -103,11 +104,11 @@ export function Novidades({ banners, irPara, padrao }: { banners: Banner[]; irPa
       style={{ '--cols-lat': laterais.length } as CSSProperties}
       onMouseEnter={() => setSobre(true)} onMouseLeave={() => setSobre(false)} onFocus={(e) => { if (e.target.matches(':focus-visible')) setSobre(true); }} onBlur={() => setSobre(false)}>
       {principal.length > 0
-        ? <Carrossel lista={principal} tick={tick} irPara={irPara} titulo={titulos[0]} pausa={comPausa(0)} />
+        ? <Carrossel lista={principal} tick={tick} irPara={irPara} titulo={titulos[0]} pausa={comPausa(0)} parado={parado} />
         : <div className="nov-slot">{padrao}</div>}
       {laterais.length > 0 && (
         <div className="nov-laterais" style={{ gridTemplateRows: `repeat(${laterais.length}, minmax(0, 1fr))` }}>
-          {laterais.map((l, k) => <Carrossel key={l[0].posicao} lista={l} tick={tick} irPara={irPara} menor titulo={titulos[k + 1]} pausa={principal.length === 0 ? comPausa(k) : undefined} />)}
+          {laterais.map((l, k) => <Carrossel key={l[0].posicao} lista={l} tick={tick} irPara={irPara} menor titulo={titulos[k + 1]} pausa={principal.length === 0 ? comPausa(k) : undefined} parado={parado} />)}
         </div>
       )}
     </div>

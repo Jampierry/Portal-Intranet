@@ -46,3 +46,4 @@ Observações de projeto: imagens e anexos ficam **dentro do banco** (valem em q
 | 038, 040 | avisos push; sino (lidos) |
 | 042–044 | aprovações de publicações, aprovação por aba, anexos das redes sociais |
 | 046–047 | Meu perfil (contato e emergência) e foto |
+| 048 | Vídeos curtos (`videos_arquivo`) para banners e tela de entrada |

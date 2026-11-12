@@ -1,4 +1,5 @@
 import { confirmar } from '../Confirmar.tsx';
+import { ehVideo } from '../midia';
 import { CampoDocumento } from './CampoDocumento';
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { api } from '../api';
@@ -25,6 +26,8 @@ export interface Campo {
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
+  /** Só para tipo 'imagem': aceita também vídeo curto (MP4/WebM, até 20 MB). */
+  video?: boolean;
   max?: number;
   sugestoes?: string[];
   /** Só para tipo 'imagem': busca a imagem sozinha a partir de outro campo (ex.: ícone do aplicativo a partir do endereço). */
@@ -113,11 +116,13 @@ function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; val
   const escolher = async (arq: File | undefined) => {
     if (!arq) return;
     setErro('');
-    if (!/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) return setErro('Use uma imagem PNG, JPG, WebP ou GIF.');
-    if (arq.size > 5 * 1024 * 1024) return setErro('A imagem passa de 5 MB. Escolha uma menor.');
+    const eVideo = /^video\/(mp4|webm)$/.test(arq.type);
+    if (eVideo && !c.video) return setErro('Aqui só vale imagem PNG, JPG, WebP ou GIF.');
+    if (!eVideo && !/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) return setErro(c.video ? 'Use uma imagem (PNG, JPG, WebP, GIF) ou um vídeo MP4 ou WebM.' : 'Use uma imagem PNG, JPG, WebP ou GIF.');
+    if (eVideo ? arq.size > 20 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) return setErro(eVideo ? 'O vídeo passa de 20 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
     setEnviando(true);
     try {
-      const r = await fetch('/api/gestao/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
+      const r = await fetch(eVideo ? '/api/gestao/videos' : '/api/gestao/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
       const j = await r.json().catch(() => ({})) as { url?: string; erro?: string };
       if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
       mudar(j.url);
@@ -127,10 +132,10 @@ function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; val
     <div className="campo-imagem">
       <span className="rotulo-campo" id={`${id}-rot`}>{c.rotulo}</span>
       <div className="campo-imagem-linha">
-        {valor ? <img className="campo-imagem-previa" src={valor} alt="Prévia da imagem escolhida" /> : <span className="campo-imagem-vazia">Sem imagem</span>}
+        {valor ? (ehVideo(valor) ? <video className="campo-imagem-previa" src={valor} muted loop playsInline autoPlay aria-label="Prévia do vídeo escolhido" /> : <img className="campo-imagem-previa" src={valor} alt="Prévia da imagem escolhida" />) : <span className="campo-imagem-vazia">{c.video ? 'Sem imagem ou vídeo' : 'Sem imagem'}</span>}
         <div className="campo-imagem-acoes">
-          <label className="btn btn-sec btn-pequeno" htmlFor={id} style={{ margin: 0 }}>{enviando ? 'Enviando…' : valor ? 'Trocar imagem…' : 'Escolher imagem…'}</label>
-          <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" aria-labelledby={`${id}-rot`} disabled={enviando}
+          <label className="btn btn-sec btn-pequeno" htmlFor={id} style={{ margin: 0 }}>{enviando ? 'Enviando…' : valor ? (c.video ? 'Trocar imagem ou vídeo…' : 'Trocar imagem…') : (c.video ? 'Escolher imagem ou vídeo…' : 'Escolher imagem…')}</label>
+          <input id={id} type="file" accept={c.video ? 'image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm' : 'image/png,image/jpeg,image/webp,image/gif'} className="so-leitor" aria-labelledby={`${id}-rot`} disabled={enviando}
             onChange={(e) => { void escolher(e.target.files?.[0]); e.target.value = ''; }} />
           {c.auto && <button type="button" className="btn btn-sec btn-pequeno" disabled={enviando || !urlPlausivel(origem)} onClick={() => void buscar(false)}>{c.auto.rotulo}</button>}
           {valor && <button type="button" className="btn btn-sec btn-pequeno" onClick={() => mudar('')}>Remover</button>}
