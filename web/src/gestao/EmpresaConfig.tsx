@@ -137,8 +137,8 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           <span className="prev-rotulo">Menu lateral</span>
           <div className="menu prev-menu-real">
             <div className="sbtop">
-              <span className="appbtn">{cfg.logo ? <img src={cfg.logo} alt="" width={30} height={30} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={30} />}</span>
               <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" sobre="menu" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
+              <span className="menubtn" aria-hidden="true"><Icone nome="menu" tamanho={20} /></span>
             </div>
           </div>
           <span className="prev-rotulo">Rodapé</span>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Lema } from './Capa';
-import { IconeSistema } from './icones';
-import { LogoEmpresa, LogoNome, useEmpresa, type ConfigEmpresa } from './empresa';
+import { LogoNome, useEmpresa, type ConfigEmpresa } from './empresa';
 import { ehVideo, VideoFundo } from './midia';
 
 /** Configuração da lateral da tela de entrada (vem de /api/entrada; editada em Configurações › Tela de entrada). */
@@ -55,7 +54,6 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
         : <div key={u} className={`entrar-fundo-img kb${k % 4}${k === i ? ' ativa' : ''}${k === ant && k !== i ? ' saindo' : ''}`} style={{ backgroundImage: `url(${u})`, ['--dur' as string]: `${cfg.intervalo + 3}s` }} />)}
       {imagens.length > 0 && <div className="entrar-fundo-veu" style={{ background: `linear-gradient(180deg, rgba(0,0,0,${veu * 0.55}) 0%, rgba(0,0,0,${veu}) 100%)` }} />}
       <div className="entrar-logo">
-        {rascunho ? (rascunho.logo ? <img className="entrar-logo-img" src={rascunho.logo} alt="" width={34} height={34} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={34} />) : <LogoEmpresa tamanho={previa ? 26 : 34} classe="entrar-logo-img" />}
         {(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome cfg={rascunho} classe="entrar-nome-img" sobre="menu" /> : <span>{empresa.nome}</span>}
       </div>
       <div className="entrar-frase">

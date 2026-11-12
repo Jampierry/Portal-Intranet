@@ -83,3 +83,19 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
     -webkit-mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent); mask-image: linear-gradient(to right, transparent, #000 38%, #000 62%, transparent);
   }
 }
+
+/* ===== Menu lateral: logo e frase centralizadas (sem ícone ao lado); o botão de menu (☰) fica no canto superior direito e recolhe/expande ===== */
+.menu .sbtop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 30px 8px 16px; text-align: center; }
+.menu .sbtop .brandtxt { align-items: center; text-align: center; width: 100%; }
+.menu .sbtop .brandtxt span { white-space: normal; }
+.menu .sbtop .empnome-img { margin-inline: auto; object-position: center; max-width: 100%; }
+.menubtn { position: absolute; top: 0; right: 0; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--menu-texto); cursor: pointer; }
+.menubtn:hover { background: var(--menu-hover); }
+.menubtn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* Menu recolhido: some a marca, só o botão, centralizado */
+.menu.mini .sbtop { padding: 4px 0 10px; }
+.menu.mini .menubtn { position: static; width: 38px; height: 38px; }
+/* Tela de entrada: só o logo, sem ícone, centralizado no alto da lateral */
+.entrar-marca > .entrar-logo { justify-content: center; text-align: center; }
+.empcfg-previa .prev-menu-real .sbtop { flex-direction: column; justify-content: center; padding: 28px 8px 12px; }
+.empcfg-previa .prev-menu-real .brandtxt { flex: none; width: 100%; }
