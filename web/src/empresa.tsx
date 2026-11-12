@@ -34,7 +34,7 @@ const iconesPadrao = new Map<string, { href: string | null; type: string | null 
 /** Ícone da aba do navegador (favicon) e da tela inicial do iPhone: usa o ícone da empresa; sem ele, volta ao ícone padrão do portal. */
 function aplicarIconeDaAba(logo: string | null) {
   if (typeof document === 'undefined') return;
-  const ext = logo ? (/.([a-z]+)$/i.exec(logo)?.[1] ?? '').toLowerCase() : '';
+  const ext = logo ? (/\.([a-z]+)$/i.exec(logo)?.[1] ?? '').toLowerCase() : '';
   for (const rel of ['icon', 'apple-touch-icon']) {
     let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
     if (!el) { if (!logo) continue; el = document.createElement('link'); el.rel = rel; document.head.appendChild(el); }
