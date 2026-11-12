@@ -291,3 +291,9 @@
 - **Ícone da empresa** (Configurações › Empresa › Trocar ícone) agora vira o **ícone da aba do navegador** (`aplicarIconeDaAba` em `web/src/empresa.tsx`; também `apple-touch-icon` se não for SVG). O ícone do PWA instalado continua fixo (`manifest.webmanifest`); gerar 192/512 no servidor é possibilidade futura.
 - **Git:** commits locais da `main` desde `73c0d5d` ainda NÃO enviados ao `origin`; organização (`org-main`) só tem o commit inicial limpo. Lint, typecheck, build e 159 testes OK; visuais não conferidos por mim.
 - **Próximo:** conferir no navegador (vídeo, divisa da entrada, menu com logo clicável, favicon); "enviar"; manuais por perfil; 2FA; Playwright; mídia fora do SQLite; ícone do PWA dinâmico.
+
+## Ponto de parada — 12/11/2026 (tarde) — organização atualizada
+- **Repositório da Dipaula** (`Di-Paula-Moda-Esportiva/Portal-Intranet`, `main` = `5460494`): recebeu vídeo, vidro, menu, ícone da aba etc. Remoto `org` usa a conta `jampierry-silva`.
+- **Roteiro de atualização da organização** (usado hoje): `git checkout org-main` → `git diff <base> main -- . ':!CLAUDE.md' ':!.claude' ':!docs/memoria' > patch` → `git apply --3way --index patch` → `npm run publicar` + `npm test` → commit (autor `jampierry.silva@dipaula.com.br`, pt-BR) → `git push org org-main:main` → `git checkout main`. Para a próxima, a base do diff é o último commit da `main` já enviado à organização: **`8836b4b`**. A `org-main` tem pequenas diferenças propositais (README/docs sem referências ao Claude e ao PREMIA, sem `origem-manus`/`web/imagens`).
+- **Pessoal** (`origin/main` = `8836b4b`) e organização estão em dia. Nada pendente de envio.
+- **Próximo:** conferir no navegador (vídeo, divisa da entrada, menu clicável, favicon, vidro nos 6 estilos); manuais por perfil (usuário lista os perfis); 2FA TOTP; Playwright; mídia fora do SQLite; ícone do PWA dinâmico; aguardar a TI (homologação).
