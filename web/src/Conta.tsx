@@ -103,7 +103,7 @@ function ConviteInstalar({ aoInstalar }: { aoInstalar: () => void }) {
 }
 
 /** Menu da conta (abre ao clicar no avatar): dados, botão Meu perfil, avatar, avisos, senha, instalar o portal e sair. */
-export function MenuConta({ usuario, avatar, mudarAvatar, abrirPerfil, sair }: { usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void; abrirPerfil: () => void; sair: () => void }) {
+export function MenuConta({ usuario, avatar, foto, mudarAvatar, abrirPerfil, sair }: { usuario: Usuario; avatar: number | null; foto: string | null; mudarAvatar: (a: number | null) => void; abrirPerfil: () => void; sair: () => void }) {
   const [aberto, setAberto] = useState(false);
   const [trocando, setTrocando] = useState(false);
   const [feito, setFeito] = useState(false);
@@ -121,12 +121,12 @@ export function MenuConta({ usuario, avatar, mudarAvatar, abrirPerfil, sair }: {
   return (
     <div className="tema-raiz" ref={raiz}>
       <button className="avbtn" onClick={() => setAberto(!aberto)} aria-expanded={aberto} aria-haspopup="dialog" aria-label="Minha conta" title={`${usuario.nome} — minha conta`}>
-        <Avatar nome={usuario.nome} avatar={avatar} tamanho={28} />
+        <Avatar nome={usuario.nome} avatar={avatar} foto={foto} tamanho={28} />
       </button>
       {aberto && (
         <div className="tema-painel conta-painel" role="dialog" aria-label="Minha conta">
           <div className="conta-topo">
-            <Avatar nome={usuario.nome} avatar={avatar} tamanho={44} />
+            <Avatar nome={usuario.nome} avatar={avatar} foto={foto} tamanho={44} />
             <div className="conta-quem"><b>{usuario.nome}</b><small className="suave">{usuario.login} · {usuario.perfil_nome}</small></div>
             <button className="icone-btn conta-sair" onClick={sair} aria-label="Sair do sistema" title="Sair do sistema">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>

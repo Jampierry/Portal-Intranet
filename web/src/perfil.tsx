@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from 'react';
+import { api } from './api';
 
 // Perfil de exibição: nome vem do usuário logado; o avatar escolhido fica neste navegador (uma escolha por login).
-export interface Perfil { nome: string; avatar: number | null }
+export interface Perfil { nome: string; avatar: number | null; foto: string | null }
 
 export function usePerfil(login: string | undefined, nome: string | undefined) {
   const chave = login ? `portal.avatar.${login}` : null;
@@ -11,7 +12,15 @@ export function usePerfil(login: string | undefined, nome: string | undefined) {
   const [avatar, setAvatar] = useState<number | null>(ler);
   useEffect(() => { setAvatar(ler()); }, [chave]); // eslint-disable-line react-hooks/exhaustive-deps
   const mudarAvatar = (a: number | null) => { setAvatar(a); try { if (chave) localStorage.setItem(chave, JSON.stringify(a)); } catch { /* vale só nesta sessão */ } };
-  const perfil: Perfil = { nome: nome ?? 'Visitante', avatar };
+  // A foto fica no servidor (vale em qualquer aparelho); "portal-foto" avisa quando ela muda em Meu perfil.
+  const [foto, setFoto] = useState<string | null>(null);
+  useEffect(() => {
+    if (!login) return;
+    const ler2 = () => { api<{ foto: string | null }>('/api/eu/perfil').then((d) => setFoto(d.foto)).catch(() => { /* sem foto */ }); };
+    ler2(); window.addEventListener('portal-foto', ler2);
+    return () => window.removeEventListener('portal-foto', ler2);
+  }, [login]);
+  const perfil: Perfil = { nome: nome ?? 'Visitante', avatar, foto };
   return { perfil, mudarAvatar };
 }
 
@@ -75,9 +84,10 @@ function avatarSvg(i: number, uid: string): string {
 export const AVATARES_QTD = AVATARES.length;
 
 /** Avatar redondo: personagem escolhido ou as iniciais do nome. */
-export function Avatar({ nome, avatar, tamanho = 36 }: { nome: string; avatar: number | null; tamanho?: number }) {
+export function Avatar({ nome, avatar, foto, tamanho = 36 }: { nome: string; avatar: number | null; foto?: string | null; tamanho?: number }) {
   const uid = useId().replace(/:/g, '');
   const st = { width: tamanho, height: tamanho, fontSize: tamanho * 0.38 };
+  if (foto) return <span className="av avchar" style={st} aria-hidden="true"><img src={foto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /></span>;
   if (avatar !== null) return <span className="av avchar" style={st} aria-hidden="true" dangerouslySetInnerHTML={{ __html: avatarSvg(avatar, uid) }} />;
   return <span className="av" style={st} aria-hidden="true">{iniciais(nome)}</span>;
 }

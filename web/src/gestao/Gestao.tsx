@@ -338,7 +338,10 @@ const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', '
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
   useAbaVisivel(pedida);
-  const abas = ABAS_CONFIG.filter(([id]) => (id === 'exemplo' || id === 'origens' ? souAdmin : id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
+  // Em produção, sem dados de exemplo ligados e sem liberação, a aba "Dados de exemplo" some.
+  const [semExemplo, setSemExemplo] = useState(false);
+  useEffect(() => { if (souAdmin) api<{ ativo: boolean; producao: boolean; permitido: boolean }>('/api/gestao/demonstracao').then((e) => setSemExemplo(e.producao && !e.permitido && !e.ativo)).catch(() => { /* mantém a aba */ }); }, [souAdmin]);
+  const abas = ABAS_CONFIG.filter(([id]) => id === 'exemplo' && semExemplo ? false : (id === 'exemplo' || id === 'origens' ? souAdmin : id === 'calendario' ? podeAbaCalendario(permissoes) : permissoes.includes(`cfg.${id === 'comunicados' ? 'empresa' : id}.ver`)));
   if (abas.length === 0) return <p className="erro">Você não tem acesso às configurações.</p>;
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (

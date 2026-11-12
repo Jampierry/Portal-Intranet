@@ -28,7 +28,7 @@ function Bloco({ titulo, icone, dica, children }: { titulo: string; icone: strin
 }
 
 /** Meu perfil: a própria pessoa cuida de avatar, contato, contato de emergência, e-mail, avisos e senha. */
-export function MeuPerfil({ usuario, avatar, mudarAvatar }: { usuario: Usuario; avatar: number | null; mudarAvatar: (a: number | null) => void }) {
+export function MeuPerfil({ usuario, avatar, foto, mudarAvatar }: { usuario: Usuario; avatar: number | null; foto: string | null; mudarAvatar: (a: number | null) => void }) {
   const [dados, setDados] = useState<Dados | null>(null);
   const [f, setF] = useState<Form>({});
   const [msg, setMsg] = useState(''); const [erro, setErro] = useState(''); const [salvando, setSalvando] = useState(false);
@@ -51,12 +51,23 @@ export function MeuPerfil({ usuario, avatar, mudarAvatar }: { usuario: Usuario; 
     try { await api('/api/eu/email', { email: email.novo, senha: email.senha }, 'PUT'); setEmail({ aberto: false, novo: '', senha: '', erro: '', ok: 'E-mail atualizado.' }); await carregar(); window.dispatchEvent(new Event('portal-avisos-email')); }
     catch (x) { setEmail((s) => ({ ...s, erro: (x as Error).message })); }
   };
+  const enviarFoto = async (arq: File | undefined, campo: HTMLInputElement) => {
+    campo.value = ''; if (!arq) return; setErro(''); setMsg('');
+    if (arq.size > 5 * 1024 * 1024) { setErro('A foto pode ter no máximo 5 MB.'); return; }
+    try {
+      const r = await fetch('/api/eu/foto', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({})) as { erro?: string };
+      if (!r.ok) throw new Error(j.erro ?? 'Não foi possível enviar a foto.');
+      window.dispatchEvent(new Event('portal-foto')); setMsg('Foto atualizada.');
+    } catch (x) { setErro((x as Error).message); }
+  };
+  const tirarFoto = async () => { try { await api('/api/eu/foto', undefined, 'DELETE'); window.dispatchEvent(new Event('portal-foto')); } catch (x) { setErro((x as Error).message); } };
   const nomeCurto = f.apelido?.trim() || usuario.nome;
 
   return (
     <div className="perfil-pagina">
       <section className="cartao-sec perfil-topo">
-        <Avatar nome={usuario.nome} avatar={avatar} tamanho={52} />
+        <Avatar nome={usuario.nome} avatar={avatar} foto={foto} tamanho={52} />
         <div className="perfil-quem">
           <h2>{nomeCurto}</h2>
           <p className="suave">{usuario.nome} · {usuario.login} · {usuario.perfil_nome}</p>
@@ -68,14 +79,14 @@ export function MeuPerfil({ usuario, avatar, mudarAvatar }: { usuario: Usuario; 
 
       <div className="perfil-grade">
         <form className="perfil-coluna" onSubmit={(e) => void salvar(e)}>
-          <Bloco titulo="Contato" icone="telefone" dica="Só você vê estes dados. Servem para o portal chamar você do jeito certo e para contato quando necessário.">
+          <Bloco titulo="Contato" icone="telefone" dica="Estes dados ficam com você; o RH e o administrador só os consultam quando necessário. Servem para o portal chamar você do jeito certo e para contato quando necessário.">
             <div className="perfil-campos">
               <label htmlFor="mp-apelido">Como prefere ser chamado(a)<input {...campo('apelido')} maxLength={40} placeholder="Ex.: Ju" /></label>
               <label htmlFor="mp-celular">Celular<input {...tel('celular')} autoComplete="tel" /></label>
               <label htmlFor="mp-email_alternativo">E-mail alternativo (pessoal)<input {...campo('email_alternativo')} type="email" maxLength={120} autoComplete="email" /></label>
             </div>
           </Bloco>
-          <Bloco titulo="Contato de emergência" icone="info" dica="Quem avisar se acontecer algo com você no trabalho. Visível apenas para você; informe só se quiser.">
+          <Bloco titulo="Contato de emergência" icone="info" dica="Quem avisar se acontecer algo com você no trabalho. Visível para você e, quando necessário, para o RH e o administrador (cada consulta fica registrada). Informe só se quiser.">
             <div className="perfil-emerg-par">
             {[1, 2].map((n) => (
               <fieldset key={n} className="perfil-emerg">
@@ -99,8 +110,13 @@ export function MeuPerfil({ usuario, avatar, mudarAvatar }: { usuario: Usuario; 
         <div className="perfil-coluna">
           <Bloco titulo="Avatar" icone="perfil">
             <div className="perfil-av-atual">
-              <Avatar nome={usuario.nome} avatar={avatar} tamanho={44} />
-              <button type="button" className="btn btn-sec btn-pequeno" aria-expanded={avAberto} onClick={() => setAvAberto(!avAberto)}>{avAberto ? 'Ocultar opções' : 'Trocar avatar'}</button>
+              <Avatar nome={usuario.nome} avatar={avatar} foto={foto} tamanho={44} />
+            <div className="perfil-av-botoes">
+                <label className="btn btn-sec btn-pequeno" htmlFor="mp-foto">{foto ? 'Trocar foto' : 'Enviar foto'}</label>
+                <input id="mp-foto" type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="so-leitor" onChange={(e) => void enviarFoto(e.target.files?.[0], e.target)} />
+                {foto && <button type="button" className="btn btn-sec btn-pequeno" onClick={() => void tirarFoto()}>Remover foto</button>}
+                <button type="button" className="btn btn-sec btn-pequeno" aria-expanded={avAberto} onClick={() => setAvAberto(!avAberto)}>{avAberto ? 'Ocultar opções' : 'Trocar avatar'}</button>
+            </div>
             </div>
             {avAberto && (
               <div className="avgal">

@@ -2087,7 +2087,9 @@ button.anexo-abrir { background: none; border: 0; padding: 0; margin: 0; font: i
 .perfil-emerg { border: 1px solid var(--linha-suave); border-radius: 10px; padding: 10px 12px 12px; margin: 0 0 12px; }
 .perfil-emerg legend { padding: 0 6px; font-size: 12px; font-weight: 700; color: var(--suave); }
 .perfil-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.perfil-av-atual { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.perfil-av-atual { display: flex; align-items: center; gap: 8px 12px; margin-bottom: 8px; flex-wrap: wrap; }
+label.btn:has(+ .so-leitor:focus-visible) { outline: 2px solid var(--rosa); outline-offset: 2px; }
+label.btn[for] { cursor: pointer; }
 .perfil-linha { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 14px; overflow-wrap: anywhere; }
 .perfil-sep { border: 0; border-top: 1px solid var(--linha-suave); margin: 14px 0; }
 @media (max-width: 960px) { .perfil-grade { grid-template-columns: 1fr; } }
@@ -2136,3 +2138,51 @@ button.anexo-abrir { background: none; border: 0; padding: 0; margin: 0; font: i
   form.perfil-coluna > .perfil-bloco:last-child .perfil-acoes { margin-top: 12px; }
 }
 .perfil-quem .perfil-aviso { flex: none; text-align: left; margin-top: 2px; font-size: 12px; }
+
+/* Celular: telas que já têm busca própria não repetem a busca do topo (some só aqui; no computador continuam as duas). */
+@media (max-width: 640px) { .topo.tem-busca-propria .busca-topo { display: none; } .topo.tem-busca-propria .faixa-espaco { flex: 1; } }
+
+/* Ficha de contato (Configurações › Usuários › Contato) */
+.ficha { display: grid; gap: 14px; }
+.ficha-quem { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); }
+.ficha-quem > div { display: grid; gap: 2px; min-width: 0; }
+.ficha-bloco { border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; background: var(--card); min-width: 0; }
+.ficha-bloco h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
+.ficha-bloco dl { margin: 0; display: grid; gap: 8px; }
+.ficha-linha { display: grid; grid-template-columns: minmax(110px, 38%) 1fr; gap: 10px; align-items: baseline; }
+.ficha-linha dt { color: var(--suave); font-size: 13px; }
+.ficha-linha dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ficha-linha dd a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.ficha-par { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ficha-vazio { margin: 0; }
+.ficha-aviso { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; margin: 0; }
+.ficha-aviso svg { flex: none; margin-top: 2px; }
+@media (max-width: 640px) { .ficha-par { grid-template-columns: 1fr; } .ficha-linha { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Avatar em Meu perfil: foto à esquerda, botões alinhados na mesma altura ao lado */
+.perfil-av-atual { flex-wrap: nowrap; gap: 14px; }
+.perfil-av-botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.perfil-av-botoes .btn { display: inline-flex; align-items: center; justify-content: center; height: 32px; margin: 0; white-space: nowrap; }
+
+/* ===== Entrada: altura certa com o zoom do tema + painel do login com fundo vivo e cartão de vidro ===== */
+.entrar, .entrar-marca, .entrar > .entrar-form { min-height: calc(100dvh / var(--zoom, 1)); }
+@media (max-width: 860px) {
+  .entrar, .entrar > .entrar-form { min-height: calc(100dvh / var(--zoom, 1)); }
+}
+@media (min-width: 861px) {
+  .entrar-form { position: relative; isolation: isolate; overflow: hidden; max-width: none; margin: 0; align-items: center; background: linear-gradient(160deg, color-mix(in srgb, var(--fundo) 88%, var(--vinho)), var(--fundo)); }
+  .entrar-form > .entrar-card, .entrar-form > .entrar-rodape { width: min(420px, 100%); }
+  .entrar-form::before, .entrar-form::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; filter: blur(70px); opacity: .55; pointer-events: none; will-change: transform; }
+  .entrar-form::before { width: 46vmin; height: 46vmin; top: 8%; left: 6%; background: radial-gradient(circle at 30% 30%, var(--vinho), transparent 70%); animation: entrar-flutua 16s ease-in-out infinite alternate; }
+  .entrar-form::after { width: 52vmin; height: 52vmin; bottom: 4%; right: 2%; background: radial-gradient(circle at 60% 60%, var(--coral), transparent 70%); animation: entrar-flutua 20s ease-in-out infinite alternate-reverse; }
+  .entrar-form .entrar-card {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--card) 62%, transparent), color-mix(in srgb, var(--card) 40%, transparent));
+    -webkit-backdrop-filter: blur(28px) saturate(1.8); backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .28), inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent), inset 0 -1px 0 color-mix(in srgb, #fff 8%, transparent);
+    border-radius: 26px;
+  }
+  .entrar-form .entrar-card input:not([type=checkbox]) { background: color-mix(in srgb, var(--fundo) 38%, transparent); border-color: color-mix(in srgb, var(--texto) 22%, transparent); }
+}
+@keyframes entrar-flutua { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(8vmin, -6vmin, 0) scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .entrar-form::before, .entrar-form::after { animation: none; } }

@@ -1,8 +1,9 @@
 // Meu perfil: cada pessoa cuida dos próprios dados de contato, contato de emergência, e-mail e preferências.
-// Os dados ficam visíveis só para a própria pessoa (nenhuma rota entrega o perfil de outra). Alterações são auditadas sem o conteúdo.
+// Os dados ficam visíveis só para a própria pessoa; a única exceção é a ficha de contato/emergência, para quem tem a permissão cfg.usuarios.emergencia (admin sempre), com registro na auditoria. Alterações são auditadas sem o conteúdo.
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
-import { auditar } from '../../acessos/api/guard.ts';
+import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
+import { guardarImagem } from '../../imagens/api/index.ts';
 import { confereSenha } from '../../acessos/api/senha.ts';
 import { corpoObjeto, ErroValidacao, texto } from '../../../servidor/src/validar.ts';
 
@@ -45,10 +46,40 @@ function validar(c: Record<string, unknown>): Perfil {
 const vazio = (): Perfil => Object.fromEntries(CAMPOS.map((k) => [k, null])) as Perfil;
 const ler = (db: Banco, id: number): Perfil => ({ ...vazio(), ...((db.prepare(`SELECT ${CAMPOS.join(', ')} FROM usuarios_perfil WHERE usuario_id = ?`).get(id) as Perfil | undefined) ?? {}) });
 
+function gravarFoto(db: Banco, id: number, url: string | null) {
+  db.prepare(`INSERT INTO usuarios_perfil (usuario_id, foto, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(usuario_id) DO UPDATE SET foto = excluded.foto, atualizado_em = excluded.atualizado_em`).run(id, url, new Date().toISOString());
+}
+
 export async function rotasPerfil(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/eu/perfil', async (req) => {
     const u = db.prepare('SELECT email, criado_em, ultimo_acesso FROM usuarios WHERE id = ?').get(req.usuario!.id) as { email: string | null; criado_em: string; ultimo_acesso: string | null };
-    return { ...ler(db, req.usuario!.id), email: u.email, criado_em: u.criado_em, ultimo_acesso: u.ultimo_acesso };
+    const f = db.prepare('SELECT foto FROM usuarios_perfil WHERE usuario_id = ?').get(req.usuario!.id) as { foto: string | null } | undefined;
+    return { ...ler(db, req.usuario!.id), email: u.email, criado_em: u.criado_em, ultimo_acesso: u.ultimo_acesso, foto: f?.foto ?? null };
+  });
+
+  // Foto de perfil: a própria pessoa envia (PNG, JPG, WebP ou GIF até 5 MB) ou remove.
+  app.post('/api/eu/foto', { bodyLimit: 5 * 1024 * 1024 }, async (req, resp) => {
+    const corpo = req.body;
+    if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha uma imagem PNG, JPG, WebP ou GIF.' });
+    const salvo = guardarImagem(db, corpo);
+    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como imagem PNG, JPG, WebP ou GIF.' });
+    gravarFoto(db, req.usuario!.id, salvo.url);
+    auditar(db, req.usuario!.id, 'perfil_foto', { acao: 'enviar', bytes: corpo.length });
+    return { foto: salvo.url };
+  });
+  app.delete('/api/eu/foto', async (req) => {
+    gravarFoto(db, req.usuario!.id, null);
+    auditar(db, req.usuario!.id, 'perfil_foto', { acao: 'remover' });
+    return { foto: null };
+  });
+
+  // Ficha de contato e emergência de outra pessoa: só admin ou quem recebeu a permissão. Cada consulta fica na auditoria.
+  app.get<{ Params: { id: string } }>('/api/usuarios/:id/ficha', { preHandler: exigirPerm('cfg.usuarios.emergencia') }, async (req, resp) => {
+    const id = Number(req.params.id);
+    const u = Number.isInteger(id) ? db.prepare('SELECT id, nome, login, email FROM usuarios WHERE id = ?').get(id) as { id: number; nome: string; login: string; email: string | null } | undefined : undefined;
+    if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
+    auditar(db, req.usuario!.id, 'perfil_ficha_lida', { usuario: u.id });
+    return { nome: u.nome, login: u.login, email: u.email, ...ler(db, u.id) };
   });
 
   app.put('/api/eu/perfil', async (req) => {

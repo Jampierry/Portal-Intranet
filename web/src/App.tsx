@@ -268,7 +268,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <div className="corpo">
         <PulsoCard />
         <ResultadoPopup />
-        <header className="topo">
+        <header className={`topo${['comunicados', 'documentos', 'pessoas', 'ajuda'].includes(tela) ? ' tem-busca-propria' : ''}`}>
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <DicaTela texto={AVISOS[tela]} />
           <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
@@ -278,7 +278,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
           <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} />
-          <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} abrirPerfil={() => irPara('perfil')} sair={() => void sair()} />
+          <MenuConta usuario={usuario} avatar={perfil.avatar} foto={perfil.foto} mudarAvatar={mudarAvatar} abrirPerfil={() => irPara('perfil')} sair={() => void sair()} />
         </header>
 
         <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
@@ -293,7 +293,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
             {tela === 'pesquisas' && <Pesquisas />}
-            {tela === 'perfil' && <MeuPerfil usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} />}
+            {tela === 'perfil' && <MeuPerfil usuario={usuario} avatar={perfil.avatar} foto={perfil.foto} mudarAvatar={mudarAvatar} />}
             {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} perfil={usuario.perfil} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}

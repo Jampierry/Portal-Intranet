@@ -50,6 +50,7 @@ export const CATALOGO: GrupoPermissao[] = [
       { chave: 'cfg.usuarios.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.usuarios.criar', rotulo: 'Criar' },
       { chave: 'cfg.usuarios.editar', rotulo: 'Editar' }, { chave: 'cfg.usuarios.senha', rotulo: 'Redefinir senha' },
       { chave: 'cfg.usuarios.aplicativos', rotulo: 'Definir os aplicativos de cada pessoa' },
+      { chave: 'cfg.usuarios.emergencia', rotulo: 'Ver o contato de emergência de cada pessoa (fica na auditoria)' },
     ] },
     { id: 'perfis', rotulo: 'Perfis', acoes: [
       { chave: 'cfg.perfis.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.perfis.criar', rotulo: 'Criar' },

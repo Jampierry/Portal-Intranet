@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
+import { Avatar } from '../perfil';
 import { dataCurta, useLista } from '../dados';
 import { JanelaForm, Selo } from './Crud';
 import type { PerfilAcesso } from '../sessao';
@@ -56,6 +57,54 @@ function AppsDaPessoa({ id, marcados, mudar }: { id: number; marcados: string[];
   );
 }
 
+/** Janela só de leitura com o contato e o contato de emergência da pessoa (cada abertura vai para a auditoria). */
+function FichaUsuario({ u, aoFechar }: { u: Usr; aoFechar: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [d, setD] = useState<Record<string, string | null> | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => { ref.current?.showModal(); }, []);
+  useEffect(() => { api<Record<string, string | null>>(`/api/usuarios/${u.id}/ficha`).then(setD).catch((e: Error) => setErro(e.message)); }, [u.id]);
+  const tel = (v: string | null | undefined) => (v ? <a href={`tel:${v.replace(/\D/g, '')}`}>{v}</a> : <span className="suave">Não informado</span>);
+  const lin = (r: string, v: ReactNode) => <div className="ficha-linha"><dt>{r}</dt><dd>{v || <span className="suave">Não informado</span>}</dd></div>;
+  const emerg = (n: 1 | 2) => {
+    const nome = d?.[`emergencia${n}_nome`];
+    return (
+      <section className="ficha-bloco">
+        <h3><Icone nome="info" tamanho={16} /> Emergência {n}</h3>
+        {nome ? <dl>{lin('Nome', nome)}{lin('Parentesco', d?.[`emergencia${n}_parent`])}{lin('Telefone', tel(d?.[`emergencia${n}_tel`]))}</dl> : <p className="suave ficha-vazio">Não informado.</p>}
+      </section>
+    );
+  };
+  return (
+    <dialog className="janela janela-larga" ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={`Contato de ${u.nome}`}>
+      <div className="janela-form">
+        <header><h2>Contato de emergência</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
+        <div className="janela-corpo ficha">
+          <div className="ficha-quem">
+            <Avatar nome={u.nome} avatar={null} tamanho={48} />
+            <div><b>{u.nome}</b><small className="suave">{u.login} · {u.perfil_nome}</small></div>
+          </div>
+          {erro && <p className="erro" role="alert">{erro}</p>}
+          {!d && !erro && <p className="suave">Carregando…</p>}
+          {d && (<>
+            <section className="ficha-bloco">
+              <h3><Icone nome="telefone" tamanho={16} /> Contato</h3>
+              <dl>{lin('Chamar de', d.apelido)}{lin('Celular', tel(d.celular))}{lin('E-mail do portal', d.email)}{lin('E-mail alternativo', d.email_alternativo)}</dl>
+            </section>
+            <div className="ficha-par">{emerg(1)}{emerg(2)}</div>
+            <section className="ficha-bloco">
+              <h3><Icone nome="escudo" tamanho={16} /> Saúde</h3>
+              <dl>{lin('Observação', d.observacao_saude)}</dl>
+            </section>
+            <p className="suave ficha-aviso"><Icone nome="escudo" tamanho={14} /> Dados informados pela própria pessoa. Use só quando necessário: esta consulta fica registrada na auditoria.</p>
+          </>)}
+        </div>
+        <footer><button type="button" className="btn" onClick={() => ref.current?.close()}>Fechar</button></footer>
+      </div>
+    </dialog>
+  );
+}
+
 /** Janela "Aplicativos" de uma pessoa (atalho na linha da tabela). */
 function AplicativosUsuario({ u, aoFechar }: { u: Usr; aoFechar: (msg?: string) => void }) {
   const [marcados, setMarcados] = useState<string[]>([]);
@@ -82,6 +131,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
   const [apps, setApps] = useState<Usr | null>(null);
+  const [ficha, setFicha] = useState<Usr | null>(null);
   const [pedidos, setPedidos] = useState<{ id: number; usuario_id: number; criado_em: string; login: string; nome: string }[]>([]);
   const lerPedidos = () => { if (libera('senha')) api<typeof pedidos>('/api/gestao/pedidos-senha').then(setPedidos).catch(() => { /* sem pedidos */ }); };
   useEffect(lerPedidos, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -127,6 +177,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
                   <td className="col-acoes">
                     {libera('editar') && <button className="btn btn-sec btn-pequeno" onClick={() => setEdit(u)}><Icone nome="editar" tamanho={13} /> Editar</button>}
                     {libera('aplicativos') && <button className="btn btn-sec btn-pequeno" onClick={() => setApps(u)}><Icone nome="apps" tamanho={13} /> Aplicativos</button>}
+                    {libera('emergencia') && <button className="btn btn-sec btn-pequeno" onClick={() => setFicha(u)}><Icone nome="telefone" tamanho={13} /> Contato</button>}
                     {libera('senha') && <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
                   </td>
                 </tr>
@@ -167,6 +218,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         </JanelaForm>
       )}
 
+      {ficha && <FichaUsuario u={ficha} aoFechar={() => setFicha(null)} />}
       {apps && <AplicativosUsuario u={apps} aoFechar={(msg) => { setApps(null); if (msg) setAviso(msg); }} />}
 
       {reset && (
@@ -182,7 +234,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
 const ACAO: Record<string, string> = {
   publicacao_aprovada: 'Publicação aprovada', publicacao_rejeitada: 'Publicação rejeitada', rede_criada: 'Publicação para rede social criada', rede_alterada: 'Publicação para rede social alterada', rede_apagada: 'Publicação para rede social apagada', rede_enviada: 'Publicação enviada para aprovação', rede_publicada: 'Publicação marcada como publicada', avisos_lidos: 'Avisos do sino marcados como lidos',
-  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
+  usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', perfil_ficha_lida: 'Contato de emergência de uma pessoa consultado', perfil_foto: 'Foto de perfil alterada', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',
