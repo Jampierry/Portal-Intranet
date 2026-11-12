@@ -9,7 +9,7 @@ import { ehVideo } from '../midia';
 async function enviar(arq: File): Promise<string> {
   const eVideo = /^video\/(mp4|webm)$/.test(arq.type);
   if (!eVideo && !/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) throw new Error('Use uma imagem (PNG, JPG, WebP, GIF) ou um vídeo MP4 ou WebM.');
-  if (eVideo ? arq.size > 20 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) throw new Error(eVideo ? 'O vídeo passa de 20 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
+  if (eVideo ? arq.size > 40 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) throw new Error(eVideo ? 'O vídeo passa de 40 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
   const r = await fetch(eVideo ? '/api/gestao/entrada/videos' : '/api/gestao/entrada/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });
   const j = await r.json().catch(() => ({})) as { url?: string; erro?: string };
   if (!r.ok || !j.url) throw new Error(j.erro ?? `Erro ${r.status}`);
@@ -87,7 +87,7 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
                     </label>
                   )}
                 </div>
-                <small className="suave">Use imagens largas (por exemplo 1200 × 1400 px), PNG, JPG, WebP ou GIF, até 5 MB cada, ou vídeos curtos MP4/WebM de até 20 MB (tocam sem som, em laço; prefira 10 a 20 segundos, 1280 px de largura){cfg.fundo === 'carrossel' ? '; no máximo 8, na ordem mostrada' : ''}.</small>
+                <small className="suave">Use imagens largas (por exemplo 1200 × 1400 px), PNG, JPG, WebP ou GIF, até 5 MB cada, ou vídeos curtos MP4/WebM de até 40 MB (tocam sem som, em laço; prefira 10 a 20 segundos, 1280 px de largura){cfg.fundo === 'carrossel' ? '; no máximo 8, na ordem mostrada' : ''}.</small>
                 <label className="entcfg-campo">Escurecer a imagem: {cfg.escurecer}%
                   <input type="range" min={0} max={80} step={5} value={cfg.escurecer} disabled={!edita} onChange={(e) => set({ escurecer: Number(e.target.value) })} />
                   <small className="suave">Ajuda a ler o texto sobre fotos claras.</small>

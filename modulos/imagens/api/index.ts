@@ -38,8 +38,8 @@ export function svgSeguro(b: Buffer): string | null {
   return t;
 }
 
-/** Vídeos curtos (MP4 ou WebM) dos banners e da tela de entrada. Limite de 20 MB; o portal toca sem som, em laço. */
-export const LIMITE_VIDEO = 20 * 1024 * 1024;
+/** Vídeos curtos (MP4 ou WebM) dos banners e da tela de entrada. Limite de 40 MB; o portal toca sem som, em laço. */
+export const LIMITE_VIDEO = 40 * 1024 * 1024;
 const MIME_VIDEO: Record<string, string> = { mp4: 'video/mp4', webm: 'video/webm' };
 export const NOME_VIDEO = /^[a-f0-9]{24}\.(mp4|webm)$/;
 
@@ -131,7 +131,7 @@ export async function rotasImagens(app: FastifyInstance, { db }: { db: Banco; pr
     const corpo = req.body;
     if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha um vídeo MP4 ou WebM.' });
     const salvo = guardarVideo(db, corpo);
-    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como vídeo MP4 ou WebM (até 20 MB).' });
+    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como vídeo MP4 ou WebM (até 40 MB).' });
     auditar(db, req.usuario!.id, 'video.enviar', { nome: salvo.nome, bytes: corpo.length });
     return resp.code(201).send({ url: `/api/videos/${salvo.nome}` });
   });

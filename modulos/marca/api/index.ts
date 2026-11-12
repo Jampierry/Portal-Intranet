@@ -127,7 +127,7 @@ export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; prod
     const corpo = req.body;
     if (!Buffer.isBuffer(corpo) || corpo.length === 0) return resp.code(400).send({ erro: 'Escolha um vídeo MP4 ou WebM.' });
     const salvo = guardarVideo(db, corpo);
-    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como vídeo MP4 ou WebM (até 20 MB).' });
+    if (!salvo) return resp.code(400).send({ erro: 'Arquivo não reconhecido como vídeo MP4 ou WebM (até 40 MB).' });
     auditar(db, req.usuario!.id, 'entrada_video_enviado', { nome: salvo.nome, bytes: corpo.length });
     return resp.code(201).send({ url: `/api/publico/videos/${salvo.nome}` });
   });

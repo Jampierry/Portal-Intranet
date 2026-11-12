@@ -64,3 +64,12 @@ test('vídeo de fundo da entrada: só o administrador envia e só é público se
   assert.equal(g.statusCode, 206);
   assert.equal((await app.inject({ method: 'PUT', url: '/api/gestao/entrada', headers: { ...adm, ...json }, payload: { fundo: 'imagem', imagens: ['/api/publico/videos/../x.mp4'] } })).statusCode, 400);
 });
+
+test('aceita vídeo de 36 MB e recusa acima de 40 MB', async () => {
+  const { app } = await criarAppTeste();
+  const ed = await entrar(app, 'edita');
+  const grande = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypmp42'), Buffer.alloc(36 * 1024 * 1024, 1)]);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/gestao/videos', headers: { ...ed, 'content-type': 'video/mp4' }, payload: grande })).statusCode, 201);
+  const enorme = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypmp42'), Buffer.alloc(41 * 1024 * 1024, 1)]);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/gestao/videos', headers: { ...ed, 'content-type': 'video/mp4' }, payload: enorme })).statusCode, 413);
+});

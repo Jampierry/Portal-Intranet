@@ -26,7 +26,7 @@ export interface Campo {
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
-  /** Só para tipo 'imagem': aceita também vídeo curto (MP4/WebM, até 20 MB). */
+  /** Só para tipo 'imagem': aceita também vídeo curto (MP4/WebM, até 40 MB). */
   video?: boolean;
   max?: number;
   sugestoes?: string[];
@@ -119,7 +119,7 @@ function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; val
     const eVideo = /^video\/(mp4|webm)$/.test(arq.type);
     if (eVideo && !c.video) return setErro('Aqui só vale imagem PNG, JPG, WebP ou GIF.');
     if (!eVideo && !/^image\/(png|jpeg|webp|gif)$/.test(arq.type)) return setErro(c.video ? 'Use uma imagem (PNG, JPG, WebP, GIF) ou um vídeo MP4 ou WebM.' : 'Use uma imagem PNG, JPG, WebP ou GIF.');
-    if (eVideo ? arq.size > 20 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) return setErro(eVideo ? 'O vídeo passa de 20 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
+    if (eVideo ? arq.size > 40 * 1024 * 1024 : arq.size > 5 * 1024 * 1024) return setErro(eVideo ? 'O vídeo passa de 40 MB. Comprima ou escolha um menor.' : 'A imagem passa de 5 MB. Escolha uma menor.');
     setEnviando(true);
     try {
       const r = await fetch(eVideo ? '/api/gestao/videos' : '/api/gestao/imagens', { method: 'POST', headers: { 'Content-Type': arq.type }, body: arq, credentials: 'same-origin' });

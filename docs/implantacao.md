@@ -25,6 +25,7 @@ Modelo em `.env.example` (raiz). Principais variáveis:
 - `BANCO` — caminho do banco SQLite do ambiente.
 - `DOCUMENTOS_PASTA` — pasta dos documentos servidos pelo portal. O usuário que roda o serviço precisa ler essa pasta.
 - `PASTA_BACKUP`, `BACKUP_MANTER_DIAS`.
+- **Proxy reverso:** vídeos de banners e da tela de entrada chegam a 40 MB; o limite de envio do proxy precisa ser maior (nginx `client_max_body_size 45m`; IIS `maxAllowedContentLength` acima de 45 MB).
 - `PERMITIR_DADOS_EXEMPLO=1` — só no teste, se quiser ligar os dados fictícios. Em produção fica bloqueado.
 
 ## Primeira instalação
