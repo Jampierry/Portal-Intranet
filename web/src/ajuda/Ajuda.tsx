@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Icone } from '../icones';
+import { api } from '../api';
+import { Markdown } from './Markdown';
 
 const GRUPOS = ['Todos', 'Acesso', 'Usar o portal', 'Regras'] as const;
 type Grupo = Exclude<(typeof GRUPOS)[number], 'Todos'>;
@@ -87,14 +89,55 @@ const TOPICOS: { grupo: Grupo; titulo: string; icone: string; corpo: ReactNode }
   },
 ];
 
+interface Manual { id: string; titulo: string; resumo: string }
+
+/** Manuais do sistema: lista dos que o seu perfil pode ler e leitura dentro do portal. */
+function Manuais() {
+  const [lista, setLista] = useState<Manual[] | null>(null);
+  const [aberto, setAberto] = useState<{ titulo: string; texto: string } | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => { api<Manual[]>('/api/ajuda/manuais').then(setLista).catch((e: Error) => setErro(e.message)); }, []);
+  const abrir = (m: Manual) => { setErro(''); api<{ titulo: string; texto: string }>(`/api/ajuda/manuais/${m.id}`).then(setAberto).catch((e: Error) => setErro(e.message)); };
+  if (aberto) return (
+    <article className="manual-leitor">
+      <div className="manual-topo">
+        <button className="btn btn-sec btn-pequeno" onClick={() => setAberto(null)}>← Voltar aos manuais</button>
+        <button className="btn btn-sec btn-pequeno" onClick={() => window.print()}>Imprimir</button>
+      </div>
+      <Markdown texto={aberto.texto} />
+    </article>
+  );
+  return (
+    <>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {!lista && !erro && <p className="suave">Carregando…</p>}
+      <div className="manual-lista">
+        {lista?.map((m) => (
+          <button key={m.id} className="manual-cartao" onClick={() => abrir(m)}>
+            <span className="mini-ico"><Icone nome="documentos" tamanho={20} /></span>
+            <span><b>{m.titulo}</b><small>{m.resumo}</small></span>
+            <Icone nome="chev" tamanho={16} classe="seta-manual" />
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
   const [grupo, setGrupo] = useState<(typeof GRUPOS)[number]>('Todos');
   const [q, setQ] = useState('');
+  const [aba, setAba] = useState<'perguntas' | 'manuais'>('perguntas');
   const [aberto, setAberto] = useState<string | null>(TOPICOS[0].titulo);
   const termo = q.trim().toLocaleLowerCase('pt-BR');
   const lista = TOPICOS.filter((t) => (grupo === 'Todos' || t.grupo === grupo) && (!termo || t.titulo.toLocaleLowerCase('pt-BR').includes(termo)));
   return (
     <>
+      <div className="pilulas ajuda-abas" role="group" aria-label="Seção da ajuda">
+        <button aria-pressed={aba === 'perguntas'} onClick={() => setAba('perguntas')}>Perguntas frequentes</button>
+        <button aria-pressed={aba === 'manuais'} onClick={() => setAba('manuais')}>Manuais do sistema</button>
+      </div>
+      {aba === 'manuais' ? <Manuais /> : <>
       <label className="busca-pagina">
         <Icone nome="busca" tamanho={18} />
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nas perguntas" aria-label="Buscar na ajuda" />
@@ -114,7 +157,8 @@ export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
           </details>
         ))}
       </div>
-      <p className="suave">Não achou o que procurava? <button className="link-ver" onClick={() => irPara('pessoas')}>Veja os contatos por área <Icone nome="seta" tamanho={15} /></button></p>
+      <p className="suave">Não achou o que procurava? <button className="link-ver" onClick={() => irPara('pessoas')}>Veja os contatos por área <Icone nome="seta" tamanho={15} /></button> ou leia os <button className="link-ver" onClick={() => setAba('manuais')}>manuais do sistema <Icone nome="seta" tamanho={15} /></button></p>
+      </>}
     </>
   );
 }

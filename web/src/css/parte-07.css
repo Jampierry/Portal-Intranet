@@ -218,8 +218,7 @@ label.busca-pagina { flex-direction: row; align-items: center; font-weight: 500;
 .busca-pagina input[type=search]::-webkit-search-cancel-button { appearance: none; }
 
 /* Ajuda: perguntas em duas colunas no computador (uma só no celular); só uma aberta por vez. */
-.faq { max-width: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; margin-bottom: 14px; }
-@media (max-width: 900px) { .faq { grid-template-columns: minmax(0, 1fr); } }
+.faq { max-width: 920px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .mvv-corpo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1180px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 1181px) and (max-width: 1500px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); gap: 10px; } }

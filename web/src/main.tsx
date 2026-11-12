@@ -11,6 +11,7 @@ import './css/parte-06.css';
 import './css/parte-07.css';
 import './css/parte-08.css';
 import './css/parte-09.css';
+import './css/parte-10.css';
 
 createRoot(document.getElementById('raiz')!).render(<><App /><ConfirmarHost /></>);
 
