@@ -29,8 +29,24 @@ const ouvintes = new Set<() => void>();
 const assinar = (f: () => void) => { ouvintes.add(f); return () => { ouvintes.delete(f); }; };
 const ver = () => atual;
 
+const TIPO_ICONE: Record<string, string> = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon' };
+const iconesPadrao = new Map<string, { href: string | null; type: string | null }>();
+/** Ícone da aba do navegador (favicon) e da tela inicial do iPhone: usa o ícone da empresa; sem ele, volta ao ícone padrão do portal. */
+function aplicarIconeDaAba(logo: string | null) {
+  if (typeof document === 'undefined') return;
+  const ext = logo ? (/.([a-z]+)$/i.exec(logo)?.[1] ?? '').toLowerCase() : '';
+  for (const rel of ['icon', 'apple-touch-icon']) {
+    let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+    if (!el) { if (!logo) continue; el = document.createElement('link'); el.rel = rel; document.head.appendChild(el); }
+    if (!iconesPadrao.has(rel)) iconesPadrao.set(rel, { href: el.getAttribute('href'), type: el.getAttribute('type') });
+    const padrao = iconesPadrao.get(rel)!;
+    if (logo && TIPO_ICONE[ext] && !(rel === 'apple-touch-icon' && ext === 'svg')) { el.setAttribute('href', logo); el.setAttribute('type', TIPO_ICONE[ext]); }
+    else { if (padrao.href) el.setAttribute('href', padrao.href); else el.remove(); if (padrao.type) el.setAttribute('type', padrao.type); else el.removeAttribute('type'); }
+  }
+}
+
 /** Troca a identidade em uso (depois de carregar ou de o administrador salvar) e avisa as telas abertas. */
-export function definirEmpresa(c: Partial<ConfigEmpresa>) { atual = { ...PADRAO_EMPRESA, ...c }; carregou = true; ouvintes.forEach((f) => f()); }
+export function definirEmpresa(c: Partial<ConfigEmpresa>) { atual = { ...PADRAO_EMPRESA, ...c }; carregou = true; aplicarIconeDaAba(atual.logo); ouvintes.forEach((f) => f()); }
 export function carregarEmpresa() {
   return fetch('/api/empresa', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then((c) => { if (c) definirEmpresa(c as ConfigEmpresa); }).catch(() => { /* fica no padrão */ });
 }

@@ -82,6 +82,7 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
                     {cfg.logo && <button type="button" className="empcfg-link" onClick={() => set({ logo: null })}>Usar o padrão</button>}
                   </span>
                 )}
+                <small className="suave">Aparece também na aba do navegador.</small>
               </div>
               <label className="empcfg-campo">Nome da empresa *
                 <input value={cfg.nome} maxLength={40} disabled={!edita} onChange={(e) => set({ nome: e.target.value })} />
