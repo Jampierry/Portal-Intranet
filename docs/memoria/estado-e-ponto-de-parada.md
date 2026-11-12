@@ -1,12 +1,12 @@
 # Estado e ponto de parada
 
-## Sessão de 12/11/2026 — aprovação por aba e anexos nas redes sociais (enviado)
+## Sessão de 12/11/2026 — aprovação por aba e anexos nas redes sociais (ENVIADO em ab06507; main = ab06507)
 - **Aprovação do RH por aba** (migração 043): a marca única "precisa de aprovação" do usuário saiu. Agora é a permissão `pub.<aba>.aprovacao` (comunicados, redes, banners, documentos) no perfil ou no ajuste do usuário; admin nunca precisa (`exigeAprovacao(usuario, aba)` em `modulos/aprovacoes/api`). Comunicado vai a rascunho; banner fica inativo; documento fica oculto (`documentos.publicado = 0`, também no download); rede vai à fila. Fila aceita tipos `banner` e `documento` (tabela `aprovacoes` recriada). Quem tinha a marca antiga ficou com comunicados + redes. Sub-abas de Aprovações com o estilo `abas-gestao`.
 - **Anexos nas redes sociais** (migração 044, `publicacoes_anexos`): PDF, Word, Excel, PowerPoint, OpenDocument, imagens, SVG (`svgSeguro`), TXT, CSV; conteúdo conferido por assinatura; 15 MB, até 10. Envio solto (`POST /api/gestao/redes/anexos?nome=`) e vínculo ao salvar (`vincular`); solto some em 1 dia; download `/api/redes/anexos/:id` (quem vê Redes/Aprovações; solto só o autor). UI: `web/src/gestao/Anexos.tsx` (cartões com miniatura, rolagem só na área dos anexos). Formulário: Título e Link lado a lado, legenda 4 linhas.
 - Depois: "Abrir" nos cartões de aprovação (leitura da publicação, `DetalhePedido.tsx`); "Mudar a data" em comunicados, banners, documentos (nova coluna `exibir_de`, migração 045) e redes, voltando para a aprovação de quem precisa (`MudarData.tsx`); aviso de confirmação de leitura sai do sino na hora (evento `leitura-confirmada`). 143 testes.
 - Resultado das pesquisas: o RH já decide tudo (liberar por pesquisa, textos, só vencedora, pop-up uma vez); falta só conferir no navegador.
 - 141 testes, typecheck e build OK; telas NÃO conferidas no navegador.
-- **Próximo:** "enviar"; conferir no navegador (Aprovações, Redes com anexos, permissões por aba, resultado de pesquisa); perfil Marketing precisa de "Ver/Criar/Editar" em Redes sociais (era só permissão, não defeito); avaliar anexos em outras abas e o atalho "tudo" marcar `.aprovacao` (ideal ignorar).
+- **Próximo:** conferir no navegador (Aprovações, Redes com anexos, permissões por aba, resultado de pesquisa); perfil Marketing precisa de "Ver/Criar/Editar" em Redes sociais (era só permissão, não defeito); avaliar anexos em outras abas e o atalho "tudo" marcar `.aprovacao` (ideal ignorar).
 - **Pendências:** `web/imagens/` fora do Git (perguntar); usuários `colegaNN.demo`; security-review; busca duplicada no celular, Início cortado, Feirão Outlet repetido, aba "Dados de exemplo" em produção; Zimbra real; HTTPS (PWA/push).
 
 ## Sessão de 11/11/2026 (noite, parte 2) — pesquisas: editor, pop-up em passos e resultado (enviado em `03cb0c6`)
