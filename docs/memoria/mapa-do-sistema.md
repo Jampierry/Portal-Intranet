@@ -1,4 +1,6 @@
-# Mapa do sistema — Portal Intranet Di Paula (07/11/2026)
+# Mapa do sistema — Portal Intranet Di Paula (07/11/2026; **parcialmente defasado**)
+
+> **Atualizado em 12/11/2026:** o sistema hoje tem 21 módulos de API (~160 rotas), **47 migrações** e **147 testes**. Além do descrito abaixo, existem: Pesquisas (`pulso`), Aprovações, Redes sociais, Aniversariantes/Novos, Avisos (sino, e-mail, push), Propriedade do conteúdo, Meu perfil (contato, emergência, foto), Pastas de documentos e Dados de exemplo. Para o estado atual use `../README.md`, `../arquitetura.md`, `../referencia-api.md`, `../banco-de-dados.md` e `../permissoes-e-perfis.md`.
 
 Leia este arquivo antes de procurar código. Ele resume **o que existe, onde está, quem pode usar e o que ainda falta**.
 

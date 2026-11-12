@@ -16,6 +16,8 @@
 | calendario / integracoes | ✅ | Calendário no menu lendo uma agenda escolhida do Zimbra (serviço `MCP/zimbra-mcp`), cadastro/exclusão de datas por permissão; configuração na aba Integrações |
 | busca global | ✅ | Busca do topo agrupa comunicados, documentos, aplicativos e contatos conforme as permissões |
 
-Testes: 78 (API com banco em memória + contraste + links). Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.
+Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). Módulos novos desde então: pulso (Pesquisas), aprovacoes, redes, pessoasmes, avisos, push, propriedade, perfil, marca, demonstracao. Visão atual: `../README.md`. Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.
 
 - **Publicar › Aprovações / Redes sociais** (12/11/2026): fila do RH para comunicados, redes, banners e documentos; aprovação definida por aba e por usuário (`pub.<aba>.aprovacao`); anexos nas redes. Ver `estado-e-ponto-de-parada.md`.
+
+- **Meu perfil** (12/11/2026): contato, emergência, foto e e-mail; ficha de emergência para admin/permissão `cfg.usuarios.emergencia` (auditada).

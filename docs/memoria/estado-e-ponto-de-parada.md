@@ -250,3 +250,9 @@
 - Resultado das pesquisas aos colaboradores: já estava pronto. "Feirão Outlet repetido" é dado do banco dev (não está no código). "Início cortado" não reproduzido sem navegador. Telas novas não conferidas visualmente.
 - Esclarecido pelo usuário (12/11): "Feirão Outlet repetido" NÃO é defeito — o compromisso se repete em vários dias na agenda. Tela de entrada: altura corrigida com `--zoom` e cartão de vidro. Resta só a parte da TI.
 - Também nesta sessão: janela "Contato" redesenhada (cartões, telefones clicáveis, um só botão Fechar) e bloco Avatar de Meu perfil alinhado. Ponto de parada salvo; **nada enviado ainda** (falta "enviar"). Pendente só: TI (servidor, HTTPS, nome interno, backup, leitura nas pastas, firewall 5174) e conferir as telas novas no navegador.
+
+## Sessão de 12/11/2026 (noite) — documentação e revisão (NÃO enviado)
+- Enviado antes: `b91d31b` (foto, ficha de emergência, login vitrificado). **Não enviado:** barra inferior padronizada (`portal.css`) e toda a documentação nova.
+- Criado: `docs/README.md` (índice), `arquitetura.md`, `referencia-api.md`, `banco-de-dados.md`, `permissoes-e-perfis.md`, `manuais/` (colaborador, publicação, RH, administrador) e `revisao-do-sistema-2026-11-12.md` (melhorias e o que falta). Atualizados: mapa-do-sistema, modulos-status, melhorias-futuras, roteiro-modulos.
+- Usuário conferiu no navegador: ficha de Contato, Avatar, login vitrificado e barra inferior. "Início cortado" e a mancha alaranjada deixam de ser pendência.
+- **Próximos (ordem sugerida):** TI (servidor, HTTPS, backup, pastas, Zimbra) → segurança (limite de login por IP — explicado ao usuário, aguardando "pode implementar" —, CSP/HSTS, política de senha) → reescrever a tela Ajuda e publicar os manuais no portal → LGPD/marca → ESLint/CI/testes de tela e dividir o CSS → exportar pesquisas, senha por e-mail, 2FA/SSO.

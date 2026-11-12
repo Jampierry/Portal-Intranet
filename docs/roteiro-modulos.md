@@ -11,6 +11,7 @@
 | 7 | gestão | Tela única com abas: comunicados, documentos, destaques (com consentimento), aplicações, usuários, auditoria ✅ | ✅ |
 | 8 | pessoas | Contatos por área (sem dados pessoais), gestão pela aba Contatos ✅ | ✅ |
 | 9 | ajuda | Perguntas frequentes (login, aplicações, comunicados, documentos, perfis) ✅ | ✅ |
-| 10+ | Futuros | SSO corporativo, notificações, recuperação de senha por e-mail | ⬜ |
+| 10 | Entregues depois | Pesquisas, aprovações do RH, redes sociais, aniversariantes e novos, avisos (sino, e-mail, push), calendário, Meu perfil | ✅ |
+| 11+ | Futuros | SSO corporativo, 2FA, recuperação de senha por e-mail, exportar pesquisas (ver `revisao-do-sistema-2026-11-12.md`) | ⬜ |
 
 Regra: ao iniciar um módulo, ler o `README.md` dele, fazer o trabalho, atualizar o status aqui e em `docs/memoria/`.

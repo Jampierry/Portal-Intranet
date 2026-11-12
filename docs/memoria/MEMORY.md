@@ -8,3 +8,4 @@ Leia este índice no início de cada sessão. Atualize os arquivos ao final (gat
 - [Decisões-chave](decisoes-chave.md) — stack (Vite+React, Fastify+SQLite), temas, marca provisória, regras de abertura de links
 - [Gatilhos](gatilhos.md) — retomar, enviar, salvar ponto de parada, melhorias futuras
 - Contexto completo: `../../CLAUDE.md`, `../requisitos.md`, `../roteiro-modulos.md`, `../decisoes.md`
+- **Documentação completa e manuais:** `../README.md` (índice), `../revisao-do-sistema-2026-11-12.md` (melhorias e pendências)
