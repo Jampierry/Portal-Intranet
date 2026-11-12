@@ -14,7 +14,7 @@ const SENHA_MIN = 8;
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
-const DTO = 'id, login, nome, email, avisos_email, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
+const DTO = 'id, login, nome, email, avisos_email, exige_aprovacao, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes';
 
 /** Usuário para a tela de administração: ajustes viram objeto e vêm também as permissões que valem de fato. */
 function paraTela(db: Banco, u: Record<string, unknown>) {
@@ -98,7 +98,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const token = criarSessao(db, u.id);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: HORAS_SESSAO * 3600 });
     auditar(db, u.id, 'login');
-    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, perfil_nome: nomeDoPerfil(db, u.perfil), trocar_senha: u.trocar_senha, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
+    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, perfil_nome: nomeDoPerfil(db, u.perfil), trocar_senha: u.trocar_senha, exige_aprovacao: (db.prepare('SELECT exige_aprovacao FROM usuarios WHERE id = ?').get(u.id) as { exige_aprovacao: number }).exige_aprovacao, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
   });
 
   app.post('/api/sair', async (req, resp) => {
@@ -151,8 +151,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
     const ajustes = ajustesDoCorpo(c);
     if ((!ehAdmin(req) && perfil === 'admin') || excede(req, Object.keys(ajustes).filter((k) => ajustes[k]))) return resp.code(403).send(NEGADO);
-    const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, ?, 1, ?, ?)')
-      .run(login, nome, email, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
+    const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes, exige_aprovacao) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)')
+      .run(login, nome, email, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null, c.exige_aprovacao === true ? 1 : 0);
     auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
     return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
@@ -179,9 +179,10 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       if (id === req.usuario!.id || atual.perfil === 'admin' || perfil === 'admin' || excede(req, novas)) return resp.code(403).send(NEGADO);
     }
     const ajustesJson = Object.keys(ajustes).length ? JSON.stringify(ajustes) : null;
-    db.prepare('UPDATE usuarios SET nome = ?, email = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, email, perfil, ativo, ajustesJson, id);
+    const exige = c.exige_aprovacao === undefined ? (db.prepare('SELECT exige_aprovacao FROM usuarios WHERE id = ?').get(id) as { exige_aprovacao: number }).exige_aprovacao : c.exige_aprovacao === true ? 1 : 0;
+    db.prepare('UPDATE usuarios SET nome = ?, email = ?, perfil = ?, ativo = ?, permissoes = ?, exige_aprovacao = ? WHERE id = ?').run(nome, email, perfil, ativo, ajustesJson, exige, id);
     if (ativo === 0 || perfil !== atual.perfil) db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
-    auditar(db, req.usuario!.id, 'usuario_alterado', { id, perfil, ativo, ajustes });
+    auditar(db, req.usuario!.id, 'usuario_alterado', { id, perfil, ativo, ajustes, exige_aprovacao: !!exige });
     return paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(id) as Record<string, unknown>);
   });
 

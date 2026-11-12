@@ -2,13 +2,13 @@ import { useId, useState } from 'react';
 
 export interface OpcaoForm { texto: string; imagem: string | null }
 export type TipoPergunta = 'nota' | 'unica' | 'multipla' | 'texto';
-export interface PerguntaForm { texto: string; tipo: TipoPergunta; obrigatoria: boolean; imagem: string | null; opcoes: OpcaoForm[] }
+export interface PerguntaForm { texto: string; tipo: TipoPergunta; obrigatoria: boolean; imagem: string | null; opcoes: OpcaoForm[]; comentario: boolean }
 
 export const TIPOS: [TipoPergunta, string][] = [
   ['nota', 'Nota de 1 a 5 (carinhas)'], ['unica', 'Escolha única (uma opção)'], ['multipla', 'Múltipla escolha (várias opções)'], ['texto', 'Resposta em texto'],
 ];
 export const perguntaNova = (tipo: TipoPergunta = 'nota'): PerguntaForm => ({
-  texto: '', tipo, obrigatoria: true, imagem: null,
+  texto: '', tipo, obrigatoria: true, imagem: null, comentario: false,
   opcoes: tipo === 'unica' || tipo === 'multipla' ? [{ texto: '', imagem: null }, { texto: '', imagem: null }] : [],
 });
 
@@ -80,6 +80,7 @@ export function EditorPerguntas({ valor, mudar, bloqueado }: { valor: PerguntaFo
                 {TIPOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
               </select>
               <label className="linha"><input type="checkbox" checked={q.obrigatoria} onChange={(e) => troca(i, { obrigatoria: e.target.checked })} /> Obrigatória</label>
+              {q.tipo === 'nota' && <label className="linha"><input type="checkbox" checked={q.comentario} onChange={(e) => troca(i, { comentario: e.target.checked })} /> Permitir comentário</label>}
               <BotaoImagem valor={q.imagem} mudar={(v) => troca(i, { imagem: v })} rotulo="Imagem da pergunta" />
             </div>}
             {comOpcoes && !fechadas.has(i) && (

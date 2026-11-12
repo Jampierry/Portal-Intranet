@@ -269,17 +269,22 @@ export function ativarExemplo(db: Banco, opcoes: { producao?: boolean; hoje?: Da
     const sorte = () => { semente = (semente * 1103515245 + 12345) % 2147483648; return semente / 2147483648; };
     const pesos = <T,>(itens: [T, number][]): T => { let x = sorte() * itens.reduce((a, i) => a + i[1], 0); for (const [v, p] of itens) { x -= p; if (x <= 0) return v; } return itens[itens.length - 1][0]; };
     const pesquisaPronta = (titulo: string, descricao: string, anonima: boolean, qtd: number,
-      perguntas: { texto: string; tipo: 'nota' | 'unica' | 'multipla' | 'texto'; opcoes?: string[] }[],
-      gerar: (q: { tipo: string; opcoes: string[] }, n: number) => { valor: string; comentario?: string }[]) => {
+      perguntas: { texto: string; tipo: 'nota' | 'unica' | 'multipla' | 'texto'; opcoes?: string[]; comentario?: boolean }[],
+      gerar: (q: { tipo: string; opcoes: string[] }, n: number) => { valor: string; comentario?: string }[], liberar = false) => {
       const idp = unico('pulsos', 'SELECT id FROM pulsos WHERE pergunta = ?', [titulo],
         'INSERT INTO pulsos (pergunta, descricao, status, anonima, criado_em, aberto_em, encerrado_em) VALUES (?, ?, ?, ?, ?, ?, ?)', [titulo, descricao, 'encerrado', anonima ? 1 : 0, agora, agora, agora]) as number;
       if (db.prepare('SELECT 1 FROM pulso_perguntas WHERE pulso_id = ?').get(idp)) return;
-      const qs = perguntas.map((q, ordem) => ({ ...q, opcoes: q.opcoes ?? [], id: Number(db.prepare('INSERT INTO pulso_perguntas (pulso_id, ordem, texto, tipo, obrigatoria, opcoes) VALUES (?, ?, ?, ?, 1, ?)')
-        .run(idp, ordem, q.texto, q.tipo, q.opcoes ? JSON.stringify(q.opcoes.map((t) => ({ texto: t, imagem: null }))) : null).lastInsertRowid) }));
+      const qs = perguntas.map((q, ordem) => ({ ...q, opcoes: q.opcoes ?? [], id: Number(db.prepare('INSERT INTO pulso_perguntas (pulso_id, ordem, texto, tipo, obrigatoria, opcoes, permite_comentario) VALUES (?, ?, ?, ?, 1, ?, ?)')
+        .run(idp, ordem, q.texto, q.tipo, q.opcoes ? JSON.stringify(q.opcoes.map((t) => ({ texto: t, imagem: null }))) : null, q.comentario ? 1 : 0).lastInsertRowid) }));
       for (let n = 0; n < qtd; n++) {
         db.prepare('INSERT INTO pulso_participacao (pulso_id, usuario_id) VALUES (?, ?)').run(idp, colegas[n]);
         for (const q of qs) for (const r of gerar(q, n))
           db.prepare('INSERT INTO pulso_respostas_item (pulso_id, pergunta_id, valor, comentario, dia, usuario_id) VALUES (?, ?, ?, ?, ?, ?)').run(idp, q.id, r.valor, r.comentario ?? null, d(-2), anonima ? null : colegas[n]);
+      }
+      // exemplo já liberado aos colaboradores: resultado de todas as perguntas, só as respostas em texto da última (os comentários da nota ficam ocultos)
+      if (liberar) {
+        db.prepare('UPDATE pulsos SET resultado_liberado = 1, liberado_em = ? WHERE id = ?').run(agora, idp);
+        db.prepare("UPDATE pulso_perguntas SET publico_textos = 1 WHERE pulso_id = ? AND tipo = 'texto'").run(idp);
       }
     };
     const COMENT = ['Ótimo ambiente de trabalho.', 'Gostaria de mais momentos de integração.', 'Equipe unida e prestativa.', 'A comunicação entre as áreas pode melhorar.', 'Me sinto valorizado(a) aqui.'];
@@ -287,7 +292,7 @@ export function ativarExemplo(db: Banco, opcoes: { producao?: boolean; hoje?: Da
     const CARDAPIO = ['Churrasco, arroz, feijão tropeiro e salada', 'Massas e saladas', 'Feijoada completa', 'Buffet de pratos executivos'];
     const ATRACOES = ['Banda ao vivo', 'DJ', 'Sorteio de brindes', 'Karaokê', 'Brincadeiras e gincanas'];
     pesquisaPronta('Festa de final de ano (exemplo)', 'Ajude a escolher a festa da empresa. Pesquisa de exemplo com respostas inventadas.', true, 28, [
-      { texto: 'O que você acha da empresa?', tipo: 'nota' },
+      { texto: 'O que você acha da empresa?', tipo: 'nota', comentario: true },
       { texto: 'Qual cardápio você quer para a festa de final de ano?', tipo: 'unica', opcoes: CARDAPIO },
       { texto: 'Quais atrações você gostaria de ter?', tipo: 'multipla', opcoes: ATRACOES },
       { texto: 'Deixe uma sugestão para a festa', tipo: 'texto' },
@@ -296,7 +301,7 @@ export function ativarExemplo(db: Banco, opcoes: { producao?: boolean; hoje?: Da
       if (q.tipo === 'unica') return [{ valor: pesos(q.opcoes.map((o, i) => [o, [12, 6, 4, 2][i]] as [string, number])) }];
       if (q.tipo === 'multipla') return q.opcoes.filter((_, i) => sorte() < [0.7, 0.45, 0.8, 0.3, 0.35][i]).map((valor) => ({ valor }));
       return n % 3 === 1 ? [{ valor: SUGEST[n % SUGEST.length] }] : [];
-    });
+    }, true);
     pesquisaPronta('Clima da equipe (exemplo, identificada)', 'Pesquisa identificada de exemplo: o RH vê quem respondeu.', false, 12, [
       { texto: 'Como você avalia o clima da sua equipe?', tipo: 'nota' },
       { texto: 'O que mais ajudaria o seu dia a dia?', tipo: 'unica', opcoes: ['Mais treinamento', 'Melhor comunicação', 'Mais flexibilidade de horário', 'Ferramentas melhores'] },

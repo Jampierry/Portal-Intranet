@@ -17,7 +17,7 @@ const areaDe = (base: string) => { const a = base.split('/').pop() ?? ''; return
 export interface Campo {
   chave: string;
   rotulo: string;
-  tipo?: 'texto' | 'area' | 'select' | 'data' | 'check' | 'imagem' | 'link' | 'documento' | 'telefone' | 'custom';
+  tipo?: 'texto' | 'area' | 'select' | 'data' | 'datahora' | 'check' | 'imagem' | 'link' | 'documento' | 'telefone' | 'custom';
   /** Só para tipo 'area': altura em linhas (padrão 5). */
   linhas?: number;
   /** Só para tipo 'custom': editor próprio do campo (o valor pode ser um objeto/lista). */
@@ -82,7 +82,7 @@ function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: s
       {c.tipo === 'area' ? <textarea rows={c.linhas ?? 5} {...comum} onChange={(e) => mudar(e.target.value)} />
         : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
         : c.tipo === 'telefone' ? <input type="tel" inputMode="numeric" autoComplete="off" placeholder="(__) _____-____" {...comum} maxLength={15} onChange={(e) => mudar(mascaraTelefone(e.target.value))} />
-        : <input type={c.tipo === 'data' ? 'date' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
+        : <input type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
       {c.dica && <small className="suave">{c.dica}</small>}
     </label>
   );
@@ -170,7 +170,7 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
 export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao, feminino, larga, gradeClasse }: {
   base: string; rotuloItem: string; idDe: (r: T) => string | number; campos: Campo[]; colunas: Coluna<T>[];
   valoresNovos: Valores; paraForm: (r: T) => Valores; podeApagar?: (r: T) => boolean;
-  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>) => ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
+  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>, recarregar: () => void) => ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
   const ord = useOrdenacao(dados, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
@@ -217,7 +217,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
                   <tr key={idDe(r)}>
                     {colunas.map((c) => <td key={c.titulo} data-rotulo={c.titulo}>{c.ver(r)}</td>)}
                     <td className="col-acoes">
-                      {acoesExtra?.(r, (v) => salvar(idDe(r), v).then(() => setAviso('Alteração salva.')))}
+                      {acoesExtra?.(r, (v) => salvar(idDe(r), v).then(() => setAviso('Alteração salva.')), recarregar)}
                       {libera('editar') && <button className="btn btn-sec btn-pequeno" onClick={() => setEdit({ id: idDe(r), v: paraForm(r) })} aria-label={`Editar ${nome}`}><Icone nome="editar" tamanho={13} /> Editar</button>}
                       {libera('excluir') && (podeApagar?.(r) ?? true) && <button className="btn btn-vermelho btn-pequeno" onClick={() => void apagar(r, nome)} aria-label={`Apagar ${nome}`}><Icone nome="lixo" tamanho={13} /></button>}
                     </td>

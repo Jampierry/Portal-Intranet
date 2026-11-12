@@ -83,3 +83,15 @@ test('desligado não envia; e-mail inválido é recusado; a pessoa liga e deslig
     assert.equal((await app.inject({ method: 'PUT', url: '/api/eu/avisos', headers: le, payload: { avisos_email: false } })).json<{ avisos_email: number }>().avisos_email, 0);
   } finally { svc.fechar(); }
 });
+
+test('sino: avisos abertos ou limpos ficam guardados por pessoa e valem em qualquer aparelho', async () => {
+  const { app } = await criarAppTeste();
+  const le = await entrar(app, 'le'), ed = await entrar(app, 'edita');
+  assert.deepEqual((await app.inject({ url: '/api/avisos/lidos', headers: le })).json(), { chaves: [] });
+  assert.equal((await app.inject({ method: 'POST', url: '/api/avisos/lidos', headers: le, payload: { chaves: [] } })).statusCode, 400);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/avisos/lidos', headers: le, payload: { chaves: ['qualquer coisa'] } })).statusCode, 400);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/avisos/lidos', headers: le, payload: { chaves: ['urgente:simulado', 'resposta:7'] } })).statusCode, 200);
+  await app.inject({ method: 'POST', url: '/api/avisos/lidos', headers: le, payload: { chaves: ['urgente:simulado'] } }); // repetir não duplica
+  assert.deepEqual((await app.inject({ url: '/api/avisos/lidos', headers: le })).json<{ chaves: string[] }>().chaves.sort(), ['resposta:7', 'urgente:simulado']);
+  assert.deepEqual((await app.inject({ url: '/api/avisos/lidos', headers: ed })).json(), { chaves: [] }); // é de cada pessoa
+});

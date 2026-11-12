@@ -3,6 +3,7 @@
 //  - Para editar o que outra pessoa criou, o dono (ou o administrador) precisa autorizar um pedido; a autorização vale 24 horas.
 //  - Conteúdo sem dono conhecido (anterior a esta regra) só o administrador apaga, e os pedidos de edição vão para ele.
 // Fica num lugar só: um gancho global confere as rotas de editar/apagar e anota o dono quando uma rota de criar responde 201.
+import { enviarPush } from '../../push/api/index.ts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar } from '../../acessos/api/guard.ts';
@@ -35,6 +36,7 @@ export const RECURSOS: Recurso[] = [
   { id: 'aniversariante', rotulo: 'Aniversariante', tabela: 'aniversariantes', chave: 'id', titulo: 'nome', criar: '/api/gestao/aniversariantes', editar: '/api/gestao/aniversariantes/:id', apagar: '/api/gestao/aniversariantes/:id' },
   { id: 'novo', rotulo: 'Novo colaborador', tabela: 'novos_colaboradores', chave: 'id', titulo: 'nome', criar: '/api/gestao/novos', editar: '/api/gestao/novos/:id', apagar: '/api/gestao/novos/:id' },
   { id: 'pulso', rotulo: 'Pesquisa de pulso', tabela: 'pulsos', chave: 'id', titulo: 'pergunta', criar: '/api/gestao/pulso', editar: '/api/gestao/pulso/:id', apagar: '/api/gestao/pulso/:id' },
+  { id: 'rede', rotulo: 'Publicação para rede social', tabela: 'publicacoes_externas', chave: 'id', titulo: 'titulo', criar: '/api/gestao/redes', editar: '/api/gestao/redes/:id', apagar: '/api/gestao/redes/:id' },
   { id: 'data', rotulo: 'Data do calendário', tabela: 'calendario_datas', chave: 'id', titulo: 'titulo', criar: '/api/gestao/calendario/datas', editar: '/api/gestao/calendario/datas/:id', apagar: '/api/gestao/calendario/datas/:id' },
   { id: 'evento', rotulo: 'Evento da agenda', tabela: 'calendario_eventos_dono', chave: 'evento_id', titulo: 'titulo', textual: true, tabelaDono: true, criar: '/api/calendario', apagar: '/api/calendario/:id' },
 ];
@@ -112,6 +114,8 @@ export async function rotasPropriedade(app: FastifyInstance, { db }: { db: Banco
     const id = Number(db.prepare('INSERT INTO pedidos_edicao (recurso, registro, titulo, solicitante_id, dono_id, criado_em) VALUES (?, ?, ?, ?, ?, ?)')
       .run(r.id, registro, titulo, eu.id, dono, new Date().toISOString()).lastInsertRowid);
     auditar(db, eu.id, 'edicao_pedida', { id, recurso: r.id, registro });
+    const decisores = dono ? [dono] : (db.prepare("SELECT id FROM usuarios WHERE perfil = 'admin' AND ativo = 1").all() as { id: number }[]).map((a) => a.id);
+    void enviarPush(db, decisores, { titulo: 'Pedido para editar', corpo: `${eu.nome} pede para editar «${titulo}».`, url: '/', tag: `pedido-${id}` });
     return resp.code(201).send({ id });
   });
 
@@ -138,6 +142,8 @@ export async function rotasPropriedade(app: FastifyInstance, { db }: { db: Banco
     const aprovar = corpoObjeto(req.body).aprovar === true;
     db.prepare('UPDATE pedidos_edicao SET status = ?, decidido_em = ?, decidido_por = ? WHERE id = ?').run(aprovar ? 'aprovado' : 'negado', new Date().toISOString(), eu.id, id);
     auditar(db, eu.id, aprovar ? 'edicao_autorizada' : 'edicao_negada', { id, recurso: p.recurso, registro: p.registro });
+    const sol = db.prepare('SELECT solicitante_id, titulo FROM pedidos_edicao WHERE id = ?').get(id) as { solicitante_id: number; titulo: string };
+    void enviarPush(db, [sol.solicitante_id], { titulo: aprovar ? 'Edição autorizada' : 'Edição negada', corpo: `Seu pedido para editar «${sol.titulo}» foi ${aprovar ? 'autorizado (vale por 24 horas)' : 'negado'}.`, url: '/', tag: `pedido-${id}` });
     return { ok: true };
   });
 }

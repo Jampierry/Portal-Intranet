@@ -4,7 +4,7 @@ import { api } from '../api';
 import { Icone } from '../icones';
 
 interface Opcao { texto: string; imagem: string | null }
-interface Pergunta { id: number; texto: string; tipo: 'nota' | 'unica' | 'multipla' | 'texto'; obrigatoria: boolean; imagem: string | null; opcoes: Opcao[] }
+interface Pergunta { id: number; texto: string; tipo: 'nota' | 'unica' | 'multipla' | 'texto'; obrigatoria: boolean; imagem: string | null; opcoes: Opcao[]; comentario?: boolean }
 interface Estado { aberto: boolean; id?: number; titulo?: string; descricao?: string | null; anonima?: boolean; respondeu?: boolean; perguntas?: Pergunta[] }
 interface Resp { valor?: string; valores?: string[]; comentario?: string }
 const NOTAS: [number, string, string][] = [[1, '😞', 'Muito ruim'], [2, '🙁', 'Ruim'], [3, '😐', 'Normal'], [4, '🙂', 'Bom'], [5, '😄', 'Muito bom']];
@@ -107,7 +107,7 @@ export function PulsoCard() {
                     <div className="pulso-notas" role="radiogroup" aria-labelledby={rotulo}>
                       {NOTAS.map(([v, c, t]) => <button key={v} type="button" role="radio" aria-checked={r.valor === String(v)} className={r.valor === String(v) ? 'on' : ''} onClick={() => muda(q.id, { valor: String(v) })} title={t}><span aria-hidden="true">{c}</span><small>{t}</small></button>)}
                     </div>
-                    {r.valor && (
+                    {r.valor && q.comentario && (
                       <label className="pulso-coment-campo">Quer comentar? (opcional)
                         <textarea rows={2} maxLength={500} value={r.comentario ?? ''} onChange={(ev) => muda(q.id, { comentario: ev.target.value })} placeholder="Não escreva nada que o identifique se quiser manter o anonimato." />
                       </label>

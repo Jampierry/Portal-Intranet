@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from './api';
 import { Avatar, AVATARES_QTD } from './perfil';
 import type { Usuario } from './sessao';
+import { ativarPush, desativarPush, pushAtivo, pushSuportado } from './push';
 
 /** Troca de senha (usada na janela "Minha conta" e na tela de primeiro acesso). */
 export function FormTrocarSenha({ aoConcluir }: { aoConcluir: () => void }) {
@@ -41,6 +42,29 @@ function AvisosEmailPessoa() {
       <input type="checkbox" checked={!!d.avisos_email} onChange={async (e) => setD(await api('/api/eu/avisos', { avisos_email: e.target.checked }, 'PUT'))} />
       Receber avisos de comunicados no e-mail <b>{d.email}</b>
     </label>
+  );
+}
+
+/** Avisos push neste aparelho: liga/desliga e manda um aviso de teste. */
+function AvisosPush() {
+  const [ativo, setAtivo] = useState<boolean | null>(null);
+  const [msg, setMsg] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(() => { void pushAtivo().then(setAtivo).catch(() => setAtivo(false)); }, []);
+  if (!pushSuportado()) return <p className="suave" style={{ fontSize: 13 }}>Avisos no aparelho: este navegador não permite (precisa de HTTPS; no iPhone, instale o portal na tela inicial).</p>;
+  if (ativo === null) return null;
+  const mudar = async (ligar: boolean) => {
+    setOcupado(true); setMsg('');
+    try {
+      if (ligar) { await ativarPush(); await api('/api/push/teste', {}); setMsg('Avisos ativados neste aparelho. Enviamos um aviso de teste.'); } else { await desativarPush(); setMsg('Avisos desligados neste aparelho.'); }
+      setAtivo(await pushAtivo());
+    } catch (e) { setMsg((e as Error).message); } finally { setOcupado(false); }
+  };
+  return (
+    <div style={{ marginTop: 8 }}>
+      <label className="linha"><input type="checkbox" checked={ativo} disabled={ocupado} onChange={(e) => void mudar(e.target.checked)} /> Receber avisos do portal neste aparelho (comunicados, pesquisas, pedidos)</label>
+      {msg && <p className="suave" role="status" style={{ fontSize: 13, margin: '4px 0 0' }}>{msg}</p>}
+    </div>
   );
 }
 
@@ -90,6 +114,7 @@ export function MenuConta({ usuario, avatar, mudarAvatar, sair }: { usuario: Usu
             ))}
           </div>
           <AvisosEmailPessoa />
+          <AvisosPush />
           <h3>Segurança</h3>
           {feito && <p className="ok" role="status" style={{ margin: '0 0 8px' }}>Senha alterada.</p>}
           {!trocando ? <button className="btn btn-sec btn-pequeno" onClick={() => { setTrocando(true); setFeito(false); }}>Trocar senha</button>

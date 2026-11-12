@@ -1,33 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import { Crud, JanelaForm, Selo } from './Crud';
+import { Crud, JanelaForm, Selo, usePermissoes } from './Crud';
+import { avisar } from '../Confirmar';
 import { EditorPerguntas, perguntaNova, type PerguntaForm } from './PulsoPerguntas';
+import { ResultadoCorpo, type Publicacao, type Resultado } from './ResultadoPesquisa';
 
-interface Pulso { id: number; pergunta: string; descricao: string | null; status: string; criado_em: string; aberto_em: string | null; encerrado_em: string | null; respostas: number; anonima: boolean; n_perguntas: number; perguntas: PerguntaForm[] }
-interface ResPergunta {
-  id: number; texto: string; tipo: string; imagem: string | null; respondentes?: number;
-  quem?: { nome: string; resposta: string }[]; media?: number | null; distribuicao?: number[]; comentarios?: string[]; textos?: string[]; opcoes?: { texto: string; imagem: string | null; total: number; nomes?: string[] }[];
-}
-interface Resultado { titulo: string; anonima?: boolean; respostas: number; alvo: number; minimo: number; liberado: boolean; perguntas?: ResPergunta[] }
-const SIT: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { aberto: ['ok', 'Aberta'], rascunho: ['aviso', 'Rascunho'], encerrado: ['neutro', 'Encerrada'] };
-const CARINHAS = ['😞', '🙁', '😐', '🙂', '😄'];
-
-function Barras({ itens }: { itens: { rotulo: string; imagem?: string | null; marca?: string; n: number }[] }) {
-  const max = Math.max(1, ...itens.map((i) => i.n));
-  const soma = itens.reduce((a, i) => a + i.n, 0);
-  return (
-    <ul className="pulso-barras" style={{ listStyle: 'none' }}>
-      {itens.map((o, i) => (
-        <li key={i} className={`pulso-barra-linha${o.marca ? ' curta' : ''}`}>
-          <span className="pulso-barra-rotulo" title={o.rotulo}>{o.imagem && <img src={o.imagem} alt="" className="pq-mini" />}{o.marca && <span aria-hidden="true">{o.marca}</span>}{o.rotulo}</span>
-          <span className="pulso-barra"><i style={{ width: `${(o.n / max) * 100}%` }} /></span>
-          <small>{o.n}{soma ? ` (${Math.round((o.n / soma) * 100)}%)` : ''}</small>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
+interface Pulso { id: number; pergunta: string; descricao: string | null; status: string; criado_em: string; aberto_em: string | null; encerrado_em: string | null; respostas: number; anonima: boolean; n_perguntas: number; perguntas: PerguntaForm[]; abre_em: string | null; fecha_em: string | null; situacao: string; rodada: number; total_respostas: number; pendentes: number }
+const SIT: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { aberto: ['ok', 'Aberta'], rascunho: ['aviso', 'Rascunho'], encerrado: ['neutro', 'Encerrada'], agendada: ['aviso', 'Agendada'], prazo: ['neutro', 'Encerrada (prazo)'] };
+const dataHora = (v: string | null) => (v ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)} ${v.slice(11, 16)}` : '');
 /** Dados inventados só para o RH ver como o resultado fica (nada disso vem do banco). */
 const EXEMPLO: Resultado = {
   titulo: 'Prévia', anonima: true, respostas: 42, alvo: 60, minimo: 5, liberado: true,
@@ -42,48 +22,70 @@ const EXEMPLO: Resultado = {
 function ResultadoPulso({ p, aoFechar }: { p: Pulso; aoFechar: () => void }) {
   const [real, setR] = useState<Resultado | null>(null);
   const [previa, setPrevia] = useState(false);
+  const [liberado, setLiberado] = useState(false);
+  const [pub, setPub] = useState<Publicacao>({});
+  const [rodada, setRodada] = useState<number | null>(null);
   const r = previa ? EXEMPLO : real;
   const [erro, setErro] = useState('');
-  useEffect(() => { api<Resultado>(`/api/gestao/pulso/${p.id}/resultado`).then(setR).catch((e: Error) => setErro(e.message)); }, [p.id]);
+  useEffect(() => {
+    api<Resultado>(`/api/gestao/pulso/${p.id}/resultado${rodada ? `?rodada=${rodada}` : ''}`).then((x) => {
+      setR(x);
+      if (rodada === null) { // só na primeira carga: trocar de rodada não desfaz o que o RH marcou
+        setLiberado(!!x.resultado_liberado);
+        setPub(Object.fromEntries((x.perguntas ?? []).map((q) => [q.id, { resultado: q.exibir_resultado !== false, textos: !!q.exibir_textos, vencedora: !!q.exibir_vencedora }])));
+      }
+    }).catch((e: Error) => setErro(e.message));
+  }, [p.id, rodada]);
+  const salvar = async () => {
+    if (!real?.liberado || previa) return aoFechar();
+    await api(`/api/gestao/pulso/${p.id}/publicacao`, { liberado, perguntas: (real.perguntas ?? []).map((q) => ({ id: q.id, resultado: pub[q.id]?.resultado !== false, textos: !!pub[q.id]?.textos, vencedora: !!pub[q.id]?.vencedora })) }, 'PUT');
+    aoFechar();
+  };
   return (
-    <JanelaForm extra titulo="Resultado da pesquisa" rotuloEnviar="Fechar" aoFechar={aoFechar} aoEnviar={async () => aoFechar()}>
+    <JanelaForm extra titulo="Resultado da pesquisa" rotuloEnviar={real?.liberado && !previa ? 'Salvar' : 'Fechar'} aoFechar={aoFechar} aoEnviar={salvar}>
       <p style={{ marginTop: 0 }}><b>{p.pergunta}</b></p>
       {erro && <p className="erro" role="alert">{erro}</p>}
       {!r && !erro && <p className="suave">Carregando…</p>}
+      {!previa && real && (real.rodadas ?? []).length > 1 && (
+        <label className="pr-rodada">Rodada
+          <select value={real.rodada} onChange={(e) => setRodada(Number(e.target.value))}>
+            {real.rodadas!.map((x) => <option key={x.rodada} value={x.rodada}>Rodada {x.rodada}{x.abre_em ? ` · ${dataHora(x.abre_em)}` : ''} · {x.respostas} resposta{x.respostas === 1 ? '' : 's'}</option>)}
+          </select>
+        </label>
+      )}
       {r && !r.liberado && <>
         <p className="suave" role="status">{r.respostas} de {r.minimo} respostas. Para proteger o anonimato, o resultado só aparece a partir de {r.minimo} respostas.</p>
         <button type="button" className="btn btn-sec btn-pequeno" onClick={() => setPrevia(true)}>Ver prévia com dados de exemplo</button>
       </>}
       {previa && <p className="aviso-previa" role="status"><b>Prévia:</b> números inventados, só para mostrar como o resultado vai ficar. <button type="button" className="btn btn-sec btn-pequeno" onClick={() => setPrevia(false)}>Sair da prévia</button></p>}
-      {r?.liberado && (
-        <div className="pulso-res">
-          <ul className="pr-resumo" aria-label="Resumo">
-            <li><b>{r.respostas}</b><span>resposta{r.respostas === 1 ? '' : 's'}</span></li>
-            <li><b>{r.alvo}</b><span>pessoas ativas</span></li>
-            <li><b>{r.alvo ? Math.min(100, Math.round((r.respostas / r.alvo) * 100)) : 0}%</b><span>participação</span></li>
-            <li><b>{r.anonima === false ? 'Identificada' : 'Anônima'}</b><span>{r.anonima === false ? 'nomes aparecem abaixo' : 'sem nomes'}</span></li>
-          </ul>
-          <div className="pr-grade">
-          {(r.perguntas ?? []).map((q, n) => (
-            <section key={q.id} className="pq-res">
-              <h3>{n + 1}. {q.texto}</h3>
-              {q.imagem && <img src={q.imagem} alt="" className="pq-res-img" />}
-              {q.tipo === 'nota' && (<>
-                <p style={{ margin: 0 }}><b>Média {q.media === null ? '—' : String(q.media).replace('.', ',')} de 5</b> · {q.respondentes} resposta{q.respondentes === 1 ? '' : 's'}</p>
-                <Barras itens={(q.distribuicao ?? []).map((v, i) => ({ rotulo: String(i + 1), marca: CARINHAS[i], n: v }))} />
-                {(q.comentarios ?? []).length > 0 && <><b>Comentários ({q.comentarios!.length})</b><ul className="pulso-coment">{q.comentarios!.map((c, i) => <li key={i}>{c}</li>)}</ul></>}
-              </>)}
-              {(q.tipo === 'unica' || q.tipo === 'multipla') && <Barras itens={(q.opcoes ?? []).map((o) => ({ rotulo: o.texto, imagem: o.imagem, n: o.total }))} />}
-              {(q.tipo === 'unica' || q.tipo === 'multipla') && q.opcoes?.some((o) => o.nomes) && (
-                <ul className="pulso-coment">{q.opcoes.map((o) => <li key={o.texto}><b>{o.texto}:</b> {o.nomes && o.nomes.length ? o.nomes.join(', ') : '—'}</li>)}</ul>
-              )}
-              {(q.tipo === 'nota' || q.tipo === 'texto') && q.quem && <><b>Quem respondeu ({q.quem.length})</b><ul className="pulso-coment">{q.quem.map((x, i) => <li key={i}><b>{x.nome}:</b> {x.resposta}</li>)}</ul></>}
-              {q.tipo === 'texto' && ((q.textos ?? []).length === 0 ? <p className="suave" style={{ margin: 0 }}>Ninguém respondeu.</p> : <><b>Respostas ({q.textos!.length})</b><ul className="pulso-coment">{q.textos!.map((c, i) => <li key={i}>{c}</li>)}</ul></>)}
-            </section>
-          ))}
-          </div>
-        </div>
-      )}
+      {r?.liberado && <ResultadoCorpo r={r} edicao={previa ? undefined : { liberado, setLiberado, pub, setPub }} />}
+    </JanelaForm>
+  );
+}
+
+/** Enviar a mesma pesquisa de novo: novo período e público (todos = nova rodada; só pendentes = continua a rodada). */
+function ReenviarPesquisa({ p, aoFechar, aoConcluir }: { p: Pulso; aoFechar: () => void; aoConcluir: () => void }) {
+  const [abre, setAbre] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [publico, setPublico] = useState<'todos' | 'pendentes'>(p.respostas > 0 && p.pendentes > 0 ? 'pendentes' : 'todos');
+  return (
+    <JanelaForm titulo="Enviar a pesquisa de novo" rotuloEnviar="Enviar de novo" aoFechar={aoFechar}
+      aoEnviar={async () => {
+        await api(`/api/gestao/pulso/${p.id}/reenviar`, { abre_em: abre, fecha_em: fecha, publico });
+        await avisar({ titulo: 'Pesquisa enviada de novo', mensagem: publico === 'todos' ? 'Abriu uma nova rodada para todos. As pessoas recebem o aviso (push) e o pop-up ao entrar.' : `A pesquisa voltou ao ar para quem ainda não respondeu (${p.pendentes} pessoa${p.pendentes === 1 ? '' : 's'}).` });
+        aoConcluir();
+      }}>
+      <p style={{ marginTop: 0 }}><b>{p.pergunta}</b><br /><small className="suave">Rodada {p.rodada}: {p.respostas} resposta{p.respostas === 1 ? '' : 's'} · {p.pendentes} pessoa{p.pendentes === 1 ? '' : 's'} ainda não respondeu</small></p>
+      <div className="pr-reenvio-datas">
+        <label>Abre em (opcional)<input type="datetime-local" value={abre} onChange={(e) => setAbre(e.target.value)} /></label>
+        <label>Encerra em (opcional)<input type="datetime-local" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label>
+      </div>
+      <small className="suave">Em branco, abre agora e fica no ar até você encerrar.</small>
+      <fieldset className="pr-publico">
+        <legend>Enviar para</legend>
+        <label className="linha"><input type="radio" name="publico" checked={publico === 'pendentes'} onChange={() => setPublico('pendentes')} /> <span><b>Só quem ainda não respondeu</b> ({p.pendentes}). Continua a mesma rodada e avisa só essas pessoas.</span></label>
+        <label className="linha"><input type="radio" name="publico" checked={publico === 'todos'} onChange={() => setPublico('todos')} /> <span><b>Todos</b>. Abre uma nova rodada: todos respondem de novo e o resultado fica separado do anterior.</span></label>
+      </fieldset>
     </JanelaForm>
   );
 }
@@ -91,6 +93,10 @@ function ResultadoPulso({ p, aoFechar }: { p: Pulso; aoFechar: () => void }) {
 /** Publicar › Pesquisas (RH): várias perguntas por pesquisa, tipos livres (nota, escolha única, múltipla, texto), imagens; resposta anônima. */
 export function PesquisaPulso() {
   const [resultado, setResultado] = useState<Pulso | null>(null);
+  const perms = usePermissoes();
+  const podeEditar = perms === null || perms.includes('pub.pulso.editar');
+  const [reenvio, setReenvio] = useState<{ p: Pulso; recarregar: () => void } | null>(null);
+  const veResultado = perms === null || perms.includes('pub.pulso.resultado'); // só administrador e perfil RH
   return (
     <>
       <Crud<Pulso> base="/api/gestao/pulso" rotuloItem="pesquisa" feminino larga gradeClasse="grade-pesq" idDe={(r) => r.id}
@@ -100,20 +106,27 @@ export function PesquisaPulso() {
           { chave: 'descricao', rotulo: 'Explicação (opcional)', tipo: 'area', linhas: 4, max: 500, metade: true, classe: 'gp-alto', dica: 'Aparece antes das perguntas.' },
           { chave: 'anonima', rotulo: 'Tipo de pesquisa', tipo: 'select', opcoes: [['1', 'Anônima (ninguém sabe quem respondeu)'], ['0', 'Identificada (o RH vê quem respondeu o quê)']], metade: true, classe: 'gp-1', dica: 'Não dá para trocar depois que alguém responde. Em pesquisa identificada, quem responde é avisado.' },
           { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['aberto', 'Aberta (aparece para as pessoas responderem)'], ['encerrado', 'Encerrada']], metade: true, classe: 'gp-1' },
+          { chave: 'abre_em', rotulo: 'Abre em (opcional)', tipo: 'datahora', metade: true, classe: 'gp-1', dica: 'Vale para pesquisa "Aberta".' },
+          { chave: 'fecha_em', rotulo: 'Encerra em (opcional)', tipo: 'datahora', metade: true, classe: 'gp-1', dica: 'Sai do ar sozinha.' },
           { chave: 'perguntas', rotulo: 'Perguntas', tipo: 'custom', render: (v, m, todos) => <EditorPerguntas valor={v as PerguntaForm[]} mudar={m} bloqueado={todos.bloqueado === true} /> },
         ]}
         colunas={[
           { titulo: 'Pesquisa', ver: (r) => r.pergunta },
           { titulo: 'Perguntas', ver: (r) => r.n_perguntas, ordem: (r) => r.n_perguntas },
           { titulo: 'Tipo', ver: (r) => (r.anonima ? 'Anônima' : 'Identificada') },
-          { titulo: 'Situação', ver: (r) => { const [t, x] = SIT[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
-          { titulo: 'Respostas', ver: (r) => r.respostas, ordem: (r) => r.respostas },
+          { titulo: 'Situação', ver: (r) => { const [t, x] = SIT[r.situacao ?? r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
+          { titulo: 'No ar', ver: (r) => (r.abre_em || r.fecha_em ? `${r.abre_em ? dataHora(r.abre_em) : 'já'} → ${r.fecha_em ? dataHora(r.fecha_em) : 'sem prazo'}` : '—') },
+          { titulo: 'Respostas', ver: (r) => `${r.respostas}${r.rodada > 1 ? ` (rodada ${r.rodada})` : ''}`, ordem: (r) => r.respostas },
         ]}
-        valoresNovos={{ pergunta: '', descricao: '', status: 'rascunho', anonima: '1', perguntas: [perguntaNova('nota')], bloqueado: false }}
-        paraForm={(r) => ({ pergunta: r.pergunta, descricao: r.descricao ?? '', status: r.status, anonima: r.anonima ? '1' : '0', perguntas: r.perguntas.map((q) => ({ ...q })), bloqueado: r.respostas > 0 })}
-        acoesExtra={(r) => <button className="btn btn-sec btn-pequeno" onClick={() => setResultado(r)}>Resultado</button>}
+        valoresNovos={{ pergunta: '', descricao: '', abre_em: '', fecha_em: '', status: 'rascunho', anonima: '1', perguntas: [perguntaNova('nota')], bloqueado: false }}
+        paraForm={(r) => ({ pergunta: r.pergunta, descricao: r.descricao ?? '', abre_em: r.abre_em ?? '', fecha_em: r.fecha_em ?? '', status: r.status, anonima: r.anonima ? '1' : '0', perguntas: r.perguntas.map((q) => ({ ...q })), bloqueado: r.total_respostas > 0 })}
+        acoesExtra={(r, _salvar, recarregar) => (<>
+          {veResultado && <button className="btn btn-sec btn-pequeno" onClick={() => setResultado(r)}>Resultado</button>}
+          {podeEditar && <button className="btn btn-sec btn-pequeno" title="Abre a mesma pesquisa de novo, com um novo período" onClick={() => setReenvio({ p: r, recarregar })}>Enviar de novo</button>}
+        </>)}
       />
       {resultado && <ResultadoPulso p={resultado} aoFechar={() => setResultado(null)} />}
+      {reenvio && <ReenviarPesquisa p={reenvio.p} aoFechar={() => setReenvio(null)} aoConcluir={() => { reenvio.recarregar(); setReenvio(null); }} />}
     </>
   );
 }

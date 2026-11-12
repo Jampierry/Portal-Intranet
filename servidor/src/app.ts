@@ -15,6 +15,9 @@ import { rotasPessoas } from '../../modulos/pessoas/api/index.ts';
 import { rotasPessoasMes } from '../../modulos/pessoasmes/api/index.ts';
 import { rotasAvisos } from '../../modulos/avisos/api/index.ts';
 import { rotasPulso } from '../../modulos/pulso/api/index.ts';
+import { rotasPush } from '../../modulos/push/api/index.ts';
+import { rotasAprovacoes } from '../../modulos/aprovacoes/api/index.ts';
+import { rotasRedes } from '../../modulos/redes/api/index.ts';
 import { rotasImagens } from '../../modulos/imagens/api/index.ts';
 import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 import { rotasPropriedade } from '../../modulos/propriedade/api/index.ts';
@@ -39,6 +42,9 @@ export const MODULOS = [
   { nome: 'pessoasmes', rotas: rotasPessoasMes },
   { nome: 'avisos', rotas: rotasAvisos },
   { nome: 'pulso', rotas: rotasPulso },
+  { nome: 'push', rotas: rotasPush },
+  { nome: 'aprovacoes', rotas: rotasAprovacoes },
+  { nome: 'redes', rotas: rotasRedes },
   { nome: 'demonstracao', rotas: rotasDemonstracao },
 ];
 

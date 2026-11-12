@@ -18,11 +18,13 @@ import { ComunicadosConfig, EmpresaConfig } from './EmpresaConfig';
 import { podeAbaCalendario } from '../calendarioTipos';
 import { Aniversariantes, NovosColaboradores } from './PessoasMes';
 import { PesquisaPulso } from './Pulso';
+import { RedesSociais } from './Redes';
+import { Aprovacoes } from './Aprovacoes';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
 
-interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null; exige_leitura: number }
+interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null; exige_leitura: number; aprovacao_status?: string | null; aprovacao_motivo?: string | null }
 interface Leituras { titulo: string; total: number; lidos: { nome: string; login: string; lido_em: string }[]; pendentes: { nome: string; login: string }[] }
 /** Janela "Leituras": quem já confirmou e quem falta confirmar um comunicado. */
 function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
@@ -54,14 +56,14 @@ function useLeituras(id: number) {
   return { dados, erro };
 }
 
-function Comunicados() {
+function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
   const [leituras, setLeituras] = useState<Com | null>(null);
   const { dados } = useLista<Com>('/api/gestao/comunicados');
   const categorias = [...new Set((dados ?? []).map((c) => c.categoria))];
   return (
     <>
     <Crud<Com> base="/api/gestao/comunicados" rotuloItem="comunicado" idDe={(r) => r.id}
-      introducao="Rascunho não aparece no portal. Ao publicar, a data de publicação é registrada. Para tirar do ar sem perder, use Arquivar."
+      introducao={`Rascunho não aparece no portal. Ao publicar, a data de publicação é registrada. Para tirar do ar sem perder, use Arquivar.${exigeAprovacao ? ' Você precisa de aprovação: ao publicar, o comunicado vai para o RH e só sobe no portal depois de aprovado (você recebe o retorno no sino).' : ''}`}
       campos={[
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 120 },
         { chave: 'resumo', rotulo: 'Resumo (aparece nos cartões)', obrigatorio: true, max: 300 },
@@ -69,7 +71,7 @@ function Comunicados() {
         { chave: 'imagem', rotulo: 'Imagem de capa (opcional)', tipo: 'imagem' },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'prioridade', rotulo: 'Prioridade', tipo: 'select', opcoes: [['normal', 'Normal'], ['urgente', 'Urgente (aparece no sino)']], metade: true },
-        { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['publicado', 'Publicado'], ['arquivado', 'Arquivado']], metade: true },
+        { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['publicado', exigeAprovacao ? 'Enviar para aprovação (publica após o RH aprovar)' : 'Publicado'], ['arquivado', 'Arquivado']], metade: true },
         { chave: 'exige_leitura', rotulo: 'Exigir confirmação de leitura', tipo: 'check', dica: 'Cada pessoa vê o botão “Li e estou ciente”, o comunicado aparece em Avisos até ser confirmado e você acompanha quem leu em “Leituras”.' },
         { chave: 'exibir_de', rotulo: 'Exibir a partir de (opcional)', tipo: 'data', metade: true },
         { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
@@ -77,7 +79,7 @@ function Comunicados() {
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Categoria', ver: (r) => r.categoria },
-        { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <><Selo texto={x} tom={t} />{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
+        { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <>{r.aprovacao_status === 'pendente' ? <Selo texto="Aguardando o RH" tom="aviso" /> : <Selo texto={x} tom={t} />}{r.aprovacao_status === 'rejeitado' && r.status === 'rascunho' && <> <Selo texto="Rejeitado" tom="erro" /><small className="motivo-rej">Motivo: {r.aprovacao_motivo}</small></>}{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
         { titulo: 'Publicado em', ver: (r) => dataCurta(r.publicado_em) || '—' },
       ]}
       valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exige_leitura: false, exibir_de: '', exibir_ate: '' }}
@@ -89,7 +91,7 @@ function Comunicados() {
           {r.exige_leitura ? <button className="btn btn-sec btn-pequeno" onClick={() => setLeituras(r)}>Leituras</button> : null}
           {r.status === 'publicado'
             ? <button className="btn btn-sec btn-pequeno" onClick={() => void salvar({ ...base, status: 'arquivado' })}>Arquivar</button>
-            : <button className="btn btn-verde btn-pequeno" onClick={() => void salvar({ ...base, status: 'publicado' })}>Publicar</button>}
+            : (r.aprovacao_status === 'pendente' ? null : <button className="btn btn-verde btn-pequeno" onClick={() => void salvar({ ...base, status: 'publicado' })}>{exigeAprovacao ? 'Enviar para aprovação' : 'Publicar'}</button>)}
         </>;
       }}
     />
@@ -271,9 +273,9 @@ function Aplicativos({ busca, limparBusca, favoritos, alternarFavorito }: { busc
   );
 }
 
-type AbaPub = 'comunicados' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'aniversariantes' | 'novos' | 'pulso' | 'contatos' | 'aplicacoes';
+type AbaPub = 'comunicados' | 'redes' | 'aprovacoes' | 'banners' | 'institucional' | 'documentos' | 'destaques' | 'aniversariantes' | 'novos' | 'pulso' | 'contatos' | 'aplicacoes';
 const ABAS_PUBLICAR: [AbaPub, string][] = [
-  ['comunicados', 'Comunicados'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['aniversariantes', 'Aniversariantes'], ['novos', 'Novos colaboradores'], ['pulso', 'Pesquisa de pulso'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
+  ['comunicados', 'Comunicados'], ['redes', 'Redes sociais'], ['aprovacoes', 'Aprovações'], ['banners', 'Banners (Novidades)'], ['institucional', 'Missão, Visão e Valores'], ['documentos', 'Documentos'], ['destaques', 'Colaborador Destaque'], ['aniversariantes', 'Aniversariantes'], ['novos', 'Novos colaboradores'], ['pulso', 'Pesquisa de pulso'], ['contatos', 'Contatos'], ['aplicacoes', 'Aplicativos'],
 ];
 
 /** Publicar: editor e admin cuidam do conteúdo do portal (comunicados, documentos, colaborador destaque, contatos e aplicativos). */
@@ -282,8 +284,8 @@ function useAbaVisivel(aba?: string) {
   useEffect(() => { document.querySelector('.abas-gestao [aria-selected=true]')?.scrollIntoView({ inline: 'nearest', block: 'nearest' }); }, [aba]);
 }
 
-export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito }: {
-  permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBusca, favoritos, alternarFavorito, exigeAprovacao = false }: {
+  exigeAprovacao?: boolean; permissoes: string[]; aba?: string; aoMudarAba: (a: string) => void; busca: string; limparBusca: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   useAbaVisivel(pedida);
   // Só as abas que a pessoa pode usar (a aba Aplicativos usa a permissão pub.aplicativos).
@@ -297,7 +299,9 @@ export function Publicar({ permissoes, aba: pedida, aoMudarAba, busca, limparBus
         <span id="slot-dica-aba" className="slot-dica" />
       </div>
       <PermissoesCtx.Provider value={permissoes}>
-      {aba === 'comunicados' && <Comunicados />}
+      {aba === 'comunicados' && <Comunicados exigeAprovacao={exigeAprovacao} />}
+      {aba === 'redes' && <RedesSociais exigeAprovacao={exigeAprovacao} />}
+      {aba === 'aprovacoes' && <Aprovacoes />}
       {aba === 'banners' && <Banners />}
       {aba === 'institucional' && <Institucional />}
       {aba === 'documentos' && <Documentos />}

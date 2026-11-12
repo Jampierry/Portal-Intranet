@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { config } from './config.ts';
 import { abrirBanco, migrar } from './db.ts';
 import { criarApp } from './app.ts';
+import { avisarAberturas } from '../../modulos/pulso/api/index.ts';
 
 if (config.producao) {
   // Trava de segurança: sem a origem pública, as alterações vindas do navegador seriam recusadas ou mal protegidas.
@@ -23,6 +24,9 @@ if (novas.length) console.log('Migrações aplicadas:', novas.join(', '));
 const app = await criarApp(db, config.producao);
 await app.listen({ port: config.porta, host: config.host });
 console.log(`Portal em http://${config.host}:${config.porta}  |  ${config.producao ? 'PRODUÇÃO' : 'desenvolvimento (API)'}  |  banco: ${config.caminhoBanco}`);
+
+// Pesquisas agendadas: quando chega a hora de abrir, avisa por push (uma vez cada).
+setInterval(() => { void avisarAberturas(db); }, 60_000).unref();
 
 // Desligamento limpo (serviço parado ou reiniciado): termina as requisições em andamento e fecha o banco.
 for (const sinal of ['SIGINT', 'SIGTERM'] as const) {

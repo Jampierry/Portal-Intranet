@@ -8,7 +8,7 @@ import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 import { useOrdenacao } from './Ordenar';
 import { Dica, DicaAba } from '../Dica';
 
-interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
+interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; exige_aprovacao?: number; ultimo_acesso: string | null; permissoes: Ajustes }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -78,7 +78,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
     situacao: (u) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado'), acesso: (u) => u.ultimo_acesso,
   });
   const [aviso, setAviso] = useState('');
-  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
+  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes; exige_aprovacao: boolean } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
   const [apps, setApps] = useState<Usr | null>(null);
@@ -93,7 +93,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         <Dica lado="dir">
           O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
         </Dica>
-        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {}, exige_aprovacao: false })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
       </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -148,6 +148,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
             <select value={novo.perfil} onChange={(e) => setNovo({ ...novo, perfil: e.target.value as PerfilAcesso })}>
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
+          <label className="linha"><input type="checkbox" checked={novo.exige_aprovacao} onChange={(e) => setNovo({ ...novo, exige_aprovacao: e.target.checked })} />Precisa de aprovação do RH para publicar<small className="suave"> (o que ela publicar vai para a fila de aprovação)</small></label>
           <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
           <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
         </JanelaForm>
@@ -155,7 +156,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
       {edit && (
         <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes, exige_aprovacao: !!edit.exige_aprovacao }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>E-mail (opcional)<input type="email" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" /></label>
           <label>Perfil *
@@ -163,6 +164,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
           <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
+          <label className="linha"><input type="checkbox" checked={!!edit.exige_aprovacao} onChange={(e) => setEdit({ ...edit, exige_aprovacao: e.target.checked ? 1 : 0 })} />Precisa de aprovação do RH para publicar<small className="suave"> (o que ela publicar vai para a fila de aprovação)</small></label>
           <AjustesUsuario perfil={edit.perfil} ajustes={edit.permissoes} mudar={(permissoes) => setEdit({ ...edit, permissoes })} />
         </JanelaForm>
       )}
@@ -181,6 +183,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 }
 
 const ACAO: Record<string, string> = {
+  publicacao_aprovada: 'Publicação aprovada', publicacao_rejeitada: 'Publicação rejeitada', rede_criada: 'Publicação para rede social criada', rede_alterada: 'Publicação para rede social alterada', rede_apagada: 'Publicação para rede social apagada', rede_enviada: 'Publicação enviada para aprovação', rede_publicada: 'Publicação marcada como publicada', avisos_lidos: 'Avisos do sino marcados como lidos',
   usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
   login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',

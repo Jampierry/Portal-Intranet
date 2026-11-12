@@ -67,6 +67,20 @@ export async function avisarNovoComunicado(db: Banco, slug: string, quem: number
 }
 
 export async function rotasAvisos(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
+  // ----- Sino: avisos que a pessoa já abriu ou limpou -----
+  app.get('/api/avisos/lidos', async (req) => ({ chaves: (db.prepare('SELECT chave FROM avisos_lidos WHERE usuario_id = ?').all(req.usuario!.id) as { chave: string }[]).map((r) => r.chave) }));
+  app.post('/api/avisos/lidos', async (req) => {
+    const c = corpoObjeto(req.body);
+    const lista = Array.isArray(c.chaves) ? c.chaves.map(String) : [];
+    if (lista.length === 0 || lista.length > 200) throw new ErroValidacao('Informe os avisos a marcar como lidos.');
+    if (!lista.every((k) => /^(urgente|resposta|aprov):[\w.%-]{1,120}$/.test(k))) throw new ErroValidacao('Aviso inválido.');
+    const ins = db.prepare('INSERT OR IGNORE INTO avisos_lidos (usuario_id, chave, em) VALUES (?, ?, ?)');
+    const agora = new Date().toISOString();
+    for (const k of lista) ins.run(req.usuario!.id, k, agora);
+    auditar(db, req.usuario!.id, 'avisos_lidos', { quantidade: lista.length });
+    return { ok: true };
+  });
+
   const ver = { preHandler: exigirPerm('cfg.integracoes.ver') }, editar = { preHandler: exigirPerm('cfg.integracoes.editar') };
 
   app.get('/api/integracoes/avisos', ver, async () => ({ ...lerAvisos(db), destinatarios: destinatarios(db).length, conectado: !!conexaoZimbra(db) }));

@@ -4,11 +4,11 @@ import { LogoEmpresa, LogoNome, useEmpresa } from './empresa';
 import { Calendario } from './Calendario';
 import { isoDe } from './calendarioTipos';
 
-export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pessoas' | 'ajuda';
+export type Tela = 'inicio' | 'comunicados' | 'documentos' | 'publicar' | 'configuracoes' | 'calendario' | 'pesquisas' | 'pessoas' | 'ajuda';
 
 // Item: [id, nome]. Publicar aparece para editor e administrador; Configurações, só para o administrador.
 type Item = [Tela, string];
-const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pessoas', 'Contatos'], ['ajuda', 'Ajuda']];
+const ITENS: Item[] = [['inicio', 'Início'], ['comunicados', 'Comunicados'], ['documentos', 'Documentos'], ['calendario', 'Calendário'], ['pesquisas', 'Pesquisas'], ['pessoas', 'Contatos'], ['ajuda', 'Ajuda']];
 
 const MESES_CURTOS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -39,7 +39,7 @@ interface Props {
 export function Menu(p: Props) {
   const empresa = useEmpresa();
   const mini = p.recolhido;
-  const itens: Item[] = [...ITENS.slice(0, 4).filter(([id]) => id === 'inicio' || p.telasLiberadas.includes(id)), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(4).filter(([id]) => p.telasLiberadas.includes(id)), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
+  const itens: Item[] = [...ITENS.slice(0, 5).filter(([id]) => id === 'inicio' || id === 'pesquisas' || p.telasLiberadas.includes(id)), ...(p.mostrarPublicar ? ([['publicar', 'Publicar']] as Item[]) : []), ...ITENS.slice(5).filter(([id]) => p.telasLiberadas.includes(id)), ...(p.mostrarConfig ? ([['configuracoes', 'Configurações']] as Item[]) : [])];
   return (
     <aside className={`menu${mini ? ' mini' : ''}${p.gavetaAberta ? ' aberto' : ''}`} aria-label="Menu">
       <div className="sbtop">

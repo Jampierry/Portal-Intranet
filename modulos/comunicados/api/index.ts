@@ -1,4 +1,6 @@
 import { avisarNovoComunicado } from '../../avisos/api/index.ts';
+import { avisarPushComunicado } from '../../push/api/index.ts';
+import { cancelarPendentes, exigeAprovacao, solicitarAprovacao } from '../../aprovacoes/api/index.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
@@ -51,10 +53,14 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     };
   }
 
-  app.get('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.ver') }, async () => db.prepare(`SELECT ${CAMPOS} FROM comunicados ORDER BY id DESC`).all());
+  const APROV = "(SELECT a.status FROM aprovacoes a WHERE a.tipo = 'comunicado' AND a.registro_id = comunicados.id AND a.status <> 'cancelado' ORDER BY a.id DESC LIMIT 1) AS aprovacao_status, (SELECT a.motivo FROM aprovacoes a WHERE a.tipo = 'comunicado' AND a.registro_id = comunicados.id AND a.status <> 'cancelado' ORDER BY a.id DESC LIMIT 1) AS aprovacao_motivo";
+  app.get('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.ver') }, async () => db.prepare(`SELECT ${CAMPOS}, ${APROV} FROM comunicados ORDER BY id DESC`).all());
 
   app.post('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
+    // quem precisa de aprovação não publica direto: o comunicado fica em rascunho e vai para a fila do RH
+    const paraAprovar = d.status === 'publicado' && exigeAprovacao(db, req.usuario!.id);
+    if (paraAprovar) d.status = 'rascunho';
     const slug = slugUnico((s) => !!db.prepare('SELECT 1 FROM comunicados WHERE slug = ?').get(s), d.titulo);
     const agora = new Date().toISOString();
     const r = db.prepare(
@@ -63,7 +69,8 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     ).run(slug, d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, req.usuario!.id, d.exibir_de, d.exibir_ate, d.exige_leitura, d.status === 'publicado' ? hoje() : null, agora, agora);
     const id = Number(r.lastInsertRowid);
     auditar(db, req.usuario!.id, 'comunicado_criado', { id, titulo: d.titulo, status: d.status });
-    if (d.status === 'publicado') void avisarNovoComunicado(db, slug, req.usuario!.id); // e-mail de aviso (se ligado em Integrações)
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'comunicado', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
+    if (d.status === 'publicado') { void avisarNovoComunicado(db, slug, req.usuario!.id); void avisarPushComunicado(db, slug); } // e-mail (se ligado em Integrações) e push
     return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
   });
 
@@ -72,13 +79,17 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     const atual = db.prepare('SELECT status, publicado_em FROM comunicados WHERE id = ?').get(id) as { status: string; publicado_em: string | null } | undefined;
     if (!atual) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     const d = ler(corpoObjeto(req.body));
+    const paraAprovar = d.status === 'publicado' && exigeAprovacao(db, req.usuario!.id);
+    if (paraAprovar) d.status = 'rascunho'; // volta para rascunho até o RH aprovar a versão nova
     // A data de publicação nasce na primeira vez que vira "publicado" e não muda depois.
     const publicado_em = atual.publicado_em ?? (d.status === 'publicado' ? hoje() : null);
     db.prepare(
       `UPDATE comunicados SET titulo = ?, resumo = ?, corpo = ?, imagem = ?, categoria = ?, prioridade = ?, status = ?, exibir_de = ?, exibir_ate = ?, exige_leitura = ?, publicado_em = ?, atualizado_em = ? WHERE id = ?`,
     ).run(d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, d.exibir_de, d.exibir_ate, d.exige_leitura, publicado_em, new Date().toISOString(), id);
     auditar(db, req.usuario!.id, 'comunicado_alterado', { id, titulo: d.titulo, de: atual.status, para: d.status });
-    if (d.status === 'publicado') { const s = (db.prepare('SELECT slug FROM comunicados WHERE id = ?').get(id) as { slug: string }).slug; void avisarNovoComunicado(db, s, req.usuario!.id); }
+    if (paraAprovar) solicitarAprovacao(db, { tipo: 'comunicado', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
+    else cancelarPendentes(db, 'comunicado', id);
+    if (d.status === 'publicado') { const s = (db.prepare('SELECT slug FROM comunicados WHERE id = ?').get(id) as { slug: string }).slug; void avisarNovoComunicado(db, s, req.usuario!.id); void avisarPushComunicado(db, s); }
     return db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id);
   });
 

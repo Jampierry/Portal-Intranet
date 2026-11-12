@@ -19,6 +19,8 @@ import { CalendarioPagina } from './CalendarioPagina';
 import { podeAbaCalendario } from './calendarioTipos';
 import { Lancador } from './aplicacoes/Lancador';
 import { PulsoCard } from './inicio/PulsoCard';
+import { ResultadoPopup } from './pesquisas/ResultadoPopup';
+import { Pesquisas } from './pesquisas/Pesquisas';
 import { useEmpresa } from './empresa';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
@@ -35,10 +37,11 @@ const AVISOS: Record<Tela, string> = {
   configuracoes: 'Usuários, perfis e auditoria do portal. Só o administrador acessa.',
   pessoas: 'Quem procurar em cada área da empresa: e-mail, ramal ou ferramenta de chamados. Não há dados pessoais de funcionários aqui.',
   ajuda: 'Respostas rápidas sobre login, aplicações, comunicados e documentos.',
+  pesquisas: 'Resultados das pesquisas que o RH divulgou. Os novos aparecem em um aviso ao entrar; depois, só aqui.',
 };
 // Nome de cada tela, mostrado na barra superior universal (não aparece dentro da janela).
-const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Contatos', ajuda: 'Ajuda' };
-const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
+const TITULOS: Record<Tela, string> = { inicio: 'Início', comunicados: 'Comunicados', calendario: 'Calendário', documentos: 'Documentos', publicar: 'Publicar', configuracoes: 'Configurações', pessoas: 'Contatos', ajuda: 'Ajuda', pesquisas: 'Pesquisas' };
+const TELAS: Tela[] = ['inicio', 'comunicados', 'calendario', 'documentos', 'pesquisas', 'publicar', 'configuracoes', 'pessoas', 'ajuda'];
 interface Rota { tela: Tela; slug?: string }
 /** Endereço: #comunicados, #comunicados/<slug>, #aplicacoes... (vazio = início). */
 const rotaDoEndereco = (): Rota => {
@@ -71,9 +74,19 @@ function DicaTela({ texto }: { texto: string }) {
 interface PedidoSenha { id: number; usuario_id: number; criado_em: string; login: string; nome: string }
 interface PedidoEdicao { id: number; rotulo: string; titulo: string | null; criado_em: string; status: string; solicitante: string; dono: string | null }
 interface CaixaEdicao { pendentes: PedidoEdicao[]; respostas: PedidoEdicao[] }
-function Sino({ itens, leitura, ir, pedidos, irPedidos, edicoes, decidir }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void; edicoes: CaixaEdicao; decidir: (id: number, aprovar: boolean) => void }) {
+interface LinhaAprov { id: number; tipo: 'comunicado' | 'rede_social'; titulo: string; detalhe: string | null; solicitante: string; status: string; motivo: string | null; decisor: string | null; criado_em: string }
+interface CaixaAprov { pendentes: LinhaAprov[]; respostas: LinhaAprov[] }
+function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: caixa, decidir, lidos, marcar, aprov: caixaAprov, irPublicar }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void; edicoes: CaixaEdicao; decidir: (id: number, aprovar: boolean) => void; lidos: Set<string>; marcar: (chaves: string[]) => void; aprov: CaixaAprov; irPublicar: (aba: string) => void }) {
   const [aberto, setAberto] = useState(false);
-  const total = itens.length + leitura.length + pedidos.length + edicoes.pendentes.length + edicoes.respostas.length;
+  // o que a pessoa já abriu ou limpou sai da lista; confirmação de leitura, pedidos para decidir e pedidos de senha só saem quando resolvidos
+  const chaveCom = (c: Comunicado) => `urgente:${encodeURIComponent(c.slug)}`;
+  const chaveEd = (p: PedidoEdicao) => `resposta:${p.id}`;
+  const itens = todosItens.filter((c) => !lidos.has(chaveCom(c)));
+  const edicoes: CaixaEdicao = { pendentes: caixa.pendentes, respostas: caixa.respostas.filter((p) => !lidos.has(chaveEd(p))) };
+  const chaveAp = (p: LinhaAprov) => `aprov:${p.id}`;
+  const respAprov = caixaAprov.respostas.filter((p) => !lidos.has(chaveAp(p)));
+  const limpaveis = [...itens.map(chaveCom), ...edicoes.respostas.map(chaveEd), ...respAprov.map(chaveAp)];
+  const total = itens.length + leitura.length + pedidos.length + edicoes.pendentes.length + edicoes.respostas.length + caixaAprov.pendentes.length + respAprov.length;
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -89,7 +102,19 @@ function Sino({ itens, leitura, ir, pedidos, irPedidos, edicoes, decidir }: { it
       </button>
       {aberto && (
         <div className="tema-painel painel-avisos" role="dialog" aria-label="Avisos">
-          <h3>Avisos</h3>
+          <div className="avisos-topo">
+            <h3>Avisos</h3>
+            {limpaveis.length > 0 && <button type="button" className="btn btn-sec btn-pequeno" title="Limpa os avisos que não pedem confirmação de leitura" onClick={() => marcar(limpaveis)}>Marcar todas como lidas</button>}
+          </div>
+          {caixaAprov.pendentes.length > 0 && <small className="aviso-grupo">Publicações aguardando a sua aprovação</small>}
+          {caixaAprov.pendentes.length > 0 && <button className="aviso" onClick={() => { setAberto(false); irPublicar('aprovacoes'); }}><b>{caixaAprov.pendentes.length} publicaç{caixaAprov.pendentes.length === 1 ? 'ão' : 'ões'} para aprovar</b><small>{caixaAprov.pendentes.slice(0, 3).map((p) => `${p.titulo} (${p.solicitante})`).join(' · ')}{caixaAprov.pendentes.length > 3 ? '…' : ''} · clique para decidir</small></button>}
+          {respAprov.length > 0 && <small className="aviso-grupo">Retorno das suas publicações</small>}
+          {respAprov.map((p) => (
+            <button key={p.id} className="aviso" onClick={() => { marcar([chaveAp(p)]); setAberto(false); irPublicar(p.tipo === 'comunicado' ? 'comunicados' : 'redes'); }}>
+              <b>{p.status === 'aprovado' ? 'Aprovada' : 'Rejeitada'}: {p.titulo}</b>
+              <small>{p.status === 'aprovado' ? (p.tipo === 'comunicado' ? 'Já está no portal.' : 'Pode publicar na plataforma.') : `Motivo: ${p.motivo ?? '—'}`}{p.decisor ? ` · por ${p.decisor}` : ''} · clique para abrir e limpar</small>
+            </button>
+          ))}
           {edicoes.pendentes.length > 0 && <small className="aviso-grupo">Pedidos para editar conteúdo</small>}
           {edicoes.pendentes.map((p) => (
             <div key={p.id} className="aviso">
@@ -103,17 +128,17 @@ function Sino({ itens, leitura, ir, pedidos, irPedidos, edicoes, decidir }: { it
           ))}
           {edicoes.respostas.length > 0 && <small className="aviso-grupo">Respostas aos seus pedidos</small>}
           {edicoes.respostas.map((p) => (
-            <div key={p.id} className="aviso"><b>{p.status === 'aprovado' ? 'Edição autorizada' : 'Edição negada'}: {p.rotulo.toLowerCase()}{p.titulo ? ` “${p.titulo}”` : ''}</b><small>{p.status === 'aprovado' ? 'Vale por 24 horas: abra o conteúdo e edite.' : 'Procure o autor ou o administrador.'}</small></div>
+            <button key={p.id} className="aviso" onClick={() => marcar([chaveEd(p)])}><b>{p.status === 'aprovado' ? 'Edição autorizada' : 'Edição negada'}: {p.rotulo.toLowerCase()}{p.titulo ? ` “${p.titulo}”` : ''}</b><small>{p.status === 'aprovado' ? 'Vale por 24 horas: abra o conteúdo e edite.' : 'Procure o autor ou o administrador.'} · clique para limpar</small></button>
           ))}
           {pedidos.length > 0 && <small className="aviso-grupo">Pedidos de nova senha</small>}
           {pedidos.map((p) => (
             <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{p.nome} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
           ))}
           {(pedidos.length > 0 || leitura.length > 0) && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
-          {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 && edicoes.pendentes.length === 0 && edicoes.respostas.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso urgente no momento.</p> : itens.map((c) => (
-            <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
+          {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 && edicoes.pendentes.length === 0 && edicoes.respostas.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso no momento.</p> : itens.map((c) => (
+            <button key={c.slug} className="aviso" onClick={() => { marcar([chaveCom(c)]); setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)}</small></button>
           ))}
-          {leitura.length > 0 && <small className="aviso-grupo">Pedem a sua confirmação de leitura</small>}
+          {leitura.length > 0 && <small className="aviso-grupo">Pedem a sua confirmação de leitura (saem quando você confirmar)</small>}
           {leitura.map((c) => (
             <button key={c.slug} className="aviso" onClick={() => { setAberto(false); ir(c.slug); }}><b>{c.titulo}</b><small>{c.categoria} · {dataCurta(c.publicado_em)} · clique para ler e confirmar</small></button>
           ))}
@@ -140,7 +165,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const admin = usuario.perfil === 'admin';
   const podeConfig = ['usuarios', 'perfis', 'empresa', 'entrada', 'integracoes', 'auditoria'].some((a) => pode(usuario, `cfg.${a}.ver`)) || podeAbaCalendario(usuario.permissoes);
   const telasLiberadas = (['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'] as Tela[]).filter((t) => pode(usuario, `ver.${t}`));
-  const libera = (t: Tela) => t === 'inicio' || telasLiberadas.includes(t);
+  const libera = (t: Tela) => t === 'inicio' || t === 'pesquisas' || telasLiberadas.includes(t);
   const { dados: comunicados } = useLista<Comunicado>(libera('comunicados') ? '/api/comunicados' : null);
   const leitura = (comunicados ?? []).filter((c) => c.exige_leitura && !c.lido);
   const urgentes = (comunicados ?? []).filter((c) => c.prioridade === 'urgente' && !leitura.includes(c));
@@ -162,6 +187,28 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     void lerEdicoes(); const t = setInterval(() => void lerEdicoes(), 60_000);
     window.addEventListener('pedidos-edicao', lerEdicoes);
     return () => { clearInterval(t); window.removeEventListener('pedidos-edicao', lerEdicoes); };
+  }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Avisos que a pessoa já abriu ou limpou (guardados no servidor: valem no celular e no computador).
+  const [lidos, setLidos] = useState<Set<string>>(new Set());
+  useEffect(() => { api<{ chaves: string[] }>('/api/avisos/lidos').then((r) => setLidos(new Set(r.chaves))).catch(() => { /* sem aviso */ }); }, []);
+  const marcarLidos = (chaves: string[]) => {
+    const novas = chaves.filter((k) => !lidos.has(k));
+    if (novas.length === 0) return;
+    setLidos((a) => new Set([...a, ...novas]));
+    api('/api/avisos/lidos', { chaves: novas }).catch(() => setLidos((a) => new Set([...a].filter((k) => !novas.includes(k))))); // se falhar, o aviso volta
+  };
+  // abrir um comunicado urgente (pelo sino, pelo Início ou por um aviso push) tira o aviso do sino
+  useEffect(() => {
+    if (rota.tela !== 'comunicados' || !rota.slug) return;
+    if ((comunicados ?? []).some((c) => c.slug === rota.slug && c.prioridade === 'urgente')) marcarLidos([`urgente:${encodeURIComponent(rota.slug)}`]);
+  }, [rota.tela, rota.slug, comunicados]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Aprovação de publicações: o RH vê a fila no sino; quem pediu vê o retorno (aprovada ou rejeitada, com o motivo).
+  const [aprov, setAprov] = useState<CaixaAprov>({ pendentes: [], respostas: [] });
+  const lerAprov = () => api<CaixaAprov>('/api/aprovacoes/caixa').then(setAprov).catch(() => { /* sem aviso */ });
+  useEffect(() => {
+    void lerAprov(); const t = setInterval(() => void lerAprov(), 60_000);
+    window.addEventListener('aprovacoes', lerAprov);
+    return () => { clearInterval(t); window.removeEventListener('aprovacoes', lerAprov); };
   }, [tela]); // eslint-disable-line react-hooks/exhaustive-deps
   const decidirEdicao = async (id: number, aprovar: boolean) => { try { await api(`/api/pedidos-edicao/${id}/decidir`, { aprovar }); } finally { void lerEdicoes(); } };
 
@@ -216,6 +263,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 
       <div className="corpo">
         <PulsoCard />
+        <ResultadoPopup />
         <header className="topo">
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <DicaTela texto={AVISOS[tela]} />
@@ -225,7 +273,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
-          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} />
+          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} />
           <MenuConta usuario={usuario} avatar={perfil.avatar} mudarAvatar={mudarAvatar} sair={() => void sair()} />
         </header>
 
@@ -240,7 +288,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'documentos' && libera(tela) && <Documentos busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'pessoas' && libera(tela) && <Pessoas busca={busca} limparBusca={() => setBusca('')} />}
             {tela === 'ajuda' && libera(tela) && <Ajuda irPara={irPara} />}
-            {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} />}
+            {tela === 'pesquisas' && <Pesquisas />}
+            {tela === 'publicar' && gere && <Publicar permissoes={usuario.permissoes} aba={rota.slug} aoMudarAba={(a) => irPara('publicar', a)} busca={busca} limparBusca={() => setBusca('')} favoritos={favoritos} alternarFavorito={alternarFavorito} exigeAprovacao={!!usuario.exige_aprovacao} />}
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}
