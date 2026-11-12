@@ -99,3 +99,9 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 .entrar-marca > .entrar-logo { justify-content: center; text-align: center; }
 .empcfg-previa .prev-menu-real .sbtop { flex-direction: column; justify-content: center; padding: 28px 8px 12px; }
 .empcfg-previa .prev-menu-real .brandtxt { flex: none; width: 100%; }
+/* A logo é o botão do menu: clicar recolhe. Recolhido, o botão ☰ expande. */
+.brandbtn { display: block; width: 100%; padding: 4px 6px; margin: 0; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.brandbtn:hover { background: var(--menu-hover); }
+.brandbtn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.menu .sbtop { padding-top: 10px; }
+.menu.mini .sbtop { padding-top: 4px; }

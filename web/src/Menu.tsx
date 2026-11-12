@@ -43,10 +43,16 @@ export function Menu(p: Props) {
   return (
     <aside className={`menu${mini ? ' mini' : ''}${p.gavetaAberta ? ' aberto' : ''}`} aria-label="Menu">
       <div className="sbtop">
-        <div className="brandtxt">{(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome classe="empnome-img" sobre="menu" /> : <span className="empnome">{empresa.nome}</span>}{empresa.slogan && <span>{empresa.slogan}</span>}</div>
-        <button className="menubtn" onClick={p.alternar} aria-expanded={!mini} aria-label={mini ? 'Expandir menu' : 'Recolher menu'} title={mini ? 'Expandir menu' : 'Recolher menu'}>
-          <Icone nome="menu" tamanho={20} />
-        </button>
+        {!mini && (
+          <button className="brandbtn" onClick={p.alternar} aria-expanded={!mini} aria-label="Recolher menu" title="Recolher menu">
+            <span className="brandtxt">{(empresa.logo_nome || empresa.logo_nome_escuro) ? <LogoNome classe="empnome-img" sobre="menu" /> : <span className="empnome">{empresa.nome}</span>}{empresa.slogan && <span>{empresa.slogan}</span>}</span>
+          </button>
+        )}
+        {mini && (
+          <button className="menubtn" onClick={p.alternar} aria-expanded={!mini} aria-label="Expandir menu" title="Expandir menu">
+            <Icone nome="menu" tamanho={20} />
+          </button>
+        )}
       </div>
 
       <nav aria-label="Seções do portal">

@@ -138,7 +138,6 @@ export function EmpresaConfig({ permissoes }: { permissoes: string[] }) {
           <div className="menu prev-menu-real">
             <div className="sbtop">
               <div className="brandtxt">{(cfg.logo_nome || cfg.logo_nome_escuro) ? <LogoNome cfg={cfg} classe="empnome-img" sobre="menu" /> : <span className="empnome">{cfg.nome || '—'}</span>}{cfg.slogan && <span>{cfg.slogan}</span>}</div>
-              <span className="menubtn" aria-hidden="true"><Icone nome="menu" tamanho={20} /></span>
             </div>
           </div>
           <span className="prev-rotulo">Rodapé</span>
