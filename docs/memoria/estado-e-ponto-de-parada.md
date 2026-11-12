@@ -260,3 +260,10 @@
 ## 2026-11-12 (noite) — endurecimento e qualidade
 - Login limitado por login+IP, IP e login; CSP/HSTS em produção; política de senha; Ajuda reescrita; exportar pesquisa em CSV; ESLint + CI; `portal.css` virou `web/src/css/parte-01…09.css` (mecânico, cascata idêntica); `GET /api/gestao/armazenamento`.
 - Pendente (terceiros/decisão): TI, marca/LGPD, recuperação por e-mail, 2FA/SSO, antivírus, Playwright, imagens fora do SQLite, consolidar CSS com teste visual. Lista completa em `docs/revisao-do-sistema-2026-11-12.md` (seção 0).
+
+## Ponto de parada — 12/11/2026 (fim da noite)
+- **Feito nesta sessão (tudo em commits locais, 9 à frente de `origin/main`; usuário ainda NÃO disse "enviar"):** segurança (login por login+IP/IP/login, CSP+HSTS, política de senha), exportar pesquisa em CSV, ESLint + CI, `portal.css` → `web/src/css/parte-01…10.css` (mecânico; `parte-10` = Ajuda), `GET /api/gestao/armazenamento`.
+- **Ajuda:** reescrita; duas abas (Perguntas frequentes / Manuais do sistema, subtítulo muda por aba); coluna central de até 960 px; no computador a página não rola, só o cartão (perguntas, lista de manuais, texto do manual). Manuais vêm de `docs/manuais/*.md` via `modulos/ajuda` (`GET /api/ajuda/manuais[/:id]`), filtrados por prefixo de permissão (`pub.`, `cfg.`).
+- **Docs novos:** `docs/pendencias-ti.md` (checklist de 21 itens para a TI) e `docs/melhorias-futuras.md` reorganizado.
+- **Verificação:** lint 0 erros, typecheck, build e 153 testes OK. As telas novas da Ajuda NÃO foram vistas no navegador por mim; o usuário vem conferindo por screenshot.
+- **Próximo:** (1) manuais por perfil (ex.: Marketing) — aguardando o usuário listar os perfis; (2) `enviar` (push); (3) 2FA TOTP; (4) Playwright; (5) imagens fora do SQLite. Dependem de terceiros: TI, LGPD/marca, e-mail, SSO, antivírus.
