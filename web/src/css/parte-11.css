@@ -84,12 +84,12 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
   }
 }
 
-/* ===== Menu lateral: logo e frase centralizadas (sem ícone ao lado); o botão de menu (☰) fica no canto superior direito e recolhe/expande ===== */
+/* ===== Menu lateral: logo e frase centralizadas (sem ícone ao lado); o botão de menu (☰) fica no canto superior esquerdo e recolhe/expande ===== */
 .menu .sbtop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 30px 8px 16px; text-align: center; }
 .menu .sbtop .brandtxt { align-items: center; text-align: center; width: 100%; }
 .menu .sbtop .brandtxt span { white-space: normal; }
 .menu .sbtop .empnome-img { margin-inline: auto; object-position: center; max-width: 100%; }
-.menubtn { position: absolute; top: 0; right: 0; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--menu-texto); cursor: pointer; }
+.menubtn { position: absolute; top: 0; left: 0; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--menu-texto); cursor: pointer; }
 .menubtn:hover { background: var(--menu-hover); }
 .menubtn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 /* Menu recolhido: some a marca, só o botão, centralizado */
