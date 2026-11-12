@@ -278,3 +278,9 @@
 - **Melhorias anotadas:** vídeo nos banners e na tela de entrada (em `docs/melhorias-futuras.md`).
 - Commits locais da `main` ainda NÃO enviados ao `origin` (d35adbf, e07bc93, 8ada11d, 58c7fd0 e este). Lint, typecheck, build e 153 testes OK.
 - **Próximo:** conferir o vidro no navegador; manuais por perfil (usuário lista os perfis); "enviar"; 2FA TOTP; Playwright; vídeo nos banners; resposta da TI (homologação).
+
+## Ponto de parada — 12/11/2026 (fim da madrugada) — vídeo e entrada
+- **Vídeo nos banners e no fundo da tela de entrada** (migração 048, `videos_arquivo`): MP4/WebM até **40 MB** (conteúdo conferido por assinatura), no SQLite, entrega por Range (`enviarVideo` em `modulos/imagens/api`). Banners: `POST /api/gestao/videos` (`pub.banners.criar|editar`), `GET /api/videos/:nome` (login). Entrada: `POST /api/gestao/entrada/videos` (`cfg.entrada.editar`), `GET /api/publico/videos/:nome` (só se estiver em uso; rota pública liberada em `modulos/acessos`). Front: `web/src/midia.tsx` (`ehVideo`, `VideoFundo`; só toca o slide/imagem visível), campo `video: true` em `Campo` (Crud). Testes: `modulos/imagens/tests/video.test.ts`. TI: proxy precisa aceitar corpo de ~45 MB (anotado em `docs/implantacao.md`). Banco e backup crescem com vídeos; mover mídia para fora do SQLite continua nas melhorias futuras.
+- **Visual:** prévia "Como vai aparecer" (Empresa) não estoura mais o cartão; divisa da tela de entrada (computador) com faixa de desfoque estreita em `.entrar::after` (`parte-11.css`, ajustar `calc(50% + 6px)`, `44px`, `blur(5px)`).
+- **Estado do Git:** `main` com commits locais a partir de 73c0d5d NÃO enviados ao `origin`; a organização (`org-main`) só tem o commit inicial limpo. Lint, typecheck, build e 158 testes OK; nada conferido no navegador por mim.
+- **Próximo:** conferir vídeo (banner e entrada) e a divisa no navegador; manuais por perfil; "enviar"; 2FA TOTP; Playwright; mídia fora do SQLite; resposta da TI.
