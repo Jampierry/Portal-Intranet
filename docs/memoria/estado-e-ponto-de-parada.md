@@ -284,3 +284,10 @@
 - **Visual:** prévia "Como vai aparecer" (Empresa) não estoura mais o cartão; divisa da tela de entrada (computador) com faixa de desfoque estreita em `.entrar::after` (`parte-11.css`, ajustar `calc(50% + 6px)`, `44px`, `blur(5px)`).
 - **Estado do Git:** `main` com commits locais a partir de 73c0d5d NÃO enviados ao `origin`; a organização (`org-main`) só tem o commit inicial limpo. Lint, typecheck, build e 158 testes OK; nada conferido no navegador por mim.
 - **Próximo:** conferir vídeo (banner e entrada) e a divisa no navegador; manuais por perfil; "enviar"; 2FA TOTP; Playwright; mídia fora do SQLite; resposta da TI.
+
+## Ponto de parada — 12/11/2026 (manhã) — menu, entrada e ícone
+- **Entrada:** imagem fixa e carrossel têm listas próprias (`fixa` e `imagens` em `cfg.entrada`; configuração antiga é migrada em `lerEntrada`). Divisa imagem/formulário com faixa de desfoque (`.entrar::after`, `parte-11.css`).
+- **Menu lateral:** logo e frase centralizadas, **sem ícone**; a logo é o botão que recolhe (`.brandbtn`); recolhido, aparece o ☰ (`.menubtn`) para expandir. Tela de entrada também sem ícone, logo centralizada.
+- **Ícone da empresa** (Configurações › Empresa › Trocar ícone) agora vira o **ícone da aba do navegador** (`aplicarIconeDaAba` em `web/src/empresa.tsx`; também `apple-touch-icon` se não for SVG). O ícone do PWA instalado continua fixo (`manifest.webmanifest`); gerar 192/512 no servidor é possibilidade futura.
+- **Git:** commits locais da `main` desde `73c0d5d` ainda NÃO enviados ao `origin`; organização (`org-main`) só tem o commit inicial limpo. Lint, typecheck, build e 159 testes OK; visuais não conferidos por mim.
+- **Próximo:** conferir no navegador (vídeo, divisa da entrada, menu com logo clicável, favicon); "enviar"; manuais por perfil; 2FA; Playwright; mídia fora do SQLite; ícone do PWA dinâmico.
