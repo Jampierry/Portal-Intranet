@@ -304,3 +304,6 @@
 - **Testado:** só o caminho "nada a enviar" (corrigidos recursão da função `Git` e `utf8NoBOM` do PS 5.1). O caminho com mudanças reais (apply 3way na `org-main`, publicar+test, commit, push) ainda não foi exercitado; conferir a saída no primeiro uso. Diferenças propositais da `org-main` (README/docs) podem gerar conflito.
 - **Estado:** `origin/main` = `6b226b1`; `org/main` = `5460494`; nada pendente de envio.
 - **Próximo:** igual ao ponto anterior (conferir visuais no navegador, manuais por perfil, 2FA TOTP, Playwright, mídia fora do SQLite).
+
+## 13/11/2026 — janela "Select an account" do GitHub
+- O Git Credential Manager perguntava a conta toda hora (há `Jampierry` e `jampierry-silva` salvas). Corrigido fixando o usuário no URL dos remotos: `origin` = `https://Jampierry@github.com/Jampierry/Portal-Intranet.git`, `org` = `https://jampierry-silva@github.com/Di-Paula-Moda-Esportiva/Portal-Intranet.git` (idem Memoritrix, `origin` = `Jampierry@`). Repositório novo: configurar o remoto já com `usuario@` no URL.
