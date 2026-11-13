@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { urlSegura } from '../links';
 import { api } from '../api';
 import { avisar } from '../Confirmar';
 import { Crud, JanelaForm, Selo, usePermissoes } from './Crud';
@@ -68,7 +69,7 @@ export function RedesSociais({ exigeAprovacao }: { exigeAprovacao: boolean }) {
           {(r.status === 'rascunho' || r.status === 'rejeitada') && <button className="btn btn-verde btn-pequeno" onClick={() => void enviar(r, recarregar)}>{r.status === 'rejeitada' ? 'Reenviar para aprovação' : exigeAprovacao ? 'Enviar para aprovação' : 'Liberar'}</button>}
           {r.status === 'aprovada' && <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
           {r.status === 'aprovada' && <button className="btn btn-verde btn-pequeno" onClick={() => setPublicando({ r, recarregar })}>Marcar como publicada</button>}
-          {r.status === 'publicada' && r.link_publicado && <a className="btn btn-sec btn-pequeno" href={r.link_publicado} target="_blank" rel="noopener noreferrer">Ver publicação</a>}
+          {r.status === 'publicada' && r.link_publicado && urlSegura(r.link_publicado) && <a className="btn btn-sec btn-pequeno" href={r.link_publicado} target="_blank" rel="noopener noreferrer">Ver publicação</a>}
         </>) : null}
       />
       {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.data_prevista} url={`/api/gestao/redes/${mudandoData.r.id}/data`} campo="data_prevista" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}

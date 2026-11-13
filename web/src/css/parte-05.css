@@ -8,12 +8,12 @@
 .entrar-fundo-img.ativa { opacity: 1; }
 .entrar-fundo-veu { position: absolute; inset: 0; z-index: -1; }
 .entrar-marca.com-imagem { background: var(--menu); }
-.entrar-logo-img { height: 38px; width: auto; max-width: 150px; object-fit: contain; border-radius: 8px; }
+
 .entrar-extra { margin: 0 0 16px; max-width: 34ch; font-size: 15px; line-height: 1.45; color: var(--menu-texto); }
 @media (prefers-reduced-motion: reduce) { .entrar-fundo-img { transition: none; } }
 .entrar-marca.previa { min-height: 320px; padding: 22px 24px; border-radius: 16px; }
 .entrar-marca.previa .entrar-logo { font-size: 20px; }
-.entrar-marca.previa .entrar-logo-img { height: 28px; }
+
 .entrar-marca.previa .entrar-extra { font-size: 12.5px; }
 /* Configurações › Tela de entrada */
 .entcfg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 20px; align-items: start; }
@@ -34,12 +34,9 @@
 .entcfg-add:hover { background: var(--hover); }
 .entcfg-campo { display: grid; gap: 6px; margin: 0; font-weight: 600; font-size: 13px; }
 .entcfg-campo input[type=range] { width: 100%; padding: 0; height: auto; }
-.entcfg-logo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.entcfg-logo img { height: 44px; width: auto; max-width: 160px; object-fit: contain; border-radius: 8px; border: 1px solid var(--linha-suave); padding: 3px; }
-.entcfg-logo-acoes { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+
 .entcfg-rodape { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 960px) { .entcfg { grid-template-columns: minmax(0, 1fr); } .entcfg-previa { position: static; order: -1; } }
-
 
 /* Calendário (tela cheia): compacto; barra única e painel alinhado ao topo da grade */
 .calp-barra { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin: 4px 0 10px; }
@@ -96,20 +93,10 @@
 .empcfg-icone-img img { width: 100%; height: 100%; object-fit: contain; }
 .empcfg-icone-acoes { display: grid; gap: 4px; justify-items: start; }
 .empcfg-link { background: none; border: 0; padding: 0; font: inherit; font-size: 11.5px; color: var(--vinho-texto); text-decoration: underline; cursor: pointer; }
-.empcfg-feriado { display: grid; grid-template-columns: minmax(0, 1fr) 64px 130px 28px; gap: 8px; align-items: center; }
-.empcfg-x { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--suave); font-size: 18px; line-height: 1; cursor: pointer; }
-.empcfg-x:hover { background: var(--hover); color: var(--texto); }
-.empcfg-rodape-bloco { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
 .empcfg-previa { position: sticky; top: 8px; display: grid; gap: 10px; padding-top: 4px; }
 .prev-menu { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--menu); color: var(--menu-texto); }
-.prev-logo { width: 30px; height: 30px; flex: none; display: grid; place-items: center; }
-.prev-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
-.prev-nome { display: grid; line-height: 1.2; min-width: 0; }
-.prev-nome small { font-size: 9.5px; letter-spacing: .14em; color: var(--menu-suave); }
-.prev-destaque { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--linha-suave); border-radius: 12px; }
-.prev-destaque b { font-size: 13.5px; line-height: 1.25; }
-.prev-lema { display: grid; gap: 1px; padding: 8px 10px; border-radius: 8px; background: var(--menu); color: var(--menu-texto); }
-.prev-lema i { font-style: normal; font-size: 10px; letter-spacing: .2em; }
+
 .prev-rodape { font-size: 11px; color: var(--suave); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 960px) { .empcfg { grid-template-columns: minmax(0, 1fr); } .empcfg-previa { position: static; order: -1; } .empcfg-linha.ident, .empcfg-linha.tres { grid-template-columns: minmax(0, 1fr); } .empcfg-linha.duas { grid-template-columns: minmax(0, 1fr); } }
 
@@ -205,7 +192,7 @@
 .prev-rotulo { color: var(--vinho-texto); font-weight: 700; }
 
 /* Configurações: dicas de onde fica cada coisa e painel lateral dos Comunicados na prévia */
-.empcfg-onde { margin: 0; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; background: var(--afundado); }
+
 .prev-painel-marca { margin: 0; border-radius: var(--raio); }
 
 /* Carrossel da tela de entrada: troca com fade e a imagem em destaque se aproxima devagar. Com "reduzir movimento" ligado no sistema, as imagens ainda se alternam (sem fade nem zoom) e param ao passar o mouse. */
@@ -238,7 +225,6 @@
 .entrar-marca.previa .entrar-extra { font-size: 19px; }
 .entrar-extra + .lema .traco { display: none; }
 
-
 /* Vídeo no fundo da entrada (e prévias): ocupa o espaço como a imagem */
 .entrar-fundo-video { background: none; }
 .entrar-fundo-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -250,7 +236,7 @@
 .empcfg-previa .prev-rotulo:first-of-type { margin-top: 2px; }
 .empcfg-previa .prev-menu-real.menu { min-width: 0; overflow: hidden; }
 .empcfg-previa .prev-menu-real .sbtop { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
-.empcfg-previa .prev-menu-real .appbtn { flex: none; }
+
 .empcfg-previa .prev-menu-real .brandtxt { flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .empcfg-previa .prev-menu-real .empnome-img { max-width: 100%; height: auto; max-height: 30px; }
 .empcfg-previa .prev-menu-real .empnome, .empcfg-previa .prev-menu-real .brandtxt > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,10 +1,11 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
-import { corpoObjeto, escolha, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
+import { corpoObjeto, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { confereSenha, hashSenha } from './senha.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, HORAS_SESSAO, usuarioDaSessao } from './guard.ts';
-import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
+import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesDoPerfil, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
+import { bytesNoDisco } from '../../imagens/api/armazenamento.ts';
 
 const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
@@ -71,7 +72,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     // Defesa extra contra CSRF: requisição que muda dados precisa vir da mesma origem.
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       const origem = req.headers.origin;
-      const mesmoSite = origem !== undefined && new URL(origem).host === req.headers.host;
+      let mesmoSite = false;
+      try { mesmoSite = origem !== undefined && new URL(origem).host === req.headers.host; } catch { /* Origin: null ou inválida: não é do mesmo site */ }
       if (origem && !mesmoSite && !config.origensPermitidas.includes(origem)) return resp.code(403).send({ erro: 'Origem não permitida.' });
     }
     req.usuario = usuarioDaSessao(db, req.cookies[COOKIE_SESSAO]);
@@ -82,16 +84,16 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     }
   });
 
-  app.post('/api/login', async (req, resp) => {
+  app.post('/api/login', { bodyLimit: 4096 }, async (req, resp) => {
     const c = corpoObjeto(req.body);
     const login = String(texto(c, 'login', 'Login', { max: 64 })).toLowerCase();
     const senha = String(texto(c, 'senha', 'Senha', { max: 128 }));
     const desde = new Date(Date.now() - JANELA_MIN * 60_000).toISOString();
     // O bloqueio vale para o PAR login+IP (quem só conhece o login de alguém não trava a conta dela de outro lugar),
     // para o IP (varredura de muitos logins) e, com limite bem maior, para o login (ataque vindo de muitos IPs).
-    const chavePar = `par:${login}|${req.ip}`, chaveIp = `ip:${req.ip}`;
+    const chavePar = `par:${login}|${req.ip}`, chaveIp = `ip:${req.ip}`, chaveLogin = `login:${login}`; // prefixos: o texto digitado nunca vira a chave de outro tipo
     const falhas = (chave: string) => (db.prepare('SELECT COUNT(*) n FROM tentativas_login WHERE chave = ? AND quando > ?').get(chave, desde) as { n: number }).n;
-    if (falhas(chavePar) >= MAX_FALHAS || falhas(chaveIp) >= MAX_FALHAS_IP || falhas(login) >= MAX_FALHAS_LOGIN) {
+    if (falhas(chavePar) >= MAX_FALHAS || falhas(chaveIp) >= MAX_FALHAS_IP || falhas(chaveLogin) >= MAX_FALHAS_LOGIN) {
       auditar(db, null, 'login_bloqueado', { login, ip: req.ip });
       return resp.code(429).send({ erro: `Muitas tentativas. Aguarde ${JANELA_MIN} minutos e tente de novo.` });
     }
@@ -100,12 +102,12 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const ok = confereSenha(senha, u?.senha_hash ?? HASH_FALSO) && !!u && u.ativo === 1;
     if (!ok || !u) {
       const agora = new Date().toISOString();
-      for (const chave of [chavePar, chaveIp, login]) db.prepare('INSERT INTO tentativas_login (chave, quando) VALUES (?, ?)').run(chave, agora);
+      for (const chave of [chavePar, chaveIp, chaveLogin]) db.prepare('INSERT INTO tentativas_login (chave, quando) VALUES (?, ?)').run(chave, agora);
       db.prepare('DELETE FROM tentativas_login WHERE quando < ?').run(desde); // limpeza das tentativas antigas
       auditar(db, u?.id ?? null, 'login_falhou', { login });
       return resp.code(401).send({ erro: 'Login ou senha inválidos.' });
     }
-    db.prepare('DELETE FROM tentativas_login WHERE chave IN (?, ?)').run(login, chavePar);
+    db.prepare('DELETE FROM tentativas_login WHERE chave IN (?, ?)').run(chaveLogin, chavePar);
     db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(new Date().toISOString(), u.id);
     const token = criarSessao(db, u.id);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: HORAS_SESSAO * 3600 });
@@ -162,7 +164,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
     const ajustes = ajustesDoCorpo(c);
-    if ((!ehAdmin(req) && perfil === 'admin') || excede(req, Object.keys(ajustes).filter((k) => ajustes[k]))) return resp.code(403).send(NEGADO);
+    // Quem não é administrador também não pode escolher um perfil que dê mais acesso do que ele tem.
+    if ((!ehAdmin(req) && perfil === 'admin') || excede(req, [...permissoesDoPerfil(db, perfil), ...Object.keys(ajustes).filter((k) => ajustes[k])])) return resp.code(403).send(NEGADO);
     const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes) VALUES (?, ?, ?, ?, ?, 1, ?, ?)')
       .run(login, nome, email, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null);
     auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
@@ -188,7 +191,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     if (!ehAdmin(req)) {
       const antes = lerAjustes(atual.permissoes);
       const novas = Object.keys(ajustes).filter((k) => ajustes[k] && !antes[k]);
-      if (id === req.usuario!.id || atual.perfil === 'admin' || perfil === 'admin' || excede(req, novas)) return resp.code(403).send(NEGADO);
+      const permsNovoPerfil = perfil !== atual.perfil ? permissoesDoPerfil(db, perfil) : [];
+      if (id === req.usuario!.id || atual.perfil === 'admin' || perfil === 'admin' || excede(req, [...permsNovoPerfil, ...novas])) return resp.code(403).send(NEGADO);
     }
     const ajustesJson = Object.keys(ajustes).length ? JSON.stringify(ajustes) : null;
     db.prepare('UPDATE usuarios SET nome = ?, email = ?, perfil = ?, ativo = ?, permissoes = ? WHERE id = ?').run(nome, email, perfil, ativo, ajustesJson, id);
@@ -199,14 +203,15 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
 
   app.post<{ Params: { id: string } }>('/api/usuarios/:id/senha', senhaUsuario, async (req, resp) => {
     const id = inteiro(req.params.id, 'Usuário');
-    const u = db.prepare('SELECT login, perfil FROM usuarios WHERE id = ?').get(id) as { login: string; perfil: string } | undefined;
+    const u = db.prepare('SELECT login, perfil, permissoes FROM usuarios WHERE id = ?').get(id) as { login: string; perfil: string; permissoes: string | null } | undefined;
     if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
-    if (!ehAdmin(req) && u.perfil === 'admin') return resp.code(403).send(NEGADO);
+    // Redefinir a senha de alguém com mais acesso é virar essa pessoa: só com o mesmo acesso (ou mais).
+    if (!ehAdmin(req) && (u.perfil === 'admin' || excede(req, permissoesEfetivas(db, u.perfil, u.permissoes)))) return resp.code(403).send(NEGADO);
     const senha = String(texto(corpoObjeto(req.body), 'senha', 'Senha provisória', { max: 128 }));
     validarSenhaNova(senha, u.login);
     db.prepare('UPDATE usuarios SET senha_hash = ?, trocar_senha = 1 WHERE id = ?').run(hashSenha(senha), id);
     db.prepare('DELETE FROM sessoes WHERE usuario_id = ?').run(id);
-    db.prepare("DELETE FROM tentativas_login WHERE chave = ? OR chave LIKE ?").run(u.login, `par:${u.login}|%`);
+    db.prepare("DELETE FROM tentativas_login WHERE chave = ? OR chave LIKE ?").run(`login:${u.login}`, `par:${u.login}|%`);
     db.prepare('UPDATE pedidos_senha SET resolvido_em = ?, resolvido_por = ? WHERE usuario_id = ? AND resolvido_em IS NULL').run(new Date().toISOString(), req.usuario!.id, id);
     auditar(db, req.usuario!.id, 'senha_redefinida', { id });
     return { ok: true };
@@ -214,7 +219,7 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
 
   // ----- "Esqueci a senha": a pessoa avisa o administrador; quem pode redefinir senhas vê o pedido no sino e em Usuários -----
   const porIp = new Map<string, number[]>();
-  app.post('/api/esqueci-senha', async (req, resp) => {
+  app.post('/api/esqueci-senha', { bodyLimit: 4096 }, async (req, resp) => {
     const login = String(corpoObjeto(req.body).login ?? '').trim().toLowerCase().slice(0, 64);
     if (!login) return resp.code(400).send({ erro: 'Informe o seu login.' });
     const agora = Date.now(), recentes = (porIp.get(req.ip) ?? []).filter((t) => agora - t < JANELA_MIN * 60_000);
@@ -289,17 +294,18 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return { ok: true };
   });
 
-  // Monitoramento do tamanho do banco: imagens, fotos e anexos ficam dentro do SQLite e o backup cresce junto.
+  // Monitoramento do armazenamento: imagens, vídeos e anexos ficam no disco (pasta de mídia); o banco guarda só os índices.
   app.get('/api/gestao/armazenamento', aAuditoria, async () => {
     const um = (sql: string) => (db.prepare(sql).get() as { n: number }).n;
     const pagina = um('SELECT page_size AS n FROM pragma_page_size'), paginas = um('SELECT page_count AS n FROM pragma_page_count');
     const soma = (tabela: string, coluna: string) => { try { return um(`SELECT COALESCE(SUM(LENGTH(${coluna})), 0) AS n FROM ${tabela}`); } catch { return 0; } };
     return {
       banco_bytes: pagina * paginas,
-      imagens_bytes: soma('imagens_arquivo', 'dados'),
-      anexos_bytes: soma('publicacoes_anexos', 'dados'),
+      imagens_bytes: soma('imagens_arquivo', 'dados'), // legado: o que ainda estiver dentro do banco
+      midia_bytes: bytesNoDisco(db), // imagens e vídeos no disco (PASTA_MIDIA)
+      anexos_bytes: soma('publicacoes_anexos', 'dados'), // legado: só o que ainda estiver dentro do banco (os novos vão para o disco, em midia_bytes)
       auditoria_linhas: um('SELECT COUNT(*) AS n FROM auditoria'),
-      aviso: pagina * paginas > 1_000_000_000 ? 'O banco passou de 1 GB: avalie mover imagens e anexos para o disco e revisar o backup.' : null,
+      aviso: pagina * paginas > 1_000_000_000 ? 'O banco passou de 1 GB: avalie revisar o backup e o que ocupa espaço (auditoria, pesquisas).' : null,
     };
   });
 

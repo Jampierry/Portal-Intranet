@@ -5,7 +5,7 @@ import { criarAppTeste, entrar } from '../../acessos/tests/ajuda.ts';
 import { definirEnviadorPush, enviarPush } from '../api/index.ts';
 
 const esperar = async (cond: () => boolean) => { for (let i = 0; i < 60 && !cond(); i++) await new Promise((r) => setTimeout(r, 25)); };
-const inscricao = (n: string) => ({ endpoint: `https://push.exemplo.com/envio/${n}-aaaaaaaaaaaa`, keys: { p256dh: 'BPaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', auth: 'aaaaaaaaaaaaaaaaaaaaaa' } });
+const inscricao = (n: string) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/${n}-aaaaaaaaaaaa`, keys: { p256dh: 'BPaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', auth: 'aaaaaaaaaaaaaaaaaaaaaa' } });
 const comunicado = (p: object = {}) => ({ titulo: 'Simulado de evacuação', resumo: 'Quinta-feira, às 10h.', categoria: 'Segurança', prioridade: 'urgente', status: 'publicado', ...p });
 
 test('inscrição por aparelho: valida, é da própria pessoa e some ao cancelar', async () => {
@@ -14,6 +14,8 @@ test('inscrição por aparelho: valida, é da própria pessoa e some ao cancelar
   const chave = (await app.inject({ url: '/api/push/chave', headers: le })).json<{ chave: string }>().chave;
   assert.match(chave, /^[\w-]{80,}$/); // chave pública do servidor
   assert.equal((await app.inject({ method: 'POST', url: '/api/push/inscrever', headers: le, payload: { endpoint: 'http://inseguro.com/x', keys: {} } })).statusCode, 400);
+  // Só serviços de push dos navegadores: endereço interno da rede (o servidor faria POST nele) é recusado.
+  assert.equal((await app.inject({ method: 'POST', url: '/api/push/inscrever', headers: le, payload: { ...inscricao('x'), endpoint: 'https://servidor-interno.dipaula.local/envio/aaaaaaaaaaaa' } })).statusCode, 400);
   assert.equal((await app.inject({ method: 'POST', url: '/api/push/inscrever', headers: le, payload: inscricao('a') })).statusCode, 200);
   assert.equal((await app.inject({ method: 'POST', url: '/api/push/inscrever', headers: le, payload: inscricao('a') })).statusCode, 200); // mesmo aparelho: não duplica
   assert.equal((await app.inject({ url: '/api/push/meus', headers: le })).json<{ aparelhos: number }>().aparelhos, 1);

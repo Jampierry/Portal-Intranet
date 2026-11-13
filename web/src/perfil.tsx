@@ -29,9 +29,6 @@ export const iniciais = (n: string) => {
   return ((p[0]?.[0] ?? '?') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
 };
 
-/** Saudação pela hora do dia. */
-export function saudacao(d = new Date()) { const h = d.getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; }
-
 // [fundo 1, fundo 2, pele, cabelo, penteado, roupa, acessórios]
 const AV_PELE = ['#FBE0CF', '#F1C27D', '#E0AC69', '#C68642', '#8D5524', '#FFDBAC'];
 const AV_CAB = ['#2C1B12', '#5A3825', '#A0522D', '#D9A441', '#141414', '#9A9A9A'];

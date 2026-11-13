@@ -20,6 +20,8 @@ interface Recurso {
   criar?: string;
   editar?: string;
   apagar?: string;
+  /** rotas POST que também alteram o conteúdo (ex.: mudar a data) e valem como "editar" */
+  tambemEdita?: string[];
   /** a chave é texto (slug / id externo) em vez de número */
   textual?: boolean;
   /** o dono fica numa tabela à parte (eventos do Zimbra) */
@@ -27,16 +29,16 @@ interface Recurso {
 }
 
 export const RECURSOS: Recurso[] = [
-  { id: 'comunicado', rotulo: 'Comunicado', tabela: 'comunicados', chave: 'id', titulo: 'titulo', criar: '/api/gestao/comunicados', editar: '/api/gestao/comunicados/:id', apagar: '/api/gestao/comunicados/:id' },
-  { id: 'banner', rotulo: 'Banner', tabela: 'banners', chave: 'id', titulo: 'titulo', criar: '/api/gestao/banners', editar: '/api/gestao/banners/:id', apagar: '/api/gestao/banners/:id' },
-  { id: 'documento', rotulo: 'Documento', tabela: 'documentos', chave: 'id', titulo: 'titulo', criar: '/api/gestao/documentos', editar: '/api/gestao/documentos/:id', apagar: '/api/gestao/documentos/:id' },
+  { id: 'comunicado', rotulo: 'Comunicado', tabela: 'comunicados', chave: 'id', titulo: 'titulo', criar: '/api/gestao/comunicados', editar: '/api/gestao/comunicados/:id', apagar: '/api/gestao/comunicados/:id', tambemEdita: ['/api/gestao/comunicados/:id/data'] },
+  { id: 'banner', rotulo: 'Banner', tabela: 'banners', chave: 'id', titulo: 'titulo', criar: '/api/gestao/banners', editar: '/api/gestao/banners/:id', apagar: '/api/gestao/banners/:id', tambemEdita: ['/api/gestao/banners/:id/data'] },
+  { id: 'documento', rotulo: 'Documento', tabela: 'documentos', chave: 'id', titulo: 'titulo', criar: '/api/gestao/documentos', editar: '/api/gestao/documentos/:id', apagar: '/api/gestao/documentos/:id', tambemEdita: ['/api/gestao/documentos/:id/data'] },
   { id: 'destaque', rotulo: 'Colaborador destaque', tabela: 'destaques', chave: 'id', titulo: 'nome', criar: '/api/gestao/destaques', editar: '/api/gestao/destaques/:id', apagar: '/api/gestao/destaques/:id' },
   { id: 'contato', rotulo: 'Contato', tabela: 'contatos', chave: 'id', titulo: 'nome', criar: '/api/gestao/contatos', editar: '/api/gestao/contatos/:id', apagar: '/api/gestao/contatos/:id' },
   { id: 'aplicacao', rotulo: 'Aplicativo', tabela: 'aplicacoes', chave: 'slug', titulo: 'nome', textual: true, criar: '/api/gestao/aplicacoes', editar: '/api/gestao/aplicacoes/:slug', apagar: '/api/gestao/aplicacoes/:slug' },
   { id: 'aniversariante', rotulo: 'Aniversariante', tabela: 'aniversariantes', chave: 'id', titulo: 'nome', criar: '/api/gestao/aniversariantes', editar: '/api/gestao/aniversariantes/:id', apagar: '/api/gestao/aniversariantes/:id' },
   { id: 'novo', rotulo: 'Novo colaborador', tabela: 'novos_colaboradores', chave: 'id', titulo: 'nome', criar: '/api/gestao/novos', editar: '/api/gestao/novos/:id', apagar: '/api/gestao/novos/:id' },
   { id: 'pulso', rotulo: 'Pesquisa de pulso', tabela: 'pulsos', chave: 'id', titulo: 'pergunta', criar: '/api/gestao/pulso', editar: '/api/gestao/pulso/:id', apagar: '/api/gestao/pulso/:id' },
-  { id: 'rede', rotulo: 'Publicação para rede social', tabela: 'publicacoes_externas', chave: 'id', titulo: 'titulo', criar: '/api/gestao/redes', editar: '/api/gestao/redes/:id', apagar: '/api/gestao/redes/:id' },
+  { id: 'rede', rotulo: 'Publicação para rede social', tabela: 'publicacoes_externas', chave: 'id', titulo: 'titulo', criar: '/api/gestao/redes', editar: '/api/gestao/redes/:id', apagar: '/api/gestao/redes/:id', tambemEdita: ['/api/gestao/redes/:id/data'] },
   { id: 'data', rotulo: 'Data do calendário', tabela: 'calendario_datas', chave: 'id', titulo: 'titulo', criar: '/api/gestao/calendario/datas', editar: '/api/gestao/calendario/datas/:id', apagar: '/api/gestao/calendario/datas/:id' },
   { id: 'evento', rotulo: 'Evento da agenda', tabela: 'calendario_eventos_dono', chave: 'evento_id', titulo: 'titulo', textual: true, tabelaDono: true, criar: '/api/calendario', apagar: '/api/calendario/:id' },
 ];
@@ -67,7 +69,7 @@ export async function rotasPropriedade(app: FastifyInstance, { db }: { db: Banco
   app.addHook('preHandler', async (req: FastifyRequest, resp: FastifyReply) => {
     if (!req.usuario || ehAdmin(req)) return;
     const rota = req.routeOptions.url ?? '';
-    const edicao = porRota('editar', rota, req.method), exclusao = porRota('apagar', rota, req.method);
+    const edicao = porRota('editar', rota, req.method) ?? (req.method === 'POST' ? RECURSOS.find((x) => x.tambemEdita?.includes(rota)) : undefined), exclusao = porRota('apagar', rota, req.method);
     const r = edicao ?? exclusao;
     if (!r) return;
     const params = req.params as Record<string, string>;

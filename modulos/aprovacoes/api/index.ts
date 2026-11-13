@@ -8,10 +8,9 @@ import type { ABAS_COM_APROVACAO } from '../../acessos/api/permissoes.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { avisarNovoComunicado } from '../../avisos/api/index.ts';
 import { avisarPushComunicado, enviarPush } from '../../push/api/index.ts';
-import { corpoObjeto, ErroValidacao, inteiro, texto } from '../../../servidor/src/validar.ts';
+import { corpoObjeto, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 export type TipoAprovacao = 'comunicado' | 'rede_social' | 'banner' | 'documento';
-const ROTULO_TIPO: Record<TipoAprovacao, string> = { comunicado: 'O comunicado', rede_social: 'A publicação', banner: 'O banner', documento: 'O documento' };
 const LINK_TIPO: Record<TipoAprovacao, string> = { comunicado: '/#publicar/comunicados', rede_social: '/#publicar/redes', banner: '/#publicar/banners', documento: '/#publicar/documentos' };
 export const PLATAFORMAS: Record<string, string> = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok', youtube: 'YouTube', whatsapp: 'WhatsApp', outra: 'Outra plataforma' };
 
@@ -20,6 +19,9 @@ export const exigeAprovacao = (u: { perfil: string; permissoes: string[] }, aba:
   u.perfil !== 'admin' && u.permissoes.includes(`pub.${aba}.aprovacao`);
 
 /** Cancela pedidos pendentes do mesmo conteúdo (um novo envio substitui o anterior). */
+/** Data de hoje no horário do servidor (AAAA-MM-DD); toISOString daria o dia seguinte à noite no Brasil. */
+export const dataLocal = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 export function cancelarPendentes(db: Banco, tipo: TipoAprovacao, registroId: number) {
   db.prepare("UPDATE aprovacoes SET status = 'cancelado', decidido_em = ? WHERE tipo = ? AND registro_id = ? AND status = 'pendente'").run(new Date().toISOString(), tipo, registroId);
 }
@@ -82,7 +84,7 @@ export async function rotasAprovacoes(app: FastifyInstance, { db }: { db: Banco;
     try {
       db.prepare('UPDATE aprovacoes SET status = ?, motivo = ?, decidido_por = ?, decidido_em = ? WHERE id = ?').run(aprovar ? 'aprovado' : 'rejeitado', motivo, eu.id, agora, id);
       if (l.tipo === 'comunicado') {
-        if (aprovar) db.prepare("UPDATE comunicados SET status = 'publicado', publicado_em = COALESCE(publicado_em, ?), atualizado_em = ? WHERE id = ?").run(agora.slice(0, 10), agora, l.registro_id);
+        if (aprovar) db.prepare("UPDATE comunicados SET status = 'publicado', publicado_em = COALESCE(publicado_em, ?), atualizado_em = ? WHERE id = ?").run(dataLocal(), agora, l.registro_id);
       } else if (l.tipo === 'banner') {
         if (aprovar) db.prepare('UPDATE banners SET ativo = 1, atualizado_em = ? WHERE id = ?').run(agora, l.registro_id);
       } else if (l.tipo === 'documento') {
@@ -123,4 +125,3 @@ export async function rotasAprovacoes(app: FastifyInstance, { db }: { db: Banco;
   app.get('/api/aprovacoes/minhas', async (req) => db.prepare(`${SELECT} WHERE a.solicitante_id = ? AND a.status <> 'cancelado' ORDER BY a.id DESC LIMIT 50`).all(req.usuario!.id));
 }
 
-export { ErroValidacao };

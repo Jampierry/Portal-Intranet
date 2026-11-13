@@ -1,5 +1,4 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { IconeSistema } from './icones';
 
 /** Identidade do portal, definida pelo administrador em Configurações › Empresa (nada de nome de empresa fixo no código). */
 export interface FeriadoMunicipal { titulo: string; dia: number; mes: number }
@@ -56,12 +55,6 @@ export function useEmpresa(): ConfigEmpresa {
   const c = useSyncExternalStore(assinar, ver);
   useEffect(() => { if (!carregou) void carregarEmpresa(); }, []);
   return c;
-}
-
-/** Ícone da empresa: a imagem enviada, ou o ícone padrão do portal. */
-export function LogoEmpresa({ tamanho = 32, classe }: { tamanho?: number; classe?: string }) {
-  const { logo } = useEmpresa();
-  return logo ? <img className={classe} src={logo} alt="" width={tamanho} height={tamanho} style={{ objectFit: 'contain', borderRadius: 8 }} /> : <IconeSistema tamanho={tamanho} />;
 }
 
 /** Logo da empresa no lugar do nome escrito. A versão "claro" tem letras escuras (para fundo claro); a "escuro", letras claras (para fundo escuro).

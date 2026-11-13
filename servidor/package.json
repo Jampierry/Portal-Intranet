@@ -10,7 +10,8 @@
     "seed": "node src/cli/seed.ts",
     "admin": "node --env-file-if-exists=.env src/cli/admin.ts",
     "demo": "node src/cli/demo.ts",
-    "backup": "node --env-file-if-exists=.env src/cli/backup.ts"
+    "backup": "node --env-file-if-exists=.env src/cli/backup.ts",
+    "logo": "node --env-file-if-exists=.env src/cli/logo.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

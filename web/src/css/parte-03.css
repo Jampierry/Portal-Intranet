@@ -14,7 +14,7 @@
   .topo { padding: 12px 16px; position: sticky; top: 0; z-index: 10; }
   .versao, .bemvindo { display: none; }
   .busca-topo { flex: 1 1 140px; max-width: none; order: -1; }
-  .aviso-universal { order: 5; flex: 1 0 100%; justify-content: flex-start; text-align: left; }
+  
   .conteudo { padding: 4px 16px calc(84px + env(safe-area-inset-bottom)); }
   .hero { grid-template-columns: 1fr 1fr; min-height: 0; }
   .hero-texto { padding: 22px; }
@@ -24,10 +24,10 @@
   .pessoas .pessoa:nth-child(3) { display: none; }
   .destaque-com { grid-template-columns: 1fr; }
   .capa-grande { min-height: 150px; order: -1; }
-  .abas-mobile { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--card); border-top: 1px solid var(--linha); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .abas-mobile { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--card); border-top: 1px solid var(--linha); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
   .abas-mobile button { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; color: var(--suave); font: 500 11px var(--fonte); padding: 6px 0; cursor: pointer; }
   .abas-mobile button[aria-current=page] { color: var(--vinho-texto); font-weight: 700; }
-  .nfly { display: none; }
+  
   .tema-painel { right: -60px; }
 }
 @media (max-width: 520px) {
@@ -166,7 +166,6 @@
 .destaques.compacto .pessoa p { display: none; }
 @media (max-width: 1180px) { .linha-mvv { grid-template-columns: minmax(0, 1fr); } }
 
-
 /* Missão, visão e valores: mostra tudo; em janela mais estreita, missão e visão ficam uma abaixo da outra */
 @media (min-width: 1181px) and (max-width: 1500px) { .mvv-corpo { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
 
@@ -233,22 +232,12 @@
 .pessoa-periodo { position: absolute; top: 6px; left: 6px; z-index: 2; max-width: calc(100% - 12px); padding: 2px 8px; border-radius: 99px; font-size: 10.5px; font-weight: 700; line-height: 1.4; background: rgba(20, 16, 24, .72); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; backdrop-filter: blur(2px); }
 
 /* Permissões: matriz de perfis e ajustes por usuário */
-.matriz-perm th.col-marca, .matriz-perm td.col-marca { text-align: center; width: 110px; }
-.matriz-perm .grupo-perm th { text-align: left; background: var(--hover); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); }
-.matriz-perm input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--vinho); cursor: pointer; }
-.matriz-perm input[type=checkbox]:disabled { cursor: not-allowed; opacity: .6; }
+
 .perm-usuario { border: 1px solid var(--linha-suave); border-radius: 12px; padding: 10px 12px; margin: 4px 0 0; display: grid; gap: 6px; }
 .perm-usuario legend { font-weight: 700; padding: 0 6px; }
 .perm-grupo { display: grid; gap: 4px; padding-top: 4px; }
-.perm-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 500; }
-.perm-linha select { width: auto; min-width: 170px; max-width: 55%; }
-.perm-sim { color: var(--ok, #2e7d32); font-weight: 600; } .perm-nao { color: var(--suave); font-weight: 600; }
-@media (max-width: 600px) { .perm-linha { flex-direction: column; align-items: stretch; gap: 4px; } .perm-linha select { max-width: none; } }
-.perm-usuario label.perm-linha { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; text-align: left; padding: 3px 0; border-bottom: 1px solid var(--linha-suave); }
-.perm-usuario label.perm-linha span { text-align: left; }
-.perm-usuario label.perm-linha select { width: auto; min-width: 190px; max-width: 55%; flex: none; padding-top: 4px; padding-bottom: 4px; }
-@media (max-width: 600px) { .perm-usuario label.perm-linha { flex-direction: column; align-items: stretch; } .perm-usuario label.perm-linha select { max-width: none; } }
 
+ 
 
 /* Vídeo no lugar da imagem (banners) */
 .aprov-previa video { max-width: 100%; border-radius: 8px; }

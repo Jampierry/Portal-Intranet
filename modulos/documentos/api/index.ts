@@ -209,6 +209,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     const id = inteiro(req.params.id, 'Documento');
     const d = db.prepare('SELECT titulo FROM documentos WHERE id = ?').get(id) as { titulo: string } | undefined;
     if (!d) return resp.code(404).send({ erro: 'Documento não encontrado.' });
+    cancelarPendentes(db, 'documento', id);
     db.prepare('DELETE FROM documentos WHERE id = ?').run(id);
     auditar(db, req.usuario!.id, 'documento_apagado', { id, titulo: d.titulo });
     return { ok: true };

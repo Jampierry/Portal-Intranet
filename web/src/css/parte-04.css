@@ -13,19 +13,17 @@
 .cal-dia.hoje { box-shadow: inset 0 0 0 1.5px var(--coral, #e8604c); font-weight: 700; }
 .cal-dia.sel { background: rgba(var(--menu-veu), .22); font-weight: 700; }
 .cal-dia.tem::after { content: ''; position: absolute; left: 50%; bottom: 1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--coral, #e8604c); }
-.cal-lista { border-top: 1px solid rgba(var(--menu-veu), .14); padding-top: 5px; display: grid; gap: 3px; }
+
 .cal-data::first-letter { text-transform: uppercase; }
 .cal-data { font-weight: 700; opacity: .8; }
-.cal-lista ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.cal-lista li { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
-.cal-lista li span { font-weight: 700; color: var(--coral, #e8604c); margin-right: 3px; }
+
 .cal-aviso { margin: 0; opacity: .7; font-size: 11px; }
 /* Janela baixa: o calendário continua visível, só mais compacto (sem a lista do dia; o lema do rodapé continua) */
-@media (max-height: 800px) and (min-width: 861px) { .cal-dia, .cal-vazio { height: 20px; font-size: 11px; } .cal-menu { padding: 6px 4px 4px; gap: 3px; } .cal-lista { display: none; } }
+@media (max-height: 800px) and (min-width: 861px) { .cal-dia, .cal-vazio { height: 20px; font-size: 11px; } .cal-menu { padding: 6px 4px 4px; gap: 3px; }  }
 @media (max-height: 640px) and (min-width: 861px) { .cal-sem { display: none; } .cal-dia, .cal-vazio { height: 17px; font-size: 10px; } }
 
 /* Permissões do usuário em caixas de seleção */
-.perm-itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; }
+
 .perm-usuario label.perm-check { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 500; padding: 3px 0; text-align: left; border: 0; }
 .perm-check input[type=checkbox] { width: 17px; height: 17px; margin: 0; accent-color: var(--vinho); flex: none; cursor: pointer; }
 .perm-check .perm-ajuste { flex-basis: 100%; margin-left: 23px; color: var(--vinho-texto); font-weight: 600; font-size: 11px; }
@@ -90,8 +88,6 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 /* Calendário: cadastrar e excluir datas */
 .cal-novo { margin-top: 4px; width: 100%; border: 1px dashed rgba(var(--menu-veu), .35); background: transparent; color: inherit; border-radius: 8px; padding: 4px 6px; font: inherit; font-size: 11.5px; cursor: pointer; }
 .cal-novo:hover { background: rgba(var(--menu-veu), .12); }
-.cal-x { margin-left: 4px; border: 0; background: transparent; color: inherit; opacity: .6; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
-.cal-x:hover { opacity: 1; color: var(--coral, #e8604c); }
 
 /* Busca global do topo: resultados agrupados */
 .busca-topo { position: relative; }
@@ -160,8 +156,7 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .cal-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .calp { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; margin-top: 12px; }
 .calp-mes { display: grid; gap: 10px; min-width: 0; }
-.calp-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.calp-topo h2 { margin: 0; font-size: 18px; text-transform: capitalize; }
+
 .calp-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
 .calp-filtro { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--linha); background: var(--campo); color: var(--texto); border-radius: 99px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
 .calp-filtro i, .calp-lista i { width: 9px; height: 9px; border-radius: 50%; background: var(--cor); flex: none; }
@@ -198,14 +193,7 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .cal-dia.tem::after { content: none; }
 .cal-pontos { position: absolute; left: 0; right: 0; bottom: 1px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
 .cal-pontos i { width: 4px; height: 4px; border-radius: 50%; background: var(--c); }
-.cal-data-linha { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.cal-abrir { border: 0; background: transparent; color: inherit; font: inherit; font-size: 11px; font-weight: 600; opacity: .8; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; padding: 0; }
-.cal-abrir:hover { opacity: 1; text-decoration: underline; }
-.cal-lista li { display: flex; gap: 6px; align-items: flex-start; -webkit-line-clamp: unset; overflow: visible; }
-.cal-lista li > i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-top: 4px; flex: none; }
-.cal-lista li > div { display: grid; min-width: 0; }
-.cal-lista li span { color: inherit; opacity: .75; }
-.cal-lista li small { opacity: .65; font-size: 10.5px; }
+
 .cal-prox { display: grid; gap: 3px; margin-top: 4px; padding-top: 5px; border-top: 1px dashed rgba(var(--menu-veu), .18); }
 .cal-prox li > div > button { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
 /* Configurações › Calendário */
@@ -249,6 +237,6 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .campo-ico:focus-within > :first-child:not(input) { color: var(--vinho-texto); }
 .entrar-card .entrar-botao { width: 100%; min-height: 48px; border-radius: 12px; font-size: 15px; font-weight: 700; margin-top: 6px; }
 .entrar-card .entrar-botao:disabled { opacity: .45; background: var(--menu); color: var(--menu-texto); cursor: not-allowed; }
-.entrar-ajuda { text-align: center; margin-top: 4px; }
+
 .entrar-rodape { text-align: center; margin-top: 18px; }
 

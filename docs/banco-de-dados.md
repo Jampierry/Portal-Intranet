@@ -13,9 +13,9 @@ SQLite (`node:sqlite`), arquivo `dados-privados/portal.db` (fora do Git; muda co
 | Fluxos | `aprovacoes`, `pedidos_edicao` |
 | Avisos | `avisos_lidos`, `push_inscricoes` |
 | Calendário | `calendario_datas`, `calendario_eventos_dono` |
-| Configuração | `portal_config` (empresa e tela de entrada, JSON por chave), `integracoes` (Zimbra), `imagens_arquivo` (todas as imagens ficam no banco), `dados_exemplo` (rastreia o pacote de demonstração) |
+| Configuração | `portal_config` (empresa e tela de entrada, JSON por chave), `integracoes` (Zimbra), `imagens_arquivo` e `videos_arquivo` (só nome, tipo e data; **o conteúdo fica em arquivos** na pasta de mídia, `PASTA_MIDIA` ou `midia/` ao lado do banco), `dados_exemplo` (rastreia o pacote de demonstração) |
 
-Observações de projeto: imagens e anexos ficam **dentro do banco** (valem em qualquer máquina, mas o arquivo cresce); as pesquisas anônimas não ligam resposta e pessoa (`pulso_participacao` só marca quem já respondeu); a auditoria nunca guarda senhas nem o conteúdo do perfil pessoal.
+Observações de projeto: **imagens e vídeos ficam no disco** (`modulos/imagens/api/armazenamento.ts`; a coluna `dados` fica vazia, e conteúdo antigo é movido sozinho na subida do servidor, com `VACUUM`); os anexos de redes sociais (`publicacoes_anexos`) também: arquivo `anexos/<id>.<extensão>`, e arquivos sem linha no banco são varridos (`limparAnexosOrfaos`); as pesquisas anônimas não ligam resposta e pessoa (`pulso_participacao` só marca quem já respondeu); a auditoria nunca guarda senhas nem o conteúdo do perfil pessoal.
 
 ## Histórico das migrações
 | # | O que fez |

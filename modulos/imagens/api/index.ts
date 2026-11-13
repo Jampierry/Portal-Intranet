@@ -1,6 +1,6 @@
 // Envio e entrega de imagens de capa. A pessoa escolhe o arquivo no computador ou numa pasta da rede
-// (seletor do navegador); o servidor confere o conteúdo, guarda NO BANCO (tabela imagens_arquivo) e devolve o endereço.
-// Assim a imagem aparece para qualquer usuário, em qualquer máquina ou celular que acesse o portal.
+// (seletor do navegador); o servidor confere o conteúdo, guarda (tabela imagens_arquivo) e devolve o endereço.
+// O conteúdo vai para o DISCO (armazenamento.ts, pasta PASTA_MIDIA ou dados-privados/midia); o banco guarda só nome e tipo.
 import { randomBytes } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
@@ -8,9 +8,10 @@ import type { FastifyInstance } from 'fastify';
 import { config } from '../../../servidor/src/config.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
+import { DADOS_VAZIOS, estaNoDisco, gravarArquivo, lerArquivo, lerTrecho, moverMidiaDoBanco, tamanhoArquivo } from './armazenamento.ts';
 
-export /** Quem pode criar ou editar algo que leva imagem (comunicados, banners, documentos, destaques, contatos, aplicativos). */
-const PUB_QUE_ENVIAM_IMAGEM = ['comunicados', 'banners', 'destaques', 'aplicativos', 'documentos', 'contatos', 'aniversariantes', 'novos'].flatMap((a) => [`pub.${a}.criar`, `pub.${a}.editar`]);
+/** Quem pode criar ou editar algo que leva imagem (comunicados, banners, documentos, destaques, contatos, aplicativos, pesquisas...). */
+const PUB_QUE_ENVIAM_IMAGEM = ['comunicados', 'banners', 'destaques', 'aplicativos', 'documentos', 'contatos', 'aniversariantes', 'novos', 'pulso'].flatMap((a) => [`pub.${a}.criar`, `pub.${a}.editar`]);
 const LIMITE_BYTES = 5 * 1024 * 1024;
 const TIPOS = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/x-icon': 'ico', 'image/vnd.microsoft.icon': 'ico' } as const;
 export const MIME_POR_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', ico: 'image/x-icon', svg: 'image/svg+xml' };
@@ -55,28 +56,32 @@ export function guardarVideo(db: Banco, corpo: Buffer): { nome: string } | null 
   const ext = videoPeloConteudo(corpo);
   if (!ext || corpo.length > LIMITE_VIDEO) return null;
   const nome = `${randomBytes(12).toString('hex')}.${ext}`;
-  db.prepare('INSERT INTO videos_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(nome, MIME_VIDEO[ext], corpo, new Date().toISOString());
+  gravarArquivo(db, 'videos', nome, corpo);
+  db.prepare('INSERT INTO videos_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(nome, MIME_VIDEO[ext], DADOS_VAZIOS, new Date().toISOString());
   return { nome };
 }
 
 /** Entrega o vídeo por trechos (Range), como o navegador pede para tocar e avançar. Devolve false se não existir. */
 export function enviarVideo(db: Banco, req: import('fastify').FastifyRequest, resp: import('fastify').FastifyReply, nome: string, publico = false): boolean {
-  const meta = NOME_VIDEO.test(nome) ? db.prepare('SELECT tipo, length(dados) AS tam FROM videos_arquivo WHERE nome = ?').get(nome) as { tipo: string; tam: number } | undefined : undefined;
-  if (!meta) return false;
+  const meta = NOME_VIDEO.test(nome) ? db.prepare('SELECT tipo, dados IS NULL OR length(dados) = 0 AS no_disco, length(dados) AS tam_banco FROM videos_arquivo WHERE nome = ?').get(nome) as { tipo: string; no_disco: number; tam_banco: number } | undefined : undefined;
+  const tam = !meta ? null : meta.no_disco ? tamanhoArquivo(db, 'videos', nome) : meta.tam_banco;
+  if (!meta || tam === null) return false;
   resp.header('Content-Type', meta.tipo).header('X-Content-Type-Options', 'nosniff').header('Accept-Ranges', 'bytes')
     .header('Cache-Control', publico ? 'public, max-age=3600' : 'private, max-age=86400');
   const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ''));
+  const pedaco = (ini: number, fim: number): Buffer => meta.no_disco
+    ? lerTrecho(db, 'videos', nome, ini, fim)
+    : Buffer.from((db.prepare('SELECT substr(dados, ?, ?) AS parte FROM videos_arquivo WHERE nome = ?').get(ini + 1, fim - ini + 1, nome) as { parte: Uint8Array }).parte);
   if (!m || (m[1] === '' && m[2] === '')) {
-    resp.send(Buffer.from((db.prepare('SELECT dados FROM videos_arquivo WHERE nome = ?').get(nome) as { dados: Uint8Array }).dados));
+    resp.send(pedaco(0, tam - 1));
     return true;
   }
-  let ini = m[1] === '' ? Math.max(0, meta.tam - Number(m[2])) : Number(m[1]);
-  let fim = m[1] === '' || m[2] === '' ? meta.tam - 1 : Math.min(Number(m[2]), meta.tam - 1);
-  if (ini >= meta.tam || ini > fim) { resp.code(416).header('Content-Range', `bytes */${meta.tam}`).send(); return true; }
+  let ini = m[1] === '' ? Math.max(0, tam - Number(m[2])) : Number(m[1]);
+  let fim = m[1] === '' || m[2] === '' ? tam - 1 : Math.min(Number(m[2]), tam - 1);
+  if (ini >= tam || ini > fim) { resp.code(416).header('Content-Range', `bytes */${tam}`).send(); return true; }
   fim = Math.min(fim, ini + 4 * 1024 * 1024 - 1); // trechos de até 4 MB
   ini = Math.max(0, ini);
-  const parte = db.prepare('SELECT substr(dados, ?, ?) AS parte FROM videos_arquivo WHERE nome = ?').get(ini + 1, fim - ini + 1, nome) as { parte: Uint8Array };
-  resp.code(206).header('Content-Range', `bytes ${ini}-${fim}/${meta.tam}`).send(Buffer.from(parte.parte));
+  resp.code(206).header('Content-Range', `bytes ${ini}-${fim}/${tam}`).send(pedaco(ini, fim));
   return true;
 }
 
@@ -88,14 +93,18 @@ export function guardarImagem(db: Banco, corpo: Buffer, opcoes: { aceitarSvg?: b
   const ext = extensaoPeloConteudo(corpo) ?? (opcoes.aceitarSvg && svgSeguro(corpo) ? 'svg' : null);
   if (!ext) return null;
   const nome = opcoes.nome ?? `${randomBytes(12).toString('hex')}.${ext}`;
-  db.prepare('INSERT OR REPLACE INTO imagens_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(nome, MIME_POR_EXT[ext], corpo, new Date().toISOString());
+  gravarArquivo(db, 'imagens', nome, corpo);
+  db.prepare('INSERT OR REPLACE INTO imagens_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(nome, MIME_POR_EXT[ext], DADOS_VAZIOS, new Date().toISOString());
   return { nome, url: `/api/imagens/${nome}` };
 }
 
 /** Imagem guardada (ou null). */
 export function lerImagem(db: Banco, nome: string): { tipo: string; dados: Buffer } | null {
   const r = db.prepare('SELECT tipo, dados FROM imagens_arquivo WHERE nome = ?').get(nome) as { tipo: string; dados: Uint8Array } | undefined;
-  return r ? { tipo: r.tipo, dados: Buffer.from(r.dados) } : null;
+  if (!r) return null;
+  if (!estaNoDisco(r)) return { tipo: r.tipo, dados: Buffer.from(r.dados) };
+  const dados = lerArquivo(db, 'imagens', nome);
+  return dados ? { tipo: r.tipo, dados } : null;
 }
 
 /** Entrega uma imagem do banco. `publico` só muda o cache. */
@@ -111,9 +120,10 @@ export function importarImagensAntigas(db: Banco) {
   if (!existsSync(pasta)) return 0;
   let n = 0;
   for (const arq of readdirSync(pasta)) {
-    const m = /^[a-f0-9]{24}.(png|jpg|webp|gif|ico|svg)$/.exec(arq);
+    const m = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/.exec(arq);
     if (!m || db.prepare('SELECT 1 FROM imagens_arquivo WHERE nome = ?').get(arq)) continue;
-    db.prepare('INSERT INTO imagens_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(arq, MIME_POR_EXT[m[1]], readFileSync(join(pasta, arq)), new Date().toISOString());
+    gravarArquivo(db, 'imagens', arq, readFileSync(join(pasta, arq)));
+    db.prepare('INSERT INTO imagens_arquivo (nome, tipo, dados, criado_em) VALUES (?, ?, ?, ?)').run(arq, MIME_POR_EXT[m[1]], DADOS_VAZIOS, new Date().toISOString());
     n++;
   }
   return n;
@@ -121,6 +131,8 @@ export function importarImagensAntigas(db: Banco) {
 
 export async function rotasImagens(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   importarImagensAntigas(db);
+  moverMidiaDoBanco(db); // (inclui os anexos das redes)
+  // conteúdo que ainda estava dentro do banco passa para o disco (uma vez)
 
   // Corpo binário cru (o navegador manda o arquivo como está, com o tipo da imagem).
   for (const tipo of Object.keys(TIPOS)) app.addContentTypeParser(tipo, { parseAs: 'buffer', bodyLimit: LIMITE_BYTES }, (_req, corpo, feito) => feito(null, corpo));
@@ -151,7 +163,7 @@ export async function rotasImagens(app: FastifyInstance, { db }: { db: Banco; pr
 
   // Entrega (exige login pelo hook global). O nome é sempre gerado pelo servidor; qualquer outro formato é recusado.
   app.get<{ Params: { nome: string } }>('/api/imagens/:nome', async (req, resp) => {
-    const img = /^[a-f0-9]{24}.(png|jpg|webp|gif|ico|svg)$/.test(req.params.nome) ? lerImagem(db, req.params.nome) : null;
+    const img = /^[a-f0-9]{24}\.(png|jpg|webp|gif|ico|svg)$/.test(req.params.nome) ? lerImagem(db, req.params.nome) : null;
     if (!img) return resp.code(404).send({ erro: 'Imagem não encontrada.' });
     return enviarImagem(resp, img);
   });

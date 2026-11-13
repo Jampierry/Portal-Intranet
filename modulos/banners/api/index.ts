@@ -93,6 +93,7 @@ export async function rotasBanners(app: FastifyInstance, { db }: { db: Banco; pr
     const id = inteiro(req.params.id, 'Banner');
     const b = db.prepare('SELECT titulo FROM banners WHERE id = ?').get(id) as { titulo: string } | undefined;
     if (!b) return resp.code(404).send({ erro: 'Banner não encontrado.' });
+    cancelarPendentes(db, 'banner', id);
     db.prepare('DELETE FROM banners WHERE id = ?').run(id);
     auditar(db, req.usuario!.id, 'banner_apagado', { id, titulo: b.titulo });
     return { ok: true };

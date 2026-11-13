@@ -24,3 +24,7 @@ web/dist/
 
 # Projeto separado (servidor MCP do Zimbra): contém token e credenciais, nunca no Git
 MCP/
+
+# Testes de tela (Playwright)
+playwright-report/
+test-results/

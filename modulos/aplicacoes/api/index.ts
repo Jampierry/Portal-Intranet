@@ -28,7 +28,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
     return { ok: true };
   });
 
-  // ----- Gestão do catálogo (somente admin: cada app é um link para sistema externo) -----
+  // ----- Gestão do catálogo (cada app é um link para sistema externo; quem cadastra precisa das permissões pub.aplicativos.*) -----
 
   /** Ícone próprio: só imagens guardadas pelo portal (ou vazio = ícone padrão). */
   function logo(c: Record<string, unknown>): string | null {
@@ -94,6 +94,7 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
   app.put<{ Params: { id: string } }>('/api/usuarios/:id/aplicativos', doUsuario, async (req, resp) => {
     const u = alvo(req.params.id); if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
     if (u.perfil === 'admin' && req.usuario!.perfil !== 'admin') return resp.code(403).send({ erro: 'Você não pode alterar administradores.' });
+    if (u.id === req.usuario!.id && req.usuario!.perfil !== 'admin') return resp.code(403).send({ erro: 'Você não pode liberar aplicativos para si mesmo.' });
     const lista = corpoObjeto(req.body).liberados;
     if (!Array.isArray(lista) || lista.some((x) => typeof x !== 'string')) throw new ErroValidacao('Aplicativos: envie a lista de aplicativos liberados.');
     const validos = new Set((db.prepare('SELECT slug FROM aplicacoes WHERE restrita = 1').all() as { slug: string }[]).map((r) => r.slug));

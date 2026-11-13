@@ -16,7 +16,9 @@ export function useLista<T>(url: string | null) {
   const [versao, setVersao] = useState(0);
   useEffect(() => {
     if (!url) { setDados([]); return; } // sem permissão para esta lista: nem chama o servidor
-    api<T[]>(url).then((d) => { setDados(d); setErro(''); }).catch((e: Error) => setErro(e.message));
+    let vivo = true; // resposta de uma chamada antiga não sobrescreve a nova (troca de endereço ou de tela)
+    api<T[]>(url).then((d) => { if (vivo) { setDados(d); setErro(''); } }).catch((e: Error) => { if (vivo) setErro(e.message); });
+    return () => { vivo = false; };
   }, [url, versao]);
   return { dados, erro, recarregar: () => setVersao((v) => v + 1) };
 }

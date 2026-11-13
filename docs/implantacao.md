@@ -23,8 +23,10 @@ Modelo em `.env.example` (raiz). Principais variáveis:
 - `ORIGENS_PERMITIDAS` — endereço público com https. **Obrigatória:** o servidor se recusa a subir sem ela.
 - `PORTA`, `HOST` (padrão `127.0.0.1`, atrás do proxy) e `TRUST_PROXY=1`.
 - `BANCO` — caminho do banco SQLite do ambiente.
+- `PASTA_MIDIA` — pasta das imagens, vídeos e anexos enviados (padrão: `midia/` ao lado do arquivo do banco). O usuário do serviço precisa gravar nela. **Entra no backup**: `npm run backup` copia a pasta para `<PASTA_BACKUP>/midia` (só o que ainda não está lá). Ao subir pela primeira vez depois da atualização, o portal move para o disco o que ainda estava dentro do banco (faça `npm run backup` antes).
 - `DOCUMENTOS_PASTA` — pasta dos documentos servidos pelo portal. O usuário que roda o serviço precisa ler essa pasta.
 - `PASTA_BACKUP`, `BACKUP_MANTER_DIAS`.
+- **Logo oficial:** depois de migrar o banco do ambiente, rode `npm run marca:logo` (instala a logo oficial, clara e escura, de `web/public/marca/` em Configurações › Empresa). Não altera o resto da configuração.
 - **Proxy reverso:** vídeos de banners e da tela de entrada chegam a 40 MB; o limite de envio do proxy precisa ser maior (nginx `client_max_body_size 45m`; IIS `maxAllowedContentLength` acima de 45 MB).
 - `PERMITIR_DADOS_EXEMPLO=1` — só no teste, se quiser ligar os dados fictícios. Em produção fica bloqueado.
 
@@ -58,7 +60,7 @@ Migrações só avançam, então a volta usa o backup:
 
 ## Backup
 - `npm run backup` gera `portal-AAAA-MM-DD_HHMMSS.db` em `PASTA_BACKUP` (cópia consistente, com o portal rodando) e apaga os mais antigos que `BACKUP_MANTER_DIAS`.
-- Agende diariamente (Agendador de Tarefas do Windows ou cron) e leve a pasta de backups e `DOCUMENTOS_PASTA` para o backup da empresa.
+- Agende diariamente (Agendador de Tarefas do Windows ou cron) e leve a pasta de backups (que inclui `midia/`), `PASTA_MIDIA` e `DOCUMENTOS_PASTA` para o backup da empresa.
 - **Teste a restauração** pelo menos uma vez, num ambiente de teste.
 
 ## Ambiente de teste com dados reais

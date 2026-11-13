@@ -23,3 +23,5 @@ Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). M
 - **Escala automática** (13/11/2026): telas menores que 1600×860 reduzem o portal na proporção (layout igual ao de monitor grande), com letra mínima de 10 px reais; ver `../arquitetura.md`. Também: calendário do menu com painel lateral, calendário tela cheia e barra de apps otimizados para celular, datas na borda de baixo dos avatares, rótulo "Espaço de trabalho" removido. Testes: 165.
 
 - **Meu perfil** (12/11/2026): contato, emergência, foto e e-mail; ficha de emergência para admin/permissão `cfg.usuarios.emergencia` (auditada).
+
+- **Mídia no disco, Playwright, manuais com prints, logo oficial, revisão de código** (13/11/2026): imagens, vídeos e anexos em `PASTA_MIDIA`; `npm run e2e` (33 testes de tela); prints com setas nos 4 manuais (`npm run manuais:prints`); logo oficial em `web/public/marca` + `npm run marca:logo`; correções de segurança (escalada de privilégio por perfil, chave de login, push). Detalhes em `estado-e-ponto-de-parada.md`.

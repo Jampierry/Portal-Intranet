@@ -31,7 +31,6 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
     .janela header { background: transparent; }
     .janela footer { background: color-mix(in srgb, var(--fundo) 55%, transparent); }
 
-
     /* Cartões e blocos das telas: vidro leve sobre o fundo ambiente */
     .cartao, .cartao-sec, .cartao-com, .painel-lateral, .cartao-app, .cartao-doc, .lancador {
       background: linear-gradient(150deg, color-mix(in srgb, var(--card) 78%, transparent), color-mix(in srgb, var(--card) 66%, transparent));
@@ -41,7 +40,7 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
     }
 
     /* Menus e painéis que abrem por cima da tela */
-    .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel {
+    .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel {
       background: linear-gradient(150deg, color-mix(in srgb, var(--card) 74%, transparent), color-mix(in srgb, var(--card) 62%, transparent));
       -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque);
       border-color: var(--vidro-borda);
@@ -67,7 +66,7 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 /* Quem pediu menos transparência no sistema (Windows › Acessibilidade › Efeitos de transparência desligado)
    recebe tudo sólido, como antes. Fica DEPOIS do vidro de propósito (não use "not (…)": navegador que não conhece a regra descartaria o vidro). */
 @media (prefers-reduced-transparency: reduce) {
-  .cartao, .cartao-sec, .cartao-com, .painel-lateral, .cartao-app, .cartao-doc, .lancador, .janela, .nfly, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .cartao, .cartao-sec, .cartao-com, .painel-lateral, .cartao-app, .cartao-doc, .lancador, .janela, .tema-painel, .temas-menu, .busca-resultados, .campo-link-painel, .dica-tela-painel, .dica-ajuda-painel { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .janela::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(10, 8, 12, .6); }
   .janela footer { background: var(--fundo); }
   .lancador-dica, .lancador-ico .dica { background: var(--menu); -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -215,5 +214,11 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 /* Celular: ao tocar em Aplicativos, a barra abre recolhida (faixa estreita com os ícones dos favoritos, como no computador);
    o botão do topo da faixa expande a lista completa e a seta a recolhe de novo. Tocar fora fecha. */
 @media (max-width: 860px) {
-  .lancador.barra-mob:not(.aberto) { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom)); width: 68px; box-shadow: -10px 0 28px rgba(0, 0, 0, .3); }
+  .lancador.barra-mob:not(.aberto) { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: 0; width: 68px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); box-shadow: -10px 0 28px rgba(0, 0, 0, .3); }
+  /* Sobreposta às abas de baixo: ocupa a tela até o fim (antes parava 66 px acima). */
+}
+
+/* Celular: sem o mini calendário do menu nem o painel lateral dele (o item "Calendário" do menu abre o calendário completo). */
+@media (max-width: 860px) {
+  .menu > .cal-menu, .cal-voo-casca { display: none !important; }
 }

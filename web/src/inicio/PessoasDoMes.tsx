@@ -10,10 +10,6 @@ interface Novo { nome: string; area: string; funcao: string | null; entrada: str
 interface Casa { nome: string; area: string; foto: string | null; iniciais: string; dia: number; anos: number; hoje: boolean }
 interface Resposta { mes: number; aniversariantes: Aniv[]; casa: Casa[]; novos: Novo[] }
 
-function Avatar({ foto, iniciais }: { foto: string | null; iniciais: string }) {
-  return <span className="pm-avatar" aria-hidden="true">{foto ? <img src={foto} alt="" /> : iniciais}</span>;
-}
-
 const POR_PAGINA = 3;
 
 interface Tile { chave: string; nome: string; foto: string | null; iniciais: string; linha: string; chip: string; dica?: string; hoje?: boolean }

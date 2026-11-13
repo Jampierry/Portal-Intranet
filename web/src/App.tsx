@@ -3,7 +3,7 @@ import { api } from './api';
 import { PainelTema, useTema } from './tema';
 import { Menu, type Tela } from './Menu';
 import { Icone } from './icones';
-import { Avatar, usePerfil } from './perfil';
+import { usePerfil } from './perfil';
 import { BuscaGlobal } from './BuscaGlobal';
 import { MenuConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
@@ -26,7 +26,7 @@ import { useEmpresa } from './empresa';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
 
-const ABAS: [Tela | 'menu' | 'apps', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['apps', 'Aplicativos', 'apps'], ['menu', 'Menu', 'menu']];
+const ABAS: [Tela | 'menu' | 'apps', string, string][] = [['inicio', 'Início', 'inicio'], ['comunicados', 'Comunicados', 'comunicados'], ['calendario', 'Calendário', 'calendario'], ['apps', 'Aplicativos', 'apps'], ['menu', 'Menu', 'menu']];
 
 // Dica de cada tela, mostrada no "i" ao lado do título (barra superior) em vez de dentro da página.
 const AVISOS: Record<Tela, string> = {
@@ -267,7 +267,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       <Menu tela={tela} irPara={irPara} recolhido={config.menuRecolhido} gavetaAberta={gaveta} fecharGaveta={() => setGaveta(false)}
         alternar={() => (innerWidth <= 860 ? setGaveta(!gaveta) : mudar({ menuRecolhido: !config.menuRecolhido }))}
         mostrarPublicar={gere} mostrarConfig={podeConfig} telasLiberadas={telasLiberadas}
-        mostrarCalendario={pode(usuario, 'ver.calendario')} podeCriarData={pode(usuario, 'calendario.criar')} podeExcluirData={pode(usuario, 'calendario.excluir')} />
+        mostrarCalendario={pode(usuario, 'ver.calendario')} podeCriarData={pode(usuario, 'calendario.criar')} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
       <div className="corpo">

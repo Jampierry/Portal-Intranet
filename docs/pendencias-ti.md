@@ -21,7 +21,7 @@ Marque cada item ao concluir e anote data e responsável.
 | 8 | **Backup agendado** | Agendar `npm run backup` todos os dias (Agendador de Tarefas ou cron). Gera uma cópia consistente do banco com o portal rodando e apaga as mais antigas que `BACKUP_MANTER_DIAS`. | ☐ |
 | 9 | **Backup da pasta de documentos** | Incluir `DOCUMENTOS_PASTA` e a pasta de backups no backup da empresa. | ☐ |
 | 10 | **Teste de restauração** | Restaurar um backup num ambiente de teste pelo menos uma vez e anotar o resultado. | ☐ |
-| 11 | **Tamanho do banco** | Imagens, fotos e anexos ficam **dentro do banco SQLite**, então o arquivo e o backup crescem rápido. Acompanhar o espaço em disco; o portal mostra o tamanho em `GET /api/gestao/armazenamento` (administrador) e avisa acima de 1 GB. | ☐ |
+| 11 | **Armazenamento** | Imagens, vídeos e anexos ficam em arquivos na pasta de mídia (`PASTA_MIDIA`, padrão `midia/` ao lado do banco; o serviço precisa gravar nela e ela entra no backup). Os anexos das redes sociais também ficam nessa pasta (`anexos/`); no banco só há os índices. O portal mostra os tamanhos em `GET /api/gestao/armazenamento` (administrador) e avisa se o banco passar de 1 GB. | ☐ |
 
 ## 3. Rede, acessos e integrações
 | # | Item | O que precisamos | Feito |

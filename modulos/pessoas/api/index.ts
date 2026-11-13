@@ -22,8 +22,8 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
     const canal = texto(c, 'canal', 'Canal', { max: 120, opcional: true });
     const ramal = texto(c, 'ramal', 'Ramal', { max: 20, opcional: true });
     const celular = texto(c, 'celular', 'Celular', { max: 20, opcional: true });
-    if (ramal && !/^[0-9][0-9 /.\-]{0,19}$/.test(ramal)) throw new ErroValidacao('Ramal: use só números (e, se precisar, espaço, / ou -). Ex.: 2400');
-    if (celular && !/^\+?[0-9 ()\-]{8,20}$/.test(celular)) throw new ErroValidacao('Celular: informe com DDD. Ex.: (62) 99999-0000');
+    if (ramal && !/^[0-9][0-9 /.-]{0,19}$/.test(ramal)) throw new ErroValidacao('Ramal: use só números (e, se precisar, espaço, / ou -). Ex.: 2400');
+    if (celular && !/^\+?[0-9 ()-]{8,20}$/.test(celular)) throw new ErroValidacao('Celular: informe com DDD. Ex.: (62) 99999-0000');
     if (!canal && !ramal && !celular) throw new ErroValidacao('Informe pelo menos um meio de contato: canal (e-mail ou link), ramal ou celular.');
     return {
       departamento: String(texto(c, 'departamento', 'Área', { max: 60 })),

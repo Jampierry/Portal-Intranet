@@ -19,7 +19,6 @@ const pergunta = (p: object = {}) => ({ pergunta: 'Como você se sentiu no traba
 test('várias pesquisas abertas; cada pessoa responde uma vez; a resposta não guarda quem respondeu', async () => {
   const { app, db } = await criarAppTeste();
   const ed = await entrar(app, 'edita'), le = await entrar(app, 'le');
-  const adm = await entrar(app, 'master');
   assert.deepEqual((await app.inject({ url: '/api/pulso', headers: le })).json(), { aberto: false });
   assert.equal((await app.inject({ method: 'POST', url: '/api/gestao/pulso', headers: le, payload: pergunta() })).statusCode, 403);
 

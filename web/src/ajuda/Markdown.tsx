@@ -20,7 +20,10 @@ function inline(t: string, chave: string): ReactNode[] {
 const celulas = (l: string) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 const ITEM = /^\s*([-*]|\d+\.)\s+/;
 
-/** Leitor mínimo de Markdown (títulos, listas, tabelas, citações e parágrafos), sem HTML bruto. */
+/** Imagem de manual numa linha só: `![legenda](img/arquivo.png)`. Só arquivos da pasta de prints dos manuais. */
+const IMAGEM = /^!\[([^\]]*)\]\(img\/([a-z0-9-]{1,80}\.png)\)\s*$/;
+
+/** Leitor mínimo de Markdown (títulos, listas, tabelas, citações, imagens e parágrafos), sem HTML bruto. */
 export function Markdown({ texto }: { texto: string }) {
   const linhas = texto.replace(/\r/g, '').split('\n');
   const blocos: ReactNode[] = [];
@@ -28,6 +31,10 @@ export function Markdown({ texto }: { texto: string }) {
   while (i < linhas.length) {
     const l = linhas[i];
     if (!l.trim()) { i++; continue; }
+    const img = IMAGEM.exec(l.trim());
+    if (img) {
+      blocos.push(<figure key={k++} className="manual-figura"><img src={`/api/ajuda/manuais/img/${img[2]}`} alt={img[1]} loading="lazy" />{img[1] && <figcaption>{img[1]}</figcaption>}</figure>); i++; continue;
+    }
     const h = /^(#{1,4})\s+(.*)$/.exec(l);
     if (h) {
       const Tag = `h${Math.min(h[1].length + 1, 4)}` as 'h2' | 'h3' | 'h4'; // o título da página já é o h1
@@ -52,7 +59,7 @@ export function Markdown({ texto }: { texto: string }) {
       blocos.push(<blockquote key={k++}>{inline(partes.join(' '), `q${k}`)}</blockquote>); continue;
     }
     const par: string[] = [];
-    while (i < linhas.length && linhas[i].trim() && !/^(#{1,4}\s|\||>)/.test(linhas[i]) && !ITEM.test(linhas[i])) { par.push(linhas[i].trim()); i++; }
+    while (i < linhas.length && linhas[i].trim() && !/^(#{1,4}\s|\||>|!\[)/.test(linhas[i]) && !ITEM.test(linhas[i])) { par.push(linhas[i].trim()); i++; }
     blocos.push(<p key={k++}>{inline(par.join(' '), `p${k}`)}</p>);
   }
   return <div className="manual-texto">{blocos}</div>;

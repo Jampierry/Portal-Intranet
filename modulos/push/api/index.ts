@@ -73,13 +73,15 @@ const ganchosInscricao = new Map<string, (db: Banco, usuarioId: number) => Promi
 export const aoInscrever = (nome: string, f: (db: Banco, usuarioId: number) => Promise<void>) => { ganchosInscricao.set(nome, f); };
 
 export async function rotasPush(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
+  // Só os serviços de push dos navegadores (o servidor faz POST nesse endereço): nada de endereço interno da rede.
+  const SERVICO_PUSH = /(^|\.)(googleapis\.com|push\.services\.mozilla\.com|notify\.windows\.com|push\.apple\.com)$/i;
   app.get('/api/push/chave', async () => ({ chave: chavesVapid(db).publica }));
 
   app.post('/api/push/inscrever', async (req) => {
     const c = corpoObjeto(req.body);
     const k = corpoObjeto(c.keys);
     const endpoint = String(c.endpoint ?? ''), p256dh = String(k.p256dh ?? ''), auth = String(k.auth ?? '');
-    if (!/^https:\/\/[^\s]{10,2000}$/.test(endpoint) || !/^[\w-]{20,200}$/.test(p256dh) || !/^[\w-]{10,100}$/.test(auth)) throw new ErroValidacao('Inscrição de aviso inválida.');
+    if (!/^https:\/\/[^\s]{10,2000}$/.test(endpoint) || !SERVICO_PUSH.test(new URL(endpoint).hostname) || !/^[\w-]{20,200}$/.test(p256dh) || !/^[\w-]{10,100}$/.test(auth)) throw new ErroValidacao('Inscrição de aviso inválida.');
     const jaTinha = !!db.prepare('SELECT 1 FROM push_inscricoes WHERE endpoint = ? AND usuario_id = ?').get(endpoint, req.usuario!.id);
     db.prepare('INSERT INTO push_inscricoes (usuario_id, endpoint, p256dh, auth, agente, criado_em) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET usuario_id = excluded.usuario_id, p256dh = excluded.p256dh, auth = excluded.auth')
       .run(req.usuario!.id, endpoint, p256dh, auth, String(req.headers['user-agent'] ?? '').slice(0, 200), new Date().toISOString());

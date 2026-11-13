@@ -5,6 +5,7 @@ Atualizada em 12/11/2026. Idioma: português do Brasil. **Todos os dados do port
 ## Para quem usa o portal
 | Manual | Quem lê |
 |---|---|
+| **Os manuais têm prints com setas** (`docs/manuais/img/`); para refazer depois de mudar uma tela: `npm run dev` e `npm run manuais:prints` (roteiros em `scripts/manuais-roteiros.mjs`). | |
 | [Manual do colaborador](manuais/manual-colaborador.md) | todas as pessoas: entrar, navegar, comunicados, documentos, pesquisas, calendário, Meu perfil |
 | [Manual de quem publica](manuais/manual-publicacao.md) | editores e Marketing: Publicar (comunicados, banners, documentos, redes, destaques, contatos, aplicativos) |
 | [Manual do RH](manuais/manual-rh.md) | RH: aprovações, pesquisas, aniversariantes, novos colaboradores, contato de emergência |

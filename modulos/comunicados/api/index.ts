@@ -1,6 +1,6 @@
 import { avisarNovoComunicado } from '../../avisos/api/index.ts';
 import { avisarPushComunicado } from '../../push/api/index.ts';
-import { cancelarPendentes, exigeAprovacao, solicitarAprovacao } from '../../aprovacoes/api/index.ts';
+import { cancelarPendentes, dataLocal, exigeAprovacao, solicitarAprovacao } from '../../aprovacoes/api/index.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
@@ -11,6 +11,12 @@ const STATUS = ['rascunho', 'publicado', 'arquivado'] as const;
 const PRIORIDADES = ['normal', 'urgente'] as const;
 // Só aparece para todos o que está publicado e dentro da janela de exibição (se houver).
 const VISIVEL = "status = 'publicado' AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND (exibir_ate IS NULL OR exibir_ate >= date('now','localtime'))";
+
+/** A capa de um comunicado só pode ser uma imagem enviada pelo portal (nada de endereço externo que rastreia quem abre). */
+function imagemInterna(v: string | null): string | null {
+  if (v && !/^\/api\/imagens\/[\w.-]+$/.test(v)) throw new ErroValidacao('Imagem: envie a imagem pela tela.');
+  return v;
+}
 
 export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   const LIDO = 'EXISTS (SELECT 1 FROM comunicado_leituras l WHERE l.comunicado_id = comunicados.id AND l.usuario_id = ?) AS lido';
@@ -35,7 +41,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
 
   // ----- Gestão (editor e admin) -----
   const CAMPOS = 'id, slug, titulo, resumo, corpo, categoria, prioridade, imagem, status, exibir_de, exibir_ate, exige_leitura, publicado_em, criado_em, atualizado_em';
-  const hoje = () => new Date().toISOString().slice(0, 10);
+  const hoje = () => dataLocal();
 
   function ler(c: Record<string, unknown>) {
     const exibir_de = dataIso(c, 'exibir_de', 'Exibir a partir de');
@@ -46,7 +52,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
       resumo: String(texto(c, 'resumo', 'Resumo', { max: 300 })),
       corpo: texto(c, 'corpo', 'Texto', { max: 5000, opcional: true }),
       categoria: String(texto(c, 'categoria', 'Categoria', { max: 40 })),
-      imagem: texto(c, 'imagem', 'Imagem', { max: 300, opcional: true }),
+      imagem: imagemInterna(texto(c, 'imagem', 'Imagem', { max: 300, opcional: true })),
       prioridade: escolha(c, 'prioridade', 'Prioridade', PRIORIDADES, 'normal'),
       status: escolha(c, 'status', 'Situação', STATUS, 'rascunho'),
       exibir_de, exibir_ate, exige_leitura: c.exige_leitura ? 1 : 0,
@@ -127,6 +133,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     const c = db.prepare('SELECT titulo, status FROM comunicados WHERE id = ?').get(id) as { titulo: string; status: string } | undefined;
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     if (req.usuario!.perfil !== 'admin' && c.status !== 'rascunho') return resp.code(403).send({ erro: 'Só o administrador apaga comunicado já publicado. Use "Arquivar".' });
+    cancelarPendentes(db, 'comunicado', id); // pedido de aprovação não fica órfão na fila do RH
     db.prepare('DELETE FROM comunicados WHERE id = ?').run(id);
     auditar(db, req.usuario!.id, 'comunicado_apagado', { id, titulo: c.titulo });
     return { ok: true };

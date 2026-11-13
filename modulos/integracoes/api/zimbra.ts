@@ -62,5 +62,6 @@ export async function chamarZimbra<T>(c: ConexaoZimbra, metodo: string, caminho:
     const e = (await r.json().catch(() => ({}))) as { erro?: string };
     throw new ErroZimbra(e.erro ?? `O serviço Zimbra respondeu ${r.status}.`, r.status === 401 ? 401 : r.status >= 500 ? 502 : 400);
   }
-  return (await r.json()) as T;
+  try { return (await r.json()) as T; }
+  catch { throw new ErroZimbra('O serviço Zimbra devolveu uma resposta inválida.', 502); }
 }

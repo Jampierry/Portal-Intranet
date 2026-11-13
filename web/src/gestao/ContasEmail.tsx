@@ -1,5 +1,6 @@
 import { confirmar } from '../Confirmar.tsx';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { urlSegura } from '../links';
 import { api } from '../api';
 import { Selo } from './Crud';
 
@@ -58,8 +59,9 @@ export function ContasEmail({ edita }: { edita: boolean }) {
   });
   const conectar = (c: Conta) => void executar('c-' + c.id, async () => {
     const r = await api<{ url: string }>('/api/integracoes/zimbra/oauth/iniciar', { conta: c.id });
+    if (!urlSegura(r.url)) throw new Error('O serviço devolveu um endereço de login inválido.');
     window.open(r.url, '_blank', 'noopener');
-    setAviso('Janela de login aberta. Depois de autorizar, volte aqui e clique em “Atualizar”.');
+    setAviso('Janela de login aberta (se não abriu, libere pop-ups para este endereço). Depois de autorizar, volte aqui e clique em “Atualizar”.');
   });
   const salvarCli = (prov: string) => void executar('cli-' + prov, async () => {
     await api('/api/integracoes/zimbra/oauth/cliente', { provedor: prov, client_id: cli[prov].client_id, client_secret: cli[prov].client_secret || undefined }, 'PUT');

@@ -1,4 +1,3 @@
-import { confirmar } from './Confirmar.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from './api';
@@ -31,7 +30,7 @@ function diasDoEvento(e: Evento): string[] {
 }
 
 /** Calendário do menu: marca as datas importantes vindas da agenda da empresa (Zimbra, via servidor do portal). */
-export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalendario }: { podeCriar?: boolean; podeExcluir?: boolean; abrirCalendario?: (dia: string) => void }) {
+export function Calendario({ podeCriar = false, abrirCalendario }: { podeCriar?: boolean; abrirCalendario?: (dia: string) => void }) {
   const hoje = new Date();
   const hojeIso = iso(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
   const [ref, setRef] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
@@ -40,7 +39,6 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
   const [falhou, setFalhou] = useState(false);
   const [versao, setVersao] = useState(0);
   const [novo, setNovo] = useState<{ titulo: string; data: string; data_fim: string; dia_inteiro: boolean; hora_inicio: string; hora_fim: string; local: string } | null>(null);
-  const [erroAcao, setErroAcao] = useState('');
   const [verLegenda, setVerLegenda] = useState(false);
   const caixa = useRef<HTMLElement>(null);
   // Em telas baixas (menos de 900 px) o calendário do menu começa recolhido, para não cobrir os itens do menu; a escolha da pessoa é lembrada.
@@ -127,12 +125,6 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
   const doDia = porDia.get(sel) ?? [];
   const [sa, sm, sd] = sel.split('-').map(Number);
   const rotuloSel = `${NOME_DIA[new Date(sa, sm - 1, sd).getDay()]}, ${sd} de ${MESES_LONGOS[sm - 1].toLowerCase()}`;
-  const excluir = async (e: Evento) => {
-    if (!(await confirmar({ titulo: 'Excluir data', mensagem: `Excluir a data importante "${e.titulo}"?`, confirmar: 'Excluir', perigo: true }))) return;
-    setErroAcao('');
-    try { await api(`/api/calendario/${encodeURIComponent(e.id)}`, undefined, 'DELETE'); setVersao((v) => v + 1); }
-    catch (x) { setErroAcao((x as Error).message); }
-  };
   const hora = (e: Evento) => (e.dia_inteiro ? 'Dia todo' : e.inicio.slice(11, 16));
 
   return (
@@ -191,7 +183,6 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
             ))}</ul>
           </div>
         )}
-        {erroAcao && <p className="cal-aviso" role="alert">{erroAcao}</p>}
         {podeCriar && resp?.conectado && !resp.sem_agenda && <button type="button" className="cal-novo" onClick={() => setNovo({ titulo: '', data: sel, data_fim: '', dia_inteiro: true, hora_inicio: '09:00', hora_fim: '10:00', local: '' })}>+ Data importante</button>}
         {abrirCalendario && <button type="button" className="cal-voo-abrir" onClick={() => { setVooAberto(false); abrirCalendario(sel); }}>Abrir calendário completo</button>}
         </div>

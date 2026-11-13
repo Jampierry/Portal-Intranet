@@ -16,20 +16,16 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 .menu-label { font-size: 9.5px; letter-spacing: .16em; font-weight: 700; color: var(--menu-suave); padding: 6px 12px 6px; }
 .nitem { padding: 7px 12px; gap: 10px; font-size: 13px; border-radius: 8px; }
 .nitem[aria-current=page] { box-shadow: inset 2px 0 0 var(--coral); }
-.menu.mini .nitem, .menu.mini .ngrp > .nitem { height: 36px; }
-.menu-apps > b { font-size: 12.5px; padding: 2px 12px 0; }
-.menu-apps > small, .menu-vazio { font-size: 10.5px; padding: 0 12px 4px; }
-.nitem.nitem-app { padding: 5px 12px; font-size: 12.5px; }
-.menu-sep { margin: 8px 6px; }
+.menu.mini .nitem { height: 36px; }
+
 .menu-rodape { font-size: 9.5px; padding: 10px 12px 0; line-height: 1.8; }
 .menu-rodape::before { margin-bottom: 8px; }
-.ucard { padding: 6px 8px; }
-.ucard b { font-size: 12.5px; }
+
 /* topo */
 .topo { padding: 10px 20px; gap: 10px; }
 .busca-topo { height: 36px; max-width: 420px; border-radius: 9px; padding: 0 10px; gap: 8px; }
 .busca-topo input:not([type=checkbox]):not([type=radio]) { font-size: 13px; }
-.selo-enter { font: 600 9px var(--fonte); letter-spacing: .06em; padding: 2px 6px; border: 1px solid var(--linha); border-radius: 5px; color: var(--suave); background: var(--afundado); }
+
 .versao { font-size: 11.5px; }
 .topo .icone-btn { width: 36px; height: 36px; }
 .ponto-aviso { top: 7px; right: 8px; width: 8px; height: 8px; }
@@ -62,7 +58,7 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 .fav .icone, .cartao-app .icone, .cartao-doc .icone { width: 38px; height: 38px; }
 .fav b { font-size: 13px; } .fav small { font-size: 11.5px; }
 .painel-marca { min-height: 150px; padding: 20px; }
-.painel-marca-baixo { min-height: 120px; }
+
 /* comunicados */
 .grade-com { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
 .cartao-com { border-radius: 12px; }
@@ -105,9 +101,7 @@ input:not([type=checkbox]):not([type=radio]), select { font-size: 12.5px; }
 :root[data-tema=escuro] .topo { background: color-mix(in srgb, var(--vinho) 16%, var(--fundo)); }
 .bemvindo { font-size: 14.5px; color: var(--suave); white-space: nowrap; }
 .bemvindo b { color: var(--texto); font-weight: 700; }
-.aviso-universal { flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11.5px; color: var(--vinho-texto); text-align: center; }
-.aviso-universal svg { flex: none; }
-.aviso-universal span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
 .versao { margin-left: 0; font-size: 11px; }
 .busca-topo { flex: 0 1 190px; height: 30px; max-width: none; border-radius: 99px; padding: 0 11px; gap: 6px; }
 .busca-topo input:not([type=checkbox]):not([type=radio]) { font-size: 12px; }
@@ -167,8 +161,6 @@ textarea { width: 100%; border: 1px solid var(--campo); border-radius: 8px; padd
 .janela-larga { width: min(680px, calc((100vw / var(--zoom, 1)) - 24px)); }
 .grade2 .cheia { grid-column: 1 / -1; }
 .grade2 .meia, .grade2 > div:not(.cheia) { min-width: 0; }
-.divisor { border: 0; border-top: 1px solid var(--linha); margin: 14px 0; }
-.conta-dados { display: flex; align-items: center; gap: 12px; }
 
 .abas-gestao { flex-wrap: wrap; }
 .crud { display: flex; flex-direction: column; gap: 10px; min-width: 0; }

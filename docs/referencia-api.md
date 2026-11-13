@@ -22,7 +22,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/perfis` | cfg.perfis.criar |
 | PUT | `/api/perfis/:codigo` | cfg.perfis.editar |
 | DELETE | `/api/perfis/:codigo` | cfg.perfis.excluir |
-| GET | `/api/gestao/armazenamento` | cfg.auditoria.ver (tamanho do banco, imagens e anexos) |
+| GET | `/api/gestao/armazenamento` | cfg.auditoria.ver (tamanho do banco e da mídia no disco: `midia_bytes`) |
 | GET | `/api/auditoria` | cfg.auditoria.ver |
 
 ## aplicacoes
@@ -261,3 +261,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | GET | `/api/saude` | — |
 
 Notas: `POST /api/gestao/<aba>/imagens` (marca) envia imagens da empresa e da tela de entrada (`cfg.empresa.editar` / `cfg.entrada.editar`). As rotas de calendário sob `/api/gestao/calendario/*` aceitam também `ver.calendario`/`calendario.criar` conforme a ação (ver o arquivo do módulo).
+
+## ajuda (acréscimo de 13/11/2026)
+| Método | Rota | Quem |
+|---|---|---|
+| GET | `/api/ajuda/manuais/img/:nome` | login (PNG de nome simples em `docs/manuais/img/`) |

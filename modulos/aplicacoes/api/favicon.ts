@@ -1,5 +1,5 @@
 // Busca o ícone do próprio aplicativo (favicon) a partir do endereço cadastrado e guarda no portal.
-// Só o administrador chama (cadastro de aplicativos). Endereços internos são permitidos de propósito: os sistemas ficam na rede da empresa.
+// Chamado por quem cadastra ou edita aplicativos (pub.aplicativos.criar/editar). Endereços internos são permitidos de propósito: os sistemas ficam na rede da empresa.
 import { guardarImagem } from '../../imagens/api/index.ts';
 import type { Banco } from '../../../servidor/src/db.ts';
 

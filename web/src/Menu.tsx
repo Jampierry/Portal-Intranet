@@ -30,7 +30,7 @@ function DiaMini({ abrir }: { abrir: (iso: string) => void }) {
 
 interface Props {
   tela: Tela; irPara: (t: Tela, slug?: string) => void; recolhido: boolean; alternar: () => void; gavetaAberta: boolean; fecharGaveta: () => void;
-  mostrarPublicar: boolean; mostrarConfig: boolean; mostrarCalendario?: boolean; podeCriarData?: boolean; podeExcluirData?: boolean;
+  mostrarPublicar: boolean; mostrarConfig: boolean; mostrarCalendario?: boolean; podeCriarData?: boolean;
   /** Telas liberadas para o usuário (Início é sempre liberado). */
   telasLiberadas: Tela[];
 }
@@ -66,7 +66,7 @@ export function Menu(p: Props) {
 
       {mini && p.mostrarCalendario !== false && <DiaMini abrir={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
 
-      {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} podeExcluir={p.podeExcluirData} abrirCalendario={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
+      {!mini && p.mostrarCalendario !== false && <Calendario podeCriar={p.podeCriarData} abrirCalendario={(dia) => { p.fecharGaveta(); p.irPara('calendario', dia); }} />}
 
       {!mini && <div className="sbfoot"><span className="menu-rodape">JUNTOS<br />VAMOS MAIS LONGE</span></div>}
     </aside>

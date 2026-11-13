@@ -181,3 +181,26 @@ test('quem não é admin só cria perfil com permissões que ele tem', async () 
   assert.equal((await criar(['pub.aplicativos.ver'])).statusCode, 403);
   assert.equal((await criar(['pub.banners.ver', 'pub.banners.criar'])).statusCode, 201);
 });
+
+test('quem não é administrador não escolhe perfil mais forte que o seu nem redefine a senha de quem tem mais acesso', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  // O leitor (perfil consulta) ganha só a gestão de usuários.
+  await put(app, `/api/usuarios/${idDe(db, 'le')}`, adm, { permissoes: { 'cfg.usuarios.ver': true, 'cfg.usuarios.criar': true, 'cfg.usuarios.editar': true, 'cfg.usuarios.senha': true } });
+  const le = await entrar(app, 'le');
+  const base = { login: 'subiu.de.nivel', nome: 'Sobe de Nível', senha: 'Provisoria#2026' };
+  assert.equal((await app.inject({ method: 'POST', url: '/api/usuarios', headers: le, payload: { ...base, perfil: 'editor' } })).statusCode, 403);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/usuarios', headers: le, payload: { ...base, perfil: 'consulta' } })).statusCode, 201);
+  const novo = idDe(db, 'subiu.de.nivel');
+  assert.equal((await put(app, `/api/usuarios/${novo}`, le, { perfil: 'editor' })).statusCode, 403);
+  // Redefinir a senha do editor (que tem mais acesso que o leitor) seria virar o editor.
+  assert.equal((await app.inject({ method: 'POST', url: `/api/usuarios/${idDe(db, 'edita')}/senha`, headers: le, payload: { senha: 'Outra#senha2026' } })).statusCode, 403);
+});
+
+test('o texto digitado no login não vira a chave de bloqueio de outro login nem de um IP', async () => {
+  const { app, db } = await criarAppTeste();
+  for (let i = 0; i < 6; i++) await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'par:le|127.0.0.1', senha: 'errada' } });
+  assert.equal((await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'le', senha: 'senha-de-teste-1' } })).statusCode, 200); // o leitor continua entrando
+  const chaves = (db.prepare('SELECT DISTINCT chave FROM tentativas_login').all() as { chave: string }[]).map((c) => c.chave);
+  assert.ok(chaves.includes('login:par:le|127.0.0.1'));
+});

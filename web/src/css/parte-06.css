@@ -36,23 +36,9 @@
 .pessoas-mes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: stretch; }
 .pm-card .pessoa.pm-hoje .pessoa-periodo { background: var(--coral); }
 .destaques.compacto.pm-card .pessoa .area { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.pm-col { min-width: 0; display: grid; gap: 8px; align-content: start; }
-.pm-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; flex: 0 0 100%; min-width: 0; }
-.pm-janela { overflow: hidden; min-width: 0; min-height: 204px; }   /* altura de 3 linhas: os três blocos ficam alinhados */
-.pm-trilho { display: flex; transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
-.pm-col .sec-topo { align-items: center; }
-.pm-col .sec-topo h2 { font-size: 16px; }
-.pm-setas { display: inline-flex; gap: 6px; margin-left: auto; }
-.pm-setas .seta-car { width: 26px; height: 26px; box-shadow: none; }
-.pm-col .pontos { margin-top: 4px; }
-.pm-lista li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; min-height: 62px; border-radius: 12px; border: 1px solid var(--linha-suave); }
-.pm-lista li.pm-hoje { border-color: var(--coral); background: color-mix(in srgb, var(--coral) 10%, transparent); }
-.pm-lista li > div { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
-.pm-lista b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-lista small { color: var(--suave); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-lista em { color: var(--suave); font-size: 11.5px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-data { flex: none; font-size: 12px; font-weight: 700; color: var(--vinho-texto); }
-.pm-hoje .pm-data { color: var(--coral); text-transform: uppercase; letter-spacing: .06em; }
+
+   /* altura de 3 linhas: os três blocos ficam alinhados */
+
 .pm-avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: color-mix(in srgb, var(--vinho) 22%, var(--card)); color: var(--vinho-texto); font-weight: 800; font-size: 13px; }
 .pm-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -79,7 +65,7 @@
 .aniv-empresa.hoje { background: color-mix(in srgb, var(--coral) 16%, var(--card)); border-color: var(--coral); font-size: 15px; }
 
 /* Pesquisa de pulso (Início e resultado em Publicar) */
-.pulso-card { display: grid; gap: 12px; }
+
 /* Pop-up da pesquisa de pulso: sobre todo o app */
 .pulso-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(8, 6, 12, .55); }
 .pulso-modal { position: relative; display: grid; gap: 12px; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--card); color: var(--texto); border: 1px solid var(--linha); border-radius: var(--raio); padding: 20px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); outline: none; }
@@ -89,7 +75,7 @@
 .pulso-modal .pulso-notas, .pulso-modal .pulso-coment-campo { max-width: none; }
 .pulso-acoes { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .pulso-obrigado { margin: 0; padding-right: 30px; display: flex; align-items: center; gap: 8px; }
-.pulso-card .sec-topo { margin: 0; }
+
 .pulso-pergunta { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
 .pulso-notas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; max-width: 520px; }
 .pulso-notas button { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--linha); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }

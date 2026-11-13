@@ -22,18 +22,11 @@ a.btn { text-decoration: none; }
 .brandtxt span:not(.empnome) { font-size: 9.5px; letter-spacing: .24em; font-weight: 600; margin-top: 4px; }
 .nitem { padding: 10px 14px; border-radius: 10px; font-weight: 500; font-size: 15px; }
 .nitem[aria-current=page] { font-weight: 700; box-shadow: inset 3px 0 0 var(--coral); }
-.nitem.nitem-app { padding: 6px 12px; font-size: 13px; text-decoration: none; }
-.menu-sep { height: 1px; background: var(--menu-linha); margin: 12px 6px; }
-.menu-apps { display: flex; flex-direction: column; gap: 1px; }
-.menu-apps > b { font-size: 14px; font-weight: 600; padding: 4px 14px 0; }
-.menu-apps > small, .menu-vazio { font-size: 11px; color: var(--menu-suave); padding: 0 14px 6px; display: block; }
-.menu.mini .menu-sep { margin: 8px 4px; }
+
 .menu-rodape { font-size: 10.5px; letter-spacing: .26em; line-height: 1.9; padding: 14px 14px 0; position: relative; }
 .menu-rodape::before { content: ''; display: block; width: 26px; height: 2px; background: var(--coral); margin-bottom: 10px; }
 .sbfoot { border-top: 0; padding-top: 6px; gap: 10px; }
-.ucard { background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 8px 10px; border-radius: 10px; }
-button.ucard:hover { background: var(--menu-hover); }
-.nfly .ucard { cursor: default; padding: 4px 6px; }
+
 .menu.mini .sbfoot { align-items: center; }
 
 /* Avatares (galeria do PREMIA) */
@@ -145,7 +138,6 @@ button.ucard:hover { background: var(--menu-hover); }
 .painel-marca b { font-size: 22px; font-weight: 700; margin-top: 12px; }
 .painel-marca small { font-size: 9px; letter-spacing: .24em; color: var(--menu-suave); }
 .painel-marca .lema { margin-bottom: 4px; }
-.painel-marca-baixo { min-height: 150px; }
 
 /* ===== Tela Comunicados ===== */
 .com-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--espaco); align-items: start; }

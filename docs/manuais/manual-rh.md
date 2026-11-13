@@ -3,6 +3,8 @@
 Para quem cuida de pessoas, pesquisas, aprovações e reconhecimento. O perfil **RH** já vem pronto (Configurações › Perfis) e pode ser ajustado.
 
 ## 1. Aprovações
+
+![Aprovações: a fila de quem espera decisão e o histórico.](img/rh-aprovacoes.png)
 Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **histórico**.
 - Cada item mostra uma **prévia** (comunicados, redes sociais com anexos, banners, documentos) e um botão **Abrir**.
 - **Aprovar** publica; **Rejeitar** exige um **motivo**, que a pessoa lê no sino.
@@ -10,6 +12,8 @@ Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **históric
 - Novos pedidos chegam no **sino**.
 
 ## 2. Aniversariantes e novos colaboradores
+
+![Aniversariantes: cadastre um a um ou importe a planilha.](img/rh-aniversariantes.png)
 - **Aniversariantes:** cadastre manualmente ou **importe**. A **data de admissão** (opcional) mostra "N anos de casa".
 - **Novos colaboradores:** cadastro de quem acabou de entrar.
 - Ambos aparecem no Início, na seção de pessoas do mês. Use apenas dados autorizados.
@@ -18,6 +22,10 @@ Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **históric
 Só com **consentimento registrado** da pessoa. Sem ranking nem pontuação.
 
 ## 4. Pesquisas (Publicar › Pesquisas)
+
+![Pesquisas: use Nova pesquisa para montar.](img/rh-pesquisas.png)
+
+![Editor de pesquisa: título (1), anônima ou identificada (2), período (3) e perguntas (4).](img/rh-pesquisa-editor.png)
 **Montar**
 - Título e explicação, com **várias perguntas**. Tipos: **nota de 1 a 5** (com comentário opcional), **escolha única**, **múltipla escolha** e **texto**. Cada pergunta pode ser obrigatória ou não e ter **imagem**; cada opção também pode ter imagem. Reordene com as setas; as perguntas ficam **minimizáveis** no editor.
 - Escolha se a pesquisa é **anônima** (padrão) ou **identificada**.

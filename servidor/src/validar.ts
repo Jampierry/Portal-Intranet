@@ -48,7 +48,7 @@ export function urlHttp(c: Corpo, campo: string, rotulo: string, opcional = true
 export function dataIso(c: Corpo, campo: string, rotulo: string): string | null {
   const v = texto(c, campo, rotulo, { max: 10, opcional: true });
   if (v === null) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) throw new ErroValidacao(`${rotulo}: use a data no formato AAAA-MM-DD.`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)) || new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) !== v) throw new ErroValidacao(`${rotulo}: use a data no formato AAAA-MM-DD.`);
   return v;
 }
 

@@ -21,15 +21,18 @@ export function BuscaGlobal({ valor, mudar, irPara, permissoes }: { valor: strin
   const pode = (c: string) => permissoes.includes(c);
 
   // Carrega só o que a pessoa pode ver, na primeira vez que usa a busca.
+  const carregando = useRef(false);
   const carregar = () => {
-    if (dados) return;
+    if (dados || carregando.current) return;
+    carregando.current = true;
     const ler = <T,>(permitido: boolean, url: string) => (permitido ? api<T[]>(url).catch(() => [] as T[]) : Promise.resolve([] as T[]));
     void Promise.all([
       ler<Dados['comunicados'][number]>(pode('ver.comunicados'), '/api/comunicados'),
       ler<Dados['documentos'][number]>(pode('ver.documentos'), '/api/documentos'),
       ler<Dados['aplicativos'][number]>(true, '/api/aplicacoes'),
       ler<Dados['contatos'][number]>(pode('ver.pessoas'), '/api/contatos'),
-    ]).then(([comunicados, documentos, aplicativos, contatos]) => setDados({ comunicados, documentos, aplicativos, contatos }));
+    ]).then(([comunicados, documentos, aplicativos, contatos]) => setDados({ comunicados, documentos, aplicativos, contatos }))
+      .finally(() => { carregando.current = false; });
   };
 
   const termo = semAcento(valor.trim());

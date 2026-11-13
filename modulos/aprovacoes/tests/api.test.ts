@@ -6,7 +6,7 @@ import { definirEnviadorPush } from '../../push/api/index.ts';
 
 const esperar = async (cond: () => boolean) => { for (let i = 0; i < 60 && !cond(); i++) await new Promise((r) => setTimeout(r, 25)); };
 const comunicado = (p: object = {}) => ({ titulo: 'Campanha do agasalho', resumo: 'Doações até sexta.', categoria: 'Pessoas', prioridade: 'normal', status: 'publicado', ...p });
-const inscricao = (n: string) => ({ endpoint: `https://push.exemplo.com/envio/${n}-aaaaaaaaaaaa`, keys: { p256dh: 'BPaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', auth: 'aaaaaaaaaaaaaaaaaaaaaa' } });
+const inscricao = (n: string) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/${n}-aaaaaaaaaaaa`, keys: { p256dh: 'BPaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', auth: 'aaaaaaaaaaaaaaaaaaaaaa' } });
 
 /** Liga/desliga, no usuário "edita", a exigência de aprovação do RH nas abas (ajuste `pub.<aba>.aprovacao`). */
 const exigir = (db: import('../../../servidor/src/db.ts').Banco, ligado: boolean, abas = ['comunicados', 'redes', 'banners', 'documentos']) =>

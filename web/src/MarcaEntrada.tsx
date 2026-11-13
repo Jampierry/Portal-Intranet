@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Lema } from './Capa';
 import { LogoNome, useEmpresa, type ConfigEmpresa } from './empresa';
 import { ehVideo, VideoFundo } from './midia';
@@ -40,10 +40,12 @@ export function MarcaEntrada({ cfg, previa = false, empresa: rascunho }: { cfg: 
   const empresa = rascunho ?? salva;
   const imagens = cfg.fundo === 'cor' ? [] : cfg.fundo === 'imagem' ? (cfg.fixa ?? []).slice(0, 1) : cfg.imagens;
   const [pausado, setPausado] = useState(false);
+  const atual = useRef(0); // índice mostrado agora (o setState do intervalo não pode depender de um updater com efeito)
+  useEffect(() => { atual.current = i; }, [i]);
   useEffect(() => { setI(0); setAnt(-1); }, [cfg.fundo, imagens.length]); // recomeça da primeira imagem só quando a configuração muda
   useEffect(() => {
     if (cfg.fundo !== 'carrossel' || imagens.length < 2 || pausado) return;
-    const t = setInterval(() => setI((x) => { setAnt(x); return (x + 1) % imagens.length; }), cfg.intervalo * 1000);
+    const t = setInterval(() => { const x = atual.current; setAnt(x); setI((x + 1) % imagens.length); }, cfg.intervalo * 1000);
     return () => clearInterval(t);
   }, [cfg.fundo, cfg.intervalo, imagens.length, pausado]);  
   const veu = cfg.escurecer / 100;

@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { hashSenha } from '../../acessos/api/senha.ts';
 import { guardarImagem } from '../../imagens/api/index.ts';
+import { apagarArquivo } from '../../imagens/api/armazenamento.ts';
 import { avatar, capa, ICONE_EMPRESA, logoEmpresa, QTD_AVATARES, type TemaCapa } from '../data/imagens.ts';
 
 export const EMPRESA_EXEMPLO = 'Aurora Esportes';
@@ -363,9 +364,11 @@ export function desativarExemplo(db: Banco): Estado {
         else db.prepare(`UPDATE ${tabela} SET ${col} = ?, atualizado_em = ? WHERE chave = ?`).run(l.anterior, new Date().toISOString(), l.chave);
       }
     }
-    apagar('imagens_arquivo', 'nome', de('imagens_arquivo').map((l) => l.chave));
+    const arquivosDoExemplo = de('imagens_arquivo').map((l) => l.chave);
+    apagar('imagens_arquivo', 'nome', arquivosDoExemplo);
     db.exec('DELETE FROM dados_exemplo');
     db.exec('COMMIT');
+    for (const nome of arquivosDoExemplo) apagarArquivo(db, 'imagens', nome); // só depois do COMMIT: com ROLLBACK as linhas ficam e os arquivos também
   } catch (e) {
     db.exec('ROLLBACK');
     throw e;
