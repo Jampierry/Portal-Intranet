@@ -19,7 +19,7 @@ $base = (git rev-parse org-base).Trim()
 if ($topo -eq $base) { Write-Host "Nada novo para enviar à organização."; exit 0 }
 
 $patch = Join-Path $env:TEMP "org-patch.diff"
-& git diff --binary $base main -- . @excluir | Set-Content -Encoding utf8NoBOM -NoNewline $patch
+& git.exe diff --binary --output=$patch $base main -- . @excluir
 if (-not (Get-Item $patch).Length) { Write-Host "Só mudou arquivo interno; nada a enviar."; Invoke-Git tag -f org-base $topo; exit 0 }
 
 Invoke-Git checkout org-main
