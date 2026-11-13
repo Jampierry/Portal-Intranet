@@ -42,6 +42,7 @@ acessos · aplicacoes · aprovacoes · avisos · banners · calendario · comuni
 - **Abertura de apps externos:** computador = nova aba (`_blank`, `rel="noopener noreferrer"`); celular = mesma aba. Só URLs http(s). Regra em `web/src/links.ts` (testada).
 - **Acessibilidade WCAG 2.2 AA:** foco visível, teclado, rótulos, `prefers-reduced-motion`; cores só por variáveis do tema; `web/test/contraste.test.ts` valida.
 - **Zoom do tema:** o app aplica `zoom` no `<html>` e expõe `--zoom`. Alturas em `vh` devem ser divididas por `var(--zoom, 1)`; elementos `fixed` precisam medir e corrigir.
+- **Escala automática (13/11/2026):** `web/src/escala-auto.ts`. Em janela de computador (≥ 861 px) menor que 1600×860, o portal reduz tudo na mesma proporção (mínimo 60%, ex.: 1345×644 → 75%) em vez de trocar de layout; o fator multiplica a escala escolhida pelo usuário em `--zoom`. As consultas de mídia com `px` em largura/altura são reescritas em tempo de execução para o espaço "projetado" (px reais × fator), senão regras como `max-height: 800px` disparariam no tamanho real. Celular não é reduzido. Teste: `web/test/escala-auto.test.ts`. Ao escrever CSS novo, o `@media` com `px` já vale no espaço projetado: não é preciso tratar o fator.
 - Marca, cores e logo são **provisórios** (validar com Marketing).
 
 ## Segurança já implementada

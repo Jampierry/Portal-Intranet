@@ -1,4 +1,5 @@
 import { Icone } from './icones';
+import { ajustarConsultasDeMidia, fatorAuto } from './escala-auto';
 import { useEffect, useRef, useState } from 'react';
 
 export type ModoTema = 'auto' | 'claro' | 'escuro';
@@ -37,13 +38,22 @@ function aplicar(c: Config) {
   raiz.dataset.estilo = c.estilo;
   // menu claro (só em alguns estilos, no modo claro): decide a logo exibida sobre o menu e sobre a lateral do login
   raiz.dataset.menu = !escuro && ESTILOS.find((e) => e.id === c.estilo)?.menuClaro ? 'claro' : 'escuro';
-  const z = c.escala / 100;
+  const auto = fatorAuto(window.innerWidth, window.innerHeight);
+  const z = Math.round((c.escala / 100) * auto * 1000) / 1000;
   raiz.style.setProperty('zoom', String(z));
   raiz.style.setProperty('--zoom', String(z));
+  raiz.dataset.escalaAuto = auto < 1 ? 'sim' : 'nao';
+  ajustarConsultasDeMidia(auto);
 }
 
-// Aplica já ao carregar o módulo (antes do React montar).
-if (typeof document !== 'undefined') aplicar(ler());
+// Aplica já ao carregar o módulo (antes do React montar) e de novo quando a janela muda de tamanho ou termina de carregar.
+if (typeof document !== 'undefined') {
+  aplicar(ler());
+  let fila = 0;
+  const reaplicar = () => { cancelAnimationFrame(fila); fila = requestAnimationFrame(() => aplicar(ler())); };
+  window.addEventListener('resize', reaplicar);
+  window.addEventListener('load', reaplicar);
+}
 
 export function useTema() {
   const [config, setConfig] = useState<Config>(ler);

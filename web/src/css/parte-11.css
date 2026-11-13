@@ -105,3 +105,14 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 .brandbtn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .menu .sbtop { padding-top: 10px; }
 .menu.mini .sbtop { padding-top: 4px; }
+
+/* Telas baixas (ex.: monitor de 19" com a janela de ~650px de altura, escala 100%): o menu não espreme os itens nem sobrepõe o
+   calendário ao lema; os itens ficam mais justos, o calendário perde a lista do dia e, se ainda faltar espaço, o menu rola inteiro. */
+@media (min-width: 861px) and (max-height: 720px) {
+  .menu nav { flex: none; overflow-y: visible; }
+  .menu > .cal-menu { flex: none; margin-top: 8px; display: grid; }
+  .menu > .cal-menu > .cal-lista { display: none; }
+  .menu .nitem { padding-block: 5px; }
+  .menu-label { padding-block: 3px; }
+  .menu .sbfoot { flex: none; padding-top: 4px; gap: 4px; }
+}

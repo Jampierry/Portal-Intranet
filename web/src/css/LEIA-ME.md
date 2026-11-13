@@ -6,4 +6,5 @@ Regras daqui em diante:
 - Não reordene os imports de `main.tsx`.
 - Regra nova: procure antes se o seletor já existe (`grep -rn ".seletor" web/src/css`) e **edite no lugar**, em vez de acrescentar outro bloco no fim.
 - Alturas que dependem do zoom usam `var(--zoom)`.
+- `@media` com `px` em largura/altura é reescrito em tempo de execução por `web/src/escala-auto.ts` (escala automática em telas menores que 1600×860); escreva normalmente, valendo o tamanho "de projeto".
 - Consolidar as regras repetidas (ex.: `.entrar`, `.rodape-portal`) exige teste visual nos 6 estilos × claro/escuro × celular; faça por módulo e confira no navegador.

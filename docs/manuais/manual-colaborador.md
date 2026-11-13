@@ -51,7 +51,7 @@ Datas importantes, feriados e compromissos da empresa. Um compromisso que se rep
 A busca do topo procura em comunicados, documentos, aplicativos e contatos, **só no que você pode ver**. No celular, nas telas que já têm busca própria (Comunicados, Documentos, Contatos e Ajuda), a busca do topo fica escondida para não duplicar.
 
 ## 12. Temas e aparência
-O botão de temas no topo muda o modo **claro/escuro**, o **estilo** (Di Paula, Bordô, Meia-noite, Ardósia, Grafite, Oceano), o tamanho (escala) e o modo compacto. A escolha fica neste navegador.
+O botão de temas no topo muda o modo **claro/escuro**, o **estilo** (Di Paula, Bordô, Meia-noite, Ardósia, Grafite, Oceano), o tamanho (escala) e o modo compacto. A escolha fica neste navegador. Em telas menores (monitor de 19", notebook) o portal já se ajusta sozinho para manter o mesmo layout das telas grandes; se as letras ficarem pequenas, aumente a escala (110% ou 125%).
 
 ## 13. Meu perfil
 Abra pelo avatar › **Meu perfil**.

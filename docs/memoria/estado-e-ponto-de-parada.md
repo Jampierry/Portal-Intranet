@@ -313,3 +313,12 @@
 - **Git:** `origin/main` = `0ce77e5` (pessoal, em dia, inclui a nota das contas do GitHub). **Organização (`org/main`) = `5460494`: faltam levar** o PWA dinâmico, o script `enviar-org` e demais mudanças desde `8836b4b`; só com o gatilho `enviar org` (`scripts/enviar-org.ps1 -Enviar`).
 - **Chat desta janela:** Portal-Intranet (Memoritrix só como pasta adicional).
 - **Próximo:** conferir no navegador (vídeo, divisa da entrada, menu clicável, favicon e ícone do app instalado, vidro); manuais por perfil; 2FA TOTP; Playwright; mídia fora do SQLite; aguardar a TI.
+
+## Ponto de parada — 13/11/2026 (escala automática para telas de 19")
+- **Problema:** em monitor de 19" (janela útil ~1345×644, escala 100%) o layout "desconfigurava": regras de tela baixa/estreita (`max-height: 800px` etc.) disparavam e mudavam o arranjo (menu espremido, calendário sobre o lema). O usuário quer **o mesmo layout da tela grande (referência 1912×928), só menor**.
+- **Solução:** `web/src/escala-auto.ts` (`fatorAuto`, `ajustarConsultasDeMidia`) + `web/src/tema.tsx` (`aplicar` multiplica a escala do usuário pelo fator em `--zoom`, reaplica em `resize`/`load`, marca `data-escala-auto`). Janela ≥ 861 px menor que 1600×860 → fator = min(1, larg/1600, alt/860), mínimo 0.6 (1345×644 → 75%). Os `@media` com `px` de largura/altura são reescritos em tempo de execução (px × fator) em todas as folhas. Celular não muda. Teste: `web/test/escala-auto.test.ts`.
+- Também: regra de segurança para menu em ≤720 px de altura no fim de `parte-11.css` (quase nunca dispara agora).
+- **Docs atualizados:** `arquitetura.md`, `manuais/manual-colaborador.md`, `web/src/css/LEIA-ME.md`, `modulos-status.md`, `gatilhos.md` (novo: **salvar** também atualiza docs/manuais e envia).
+- **Verificação:** lint 0 erros, typecheck e 164 testes OK. **NÃO conferido no navegador de 19"**: o usuário precisa dar F5 e comparar com a captura grande. Ajustes possíveis: `REF_LARGURA`/`REF_ALTURA`/`FATOR_MIN` em `escala-auto.ts` (valores maiores = letras maiores, layout mais apertado).
+- **Máquinas:** o usuário programa de duas máquinas; ao retomar na outra, `git pull` + `npm install` + `npm run banco:migrar`. `org/main` continua em `5460494` (falta `enviar org`).
+- **Próximo:** conferir a escala automática no 19"; conferir no navegador vídeo/divisa da entrada/menu/favicon/vidro; `enviar org`; manuais por perfil; 2FA TOTP; Playwright; mídia fora do SQLite; aguardar a TI.
