@@ -307,3 +307,9 @@
 
 ## 13/11/2026 — janela "Select an account" do GitHub
 - O Git Credential Manager perguntava a conta toda hora (há `Jampierry` e `jampierry-silva` salvas). Corrigido fixando o usuário no URL dos remotos: `origin` = `https://Jampierry@github.com/Jampierry/Portal-Intranet.git`, `org` = `https://jampierry-silva@github.com/Di-Paula-Moda-Esportiva/Portal-Intranet.git` (idem Memoritrix, `origin` = `Jampierry@`). Repositório novo: configurar o remoto já com `usuario@` no URL.
+
+## Ponto de parada — 13/11/2026 (PWA dinâmico)
+- **Manifesto do PWA dinâmico** (`0ce77e5`): `/api/manifest.webmanifest` usa nome e ícone da empresa (`modulos/marca/api`, `web/index.html`, `sw.js`, testes). Resolve a limitação de o app instalado manter o ícone fixo.
+- **Git:** `origin/main` = `0ce77e5` (pessoal, em dia, inclui a nota das contas do GitHub). **Organização (`org/main`) = `5460494`: faltam levar** o PWA dinâmico, o script `enviar-org` e demais mudanças desde `8836b4b`; só com o gatilho `enviar org` (`scripts/enviar-org.ps1 -Enviar`).
+- **Chat desta janela:** Portal-Intranet (Memoritrix só como pasta adicional).
+- **Próximo:** conferir no navegador (vídeo, divisa da entrada, menu clicável, favicon e ícone do app instalado, vidro); manuais por perfil; 2FA TOTP; Playwright; mídia fora do SQLite; aguardar a TI.
