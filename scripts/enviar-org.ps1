@@ -9,7 +9,7 @@ function Git { & git @args; if ($LASTEXITCODE -ne 0) { throw "git $($args -join 
 
 $excluir = @(
   ':!CLAUDE.md', ':!.claude', ':!docs/memoria', ':!docs/origem-manus', ':!web/imagens',
-  ':!docs/avaliacao-estrutura.md', ':!docs/comparativo-mercado.md'
+  ':!docs/avaliacao-estrutura.md', ':!docs/comparativo-mercado.md', ':!scripts/enviar-org.ps1'
 )
 
 if (git status --porcelain) { throw "Há alterações não commitadas. Faça commit antes." }
