@@ -1,4 +1,4 @@
-// PWA: manifesto completo, ícones existentes e service worker que nunca guarda dados da API.
+// PWA: manifesto padrão (reserva do dinâmico), ícones existentes e service worker que nunca guarda dados da API.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -18,7 +18,7 @@ test('manifesto instalável: nome, página inicial, modo standalone e ícones de
 
 test('a página liga o manifesto e o service worker é registrado só em produção', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
+  assert.match(html, /rel="manifest" href="\/api\/manifesto"/);
   assert.match(html, /name="theme-color"/);
   assert.match(readFileSync(new URL('../src/main.tsx', import.meta.url), 'utf8'), /import\.meta\.env\.PROD[\s\S]*serviceWorker\.register\('\/sw\.js'\)/);
 });

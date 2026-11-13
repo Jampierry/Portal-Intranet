@@ -124,3 +124,19 @@ test('entrada: imagem fixa e carrossel têm listas separadas; configuração ant
   assert.deepEqual(velha.imagens, []);
   assert.equal((await app.inject({ url: a })).statusCode, 200); // a imagem fixa continua pública
 });
+
+test('manifesto do PWA: público, usa nome e ícone da empresa e volta ao padrão se o ícone não serve', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const padrao = (await app.inject({ url: '/api/manifesto' })).json<{ name: string; icons: { src: string }[] }>(); // sem login
+  assert.equal(padrao.name, 'Portal Intranet'); assert.equal(padrao.icons[0].src, '/icones/icone-192.png');
+  const png = (n: number) => { const b = Buffer.alloc(40); Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b); b.writeUInt32BE(n, 16); b.writeUInt32BE(n, 20); return b; };
+  const enviar = async (n: number) => (await app.inject({ method: 'POST', url: '/api/gestao/empresa/imagens', headers: { ...adm, 'content-type': 'image/png' }, payload: png(n) })).json<{ url: string }>().url;
+  const salvar = (logo: string) => app.inject({ method: 'PUT', url: '/api/gestao/empresa', headers: { ...adm, ...json }, payload: { nome: 'Aurora', nome_portal: 'Aurora Conecta', logo } });
+  const pequeno = await enviar(64); await salvar(pequeno);
+  assert.equal((await app.inject({ url: '/api/manifesto' })).json<{ icons: { src: string }[] }>().icons[0].src, '/icones/icone-192.png'); // 64 px é pequeno demais
+  const grande = await enviar(512); await salvar(grande);
+  const m = (await app.inject({ url: '/api/manifesto' })).json<{ name: string; short_name: string; icons: { src: string; sizes: string; type: string }[] }>();
+  assert.equal(m.name, 'Aurora Conecta'); assert.equal(m.short_name, 'Aurora');
+  assert.deepEqual(m.icons.map((i) => [i.src, i.sizes, i.type]), [[grande, '192x192 512x512', 'image/png']]);
+});

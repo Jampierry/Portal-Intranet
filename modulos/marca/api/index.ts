@@ -116,9 +116,41 @@ function validarEntrada(c: Record<string, unknown>): ConfigEntrada {
   return { fundo: fundo as ConfigEntrada['fundo'], imagens, fixa, intervalo, escurecer, linhas: listaDeLinhas(c.linhas, 'Frase'), rodape: curto(c.rodape, 'Texto pequeno', 60), texto_extra: curto(c.texto_extra, 'Texto extra', 200) };
 }
 
+/** Tamanhos para o manifesto: SVG serve em qualquer tamanho; PNG só se tiver ao menos 192 px (lê o cabeçalho IHDR). */
+export function tamanhosDoIcone(img: { tipo: string; dados: Buffer }): string | null {
+  if (img.tipo === 'image/svg+xml') return 'any';
+  if (img.tipo !== 'image/png' || img.dados.length < 24) return null;
+  const l = img.dados.readUInt32BE(16), a = img.dados.readUInt32BE(20);
+  if (l < 192 || a < 192 || l !== a) return null;
+  return l >= 512 ? '192x192 512x512' : `${l}x${a}`;
+}
+
 export async function rotasMarca(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   app.get('/api/empresa', async (_req, resp) => resp.header('Cache-Control', 'no-cache').send(lerEmpresa(db)));
   app.get('/api/entrada', async (_req, resp) => resp.header('Cache-Control', 'no-cache').send(lerEntrada(db)));
+
+  // Manifesto do PWA: nome e ícone vêm da empresa (público, o navegador o busca sem login). Sem ícone próprio utilizável, usa o padrão.
+  app.get('/api/manifesto', async (_req, resp) => {
+    const emp = lerEmpresa(db);
+    const padrao = [
+      { src: '/icones/icone-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icones/icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icones/icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ];
+    let icones = padrao;
+    const nomeImg = emp.logo ? /^\/api\/publico\/imagens\/([a-f0-9]{24}\.(?:png|svg))$/.exec(emp.logo)?.[1] : undefined;
+    const img = nomeImg ? lerImagem(db, nomeImg) : null;
+    if (img && nomeImg) {
+      const tam = tamanhosDoIcone(img);
+      if (tam) icones = [{ src: emp.logo!, sizes: tam, type: img.tipo, purpose: 'any' }];
+    }
+    const nome = emp.nome_portal || 'Portal Intranet';
+    resp.header('Cache-Control', 'no-cache').type('application/manifest+json; charset=utf-8');
+    return resp.send({
+      name: nome, short_name: nome.length <= 12 ? nome : (emp.nome || nome).slice(0, 12), description: 'Comunicados, aplicativos, documentos e calendário da empresa.',
+      lang: 'pt-BR', start_url: '/', scope: '/', display: 'standalone', orientation: 'portrait-primary', background_color: '#652b4a', theme_color: '#652b4a', icons: icones,
+    });
+  });
 
   // Só entrega imagens que alguma configuração usa (o resto da pasta de imagens continua exigindo login).
   app.get<{ Params: { nome: string } }>('/api/publico/imagens/:nome', async (req, resp) => {

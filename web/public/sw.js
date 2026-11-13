@@ -1,8 +1,8 @@
 // Service worker do portal (PWA). Faz o portal poder ser instalado e abrir mesmo sem rede (só a casca: telas, estilos e ícones).
 // Nunca guarda dados: nada de /api (comunicados, pessoas, documentos…) passa por aqui, sempre vem do servidor.
 // Estratégia: páginas = rede primeiro, com a última cópia como reserva; arquivos de /assets (nome com hash) = cache primeiro.
-const VERSAO = 'portal-v2';
-const CASCA = ['/', '/icone.svg', '/manifest.webmanifest', '/icones/icone-192.png', '/icones/icone-512.png'];
+const VERSAO = 'portal-v3';
+const CASCA = ['/', '/icone.svg','/icones/icone-192.png', '/icones/icone-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSAO).then((c) => c.addAll(CASCA)).then(() => self.skipWaiting()));
