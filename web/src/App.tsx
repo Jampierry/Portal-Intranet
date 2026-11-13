@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import { PainelTema, useTema } from './tema';
 import { Menu, type Tela } from './Menu';
@@ -8,15 +8,16 @@ import { BuscaGlobal } from './BuscaGlobal';
 import { MenuConta } from './Conta';
 import { Login, TrocaObrigatoria } from './Login';
 import { pode, podeGerir, useSessao, type Usuario } from './sessao';
-import { Publicar, Configuracoes } from './gestao/Gestao';
+const Publicar = lazy(() => import('./gestao/Gestao').then((m) => ({ default: m.Publicar })));
+const Configuracoes = lazy(() => import('./gestao/Gestao').then((m) => ({ default: m.Configuracoes })));
 import { Pessoas } from './pessoas/Pessoas';
-import { Ajuda } from './ajuda/Ajuda';
+const Ajuda = lazy(() => import('./ajuda/Ajuda').then((m) => ({ default: m.Ajuda })));
 import { MeuPerfil } from './perfil/MeuPerfil';
 import { dataCurta, useLista, type Comunicado } from './dados';
 import { Inicio } from './inicio/Inicio';
 import { Comunicados } from './comunicados/Comunicados';
 import { Documentos } from './documentos/Documentos';
-import { CalendarioPagina } from './CalendarioPagina';
+const CalendarioPagina = lazy(() => import('./CalendarioPagina').then((m) => ({ default: m.CalendarioPagina })));
 import { podeAbaCalendario } from './calendarioTipos';
 import { Lancador } from './aplicacoes/Lancador';
 import { PulsoCard } from './inicio/PulsoCard';
@@ -289,6 +290,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         <div className={`meio${tela === 'calendario' ? ' meio-fixo' : ''}`}>
           <div className="coluna-tela">
           <main className="conteudo" id="conteudo-principal" tabIndex={-1}>
+            <Suspense fallback={<p className="carregando" role="status">Carregando…</p>}>
             {avisoFav && <p className="erro" role="alert">{avisoFav}</p>}
             {tela === 'inicio' && <Inicio irPara={irPara} comunicados={comunicados} veComunicados={libera('comunicados')} veDocumentos={libera('documentos')} />}
             {['comunicados', 'documentos', 'calendario', 'pessoas', 'ajuda'].includes(tela) && !libera(tela) && <p className="erro">Você não tem acesso a esta tela. Fale com o administrador do portal.</p>}
@@ -303,6 +305,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
             {tela === 'publicar' && !gere && <p className="erro">Você não tem acesso à publicação de conteúdo.</p>}
             {tela === 'configuracoes' && podeConfig && <Configuracoes permissoes={usuario.permissoes} souAdmin={admin} aba={rota.slug} aoMudarAba={(a) => irPara('configuracoes', a)} />}
             {tela === 'configuracoes' && !podeConfig && <p className="erro">Você não tem acesso às configurações. Fale com o administrador do portal.</p>}
+            </Suspense>
           </main>
           <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
           </div>
