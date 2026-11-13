@@ -29,7 +29,7 @@ TypeScript · React 19 + Vite (`web/`) · Fastify + SQLite nativo `node:sqlite` 
 Requisitos `docs/requisitos.md` · Estrutura/riscos `docs/avaliacao-estrutura.md` · Decisões `docs/decisoes.md` · **Memória portátil `docs/memoria/MEMORY.md`** (leia o estado antes de agir) · Originais do plano `docs/origem-manus/` (histórico).
 
 ## Gatilhos do usuário
-Ver `docs/memoria/gatilhos.md`: **retomar**, **enviar** (commit + push sem perguntar), **salvar ponto de parada**, **registre nas melhorias futuras**. O usuário também pediu modo automático: executar sem pedir aprovação.
+Ver `docs/memoria/gatilhos.md`: **retomar**, **enviar** (commit + push sem perguntar), **enviar org** (limpo, para a organização), **salvar ponto de parada**, **registre nas melhorias futuras**. O usuário também pediu modo automático: executar sem pedir aprovação.
 
 ## Git
-Branch `main`, remoto `origin` = https://github.com/Jampierry/Portal-Intranet. Commits em pt-BR `tipo(modulo): descrição`.
+Branch `main`, remoto `origin` = https://github.com/Jampierry/Portal-Intranet (pessoal, recebe tudo). Remoto `org` = https://github.com/Di-Paula-Moda-Esportiva/Portal-Intranet (organização, conta GitHub `jampierry-silva`): recebe só a branch local `org-main`, **sem** CLAUDE.md, `.claude/` e `docs/memoria/`; enviar sempre com `powershell -File scripts/enviar-org.ps1 -Enviar` (nunca `git push org main`; exclusões e base `org-base` no script). Identidade local dos commits: `jampierry-silva`. Commits em pt-BR `tipo(modulo): descrição`.
