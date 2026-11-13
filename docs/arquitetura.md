@@ -48,6 +48,7 @@ acessos · aplicacoes · aprovacoes · avisos · banners · calendario · comuni
 - **Calendário do menu (`Calendario.tsx`):** só a grade do mês; a seta (aba) fica presa à borda do menu, na altura do calendário, e abre o painel dos compromissos do dia à direita, por cima da tela, em vidro (`.cal-voo-casca` fixo via portal em `document.body`; medidas por `offsetTop/offsetLeft` e `--zoom`, remedidas com `ResizeObserver`). Clicar num dia seleciona e abre o painel; "Abrir calendário completo" leva à tela cheia. Não aparece no celular.
 - **Calendário tela cheia (`CalendarioPagina.tsx`):** a barra (navegação, legendas, ações) se organiza por *container query* (`.calp-barra`, até 900/520 px). No celular (≤ 600 px) a grade mostra só o número e pontinhos coloridos; tocar no dia rola até os detalhes; legendas começam recolhidas.
 - **Barra de aplicativos no celular:** tocar em Aplicativos abre a faixa recolhida (`barraMob` em `App.tsx`, classe `.barra-mob` no `Lancador`); o botão do topo da faixa expande a lista e a seta recolhe; tocar fora ou Esc fecha.
+- **Carregamento sob demanda:** `App.tsx` abre Publicar, Configurações, Ajuda e Calendário com `lazy` + `Suspense` (blocos separados no build); o pacote inicial fica menor.
 - **Datas sobre avatares** (aniversariantes, tempo de casa, novos, destaque do ano): a etiqueta `.pessoa-periodo` fica na borda de baixo da foto, dentro de `.pessoa-foto`.
 - Marca, cores e logo são **provisórios** (validar com Marketing).
 

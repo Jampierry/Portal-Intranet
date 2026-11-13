@@ -357,3 +357,9 @@
 ## Ponto de parada — 13/11/2026 (noite) — telas pesadas em carregamento preguiçoso
 - `web/src/App.tsx`: Publicar/Configurações (`gestao/Gestao`), Ajuda e Calendário (tela cheia) agora carregam sob demanda (`lazy` + `Suspense`, aviso "Carregando…"); o pacote inicial do site caiu (Gestão ~149 kB fica em arquivo separado). lint, typecheck, 173 testes e build OK.
 - `origin/main` recebe este commit; `org/main` continua em `5460494` (falta `enviar org`). Na outra máquina: `git pull`, `npm install`, `npm run banco:migrar`, `npm run marca:logo`.
+
+## Ponto de parada — 13/11/2026 (noite) — envio à organização e carregamento sob demanda
+- **Organização:** `enviar org` feito; `org/main` = `6f3194b`, tag `org-base` na `main`. O script parou num conflito do `.gitignore` (a `org-main` tem bloco próprio): resolvi mantendo os dois blocos e fiz verificações, commit e push à mão. **Falha do script:** `git checkout main` não roda se o `apply --3way` deixar conflito, e a `org-main` não tem o próprio script (está excluído); ideia: o script resolver/avisar.
+- **Verificação geral:** lint, typecheck, build, 173 testes e 33 testes de tela OK, sem erros.
+- **Desempenho:** `web/src/App.tsx` carrega Publicar, Configurações, Ajuda e Calendário sob demanda (`lazy` + `Suspense`, "Carregando…"); pacote inicial 548 → 380 kB, sem o aviso de chunk grande. Não conferido visualmente no navegador.
+- **Próximo:** conferir tema escuro/celular real e a escala no 19"; manuais por perfil; mais fluxos no Playwright; ajustar o `enviar-org.ps1`; aguardar a TI.
