@@ -20,6 +20,6 @@ Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). M
 
 - **Publicar › Aprovações / Redes sociais** (12/11/2026): fila do RH para comunicados, redes, banners e documentos; aprovação definida por aba e por usuário (`pub.<aba>.aprovacao`); anexos nas redes. Ver `estado-e-ponto-de-parada.md`.
 
-- **Escala automática** (13/11/2026): telas menores que 1600×860 reduzem o portal na proporção (layout igual ao de monitor grande); ver `../arquitetura.md`. Testes: 164.
+- **Escala automática** (13/11/2026): telas menores que 1600×860 reduzem o portal na proporção (layout igual ao de monitor grande), com letra mínima de 10 px reais; ver `../arquitetura.md`. Também: calendário do menu com painel lateral, calendário tela cheia e barra de apps otimizados para celular, datas na borda de baixo dos avatares, rótulo "Espaço de trabalho" removido. Testes: 165.
 
 - **Meu perfil** (12/11/2026): contato, emergência, foto e e-mail; ficha de emergência para admin/permissão `cfg.usuarios.emergencia` (auditada).

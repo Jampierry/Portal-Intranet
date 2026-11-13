@@ -44,8 +44,10 @@ function CartaoPessoas({ id, titulo, itens, deslocar = 0 }: { id: string; titulo
               <div className="pessoas" key={p} aria-hidden={p !== pag}>
                 {g.map((t) => (
                   <article className={`pessoa${t.hoje ? ' pm-hoje' : ''}`} key={t.chave} title={t.dica}>
-                    <span className="pessoa-periodo">{t.chip}</span>
-                    <Capa semente={t.nome} icone="pessoas" foto={t.foto} classe="capa-pessoa">{!t.foto && <span className="iniciais-capa">{t.iniciais}</span>}</Capa>
+                    <div className="pessoa-foto">
+                      <Capa semente={t.nome} icone="pessoas" foto={t.foto} classe="capa-pessoa">{!t.foto && <span className="iniciais-capa">{t.iniciais}</span>}</Capa>
+                      <span className="pessoa-periodo">{t.chip}</span>
+                    </div>
                     <div><h3 title={t.nome}>{t.nome}</h3><small className="area">{t.linha}</small></div>
                   </article>
                 ))}

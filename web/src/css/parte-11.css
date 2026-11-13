@@ -85,7 +85,7 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 }
 
 /* ===== Menu lateral: logo e frase centralizadas (sem ícone ao lado); o botão de menu (☰) fica no canto superior esquerdo e recolhe/expande ===== */
-.menu .sbtop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 30px 8px 16px; text-align: center; }
+.menu .sbtop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 30px 8px 6px; margin-bottom: 0; text-align: center; }
 .menu .sbtop .brandtxt { align-items: center; text-align: center; width: 100%; }
 .menu .sbtop .brandtxt span { white-space: normal; }
 .menu .sbtop .empnome-img { margin-inline: auto; object-position: center; max-width: 100%; }
@@ -106,13 +106,114 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 .menu .sbtop { padding-top: 10px; }
 .menu.mini .sbtop { padding-top: 4px; }
 
-/* Telas baixas (ex.: monitor de 19" com a janela de ~650px de altura, escala 100%): o menu não espreme os itens nem sobrepõe o
-   calendário ao lema; os itens ficam mais justos, o calendário perde a lista do dia e, se ainda faltar espaço, o menu rola inteiro. */
-@media (min-width: 861px) and (max-height: 720px) {
-  .menu nav { flex: none; overflow-y: visible; }
-  .menu > .cal-menu { flex: none; margin-top: 8px; display: grid; }
-  .menu > .cal-menu > .cal-lista { display: none; }
-  .menu .nitem { padding-block: 5px; }
-  .menu-label { padding-block: 3px; }
-  .menu .sbfoot { flex: none; padding-top: 4px; gap: 4px; }
+/* Menu: o calendário fica sempre embaixo, junto do bloco "Juntos vamos mais longe" (os compromissos abrem num painel lateral). */
+@media (min-width: 861px) {
+  .menu nav { flex: 1 1 auto; min-height: 0; }
+  .menu > .cal-menu { flex: none; margin-top: auto; display: grid; }
+  .menu .sbfoot { flex: none; }
+}
+
+/* Calendário do menu: a seta na borda direita desdobra os compromissos para a direita, colados ao menu (como a barra de aplicativos). */
+.menu > .cal-menu { display: flex; flex-direction: column; padding: 8px 6px 6px; min-width: 0; }
+.menu > .cal-menu > .cal-corpo { flex: none; min-width: 0; display: grid; gap: 4px; }
+.cal-menu .cal-grade { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-menu .cal-topo b { min-width: 0; white-space: nowrap; }
+/* Casca fixa colada na borda do menu, alinhada ao calendário: guarda a aba (sempre visível) e, aberto, o painel. */
+.cal-voo-casca { position: fixed; z-index: 45; width: 0; display: flex; align-items: stretch; pointer-events: none; }
+.cal-voo-casca > * { pointer-events: auto; }
+.cal-voo-casca.aberta { width: min(300px, calc(100vw / var(--zoom, 1) - 260px)); }
+.cal-voo-btn { position: absolute; right: -18px; top: 50%; width: 18px; height: 52px; margin-top: -26px; border: 0; border-radius: 0 10px 10px 0; background: var(--menu); color: var(--menu-texto); display: grid; place-items: center; cursor: pointer; padding: 0; box-shadow: 4px 0 12px rgba(0, 0, 0, .25); }
+.cal-voo-btn:hover, .cal-voo-btn[aria-expanded=true] { background: color-mix(in srgb, var(--menu) 82%, var(--menu-texto)); }
+.cal-voo-btn:focus-visible { outline: 2px solid var(--menu-texto); outline-offset: -2px; }
+.cal-voo { position: relative; flex: none; width: 100%; max-height: calc(100vh / var(--zoom, 1) - 20px); overflow-y: auto; box-sizing: border-box; background: var(--menu); color: var(--menu-texto); border-radius: 0 14px 14px 0; padding: 10px 12px 12px; box-shadow: 8px 0 28px rgba(0, 0, 0, .3); font-size: 13px; animation: cal-voo-entra .22s ease-out; scrollbar-width: thin; }
+@keyframes cal-voo-entra { from { clip-path: inset(0 100% 0 0); opacity: .4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cal-voo { animation: none; } }
+.cal-voo-lista { display: grid; gap: 8px; }
+.cal-voo-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-voo .cal-data { font-size: 14px; opacity: 1; }
+.cal-voo .cal-nav { color: inherit; }
+.cal-voo .cal-nav:hover { background: rgba(var(--menu-veu), .14); }
+.cal-voo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cal-voo li { display: flex; gap: 8px; align-items: flex-start; line-height: 1.3; }
+.cal-voo li > i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-top: 5px; flex: none; }
+.cal-voo li > div { display: grid; min-width: 0; }
+.cal-voo li span { font-weight: 700; opacity: .75; }
+.cal-voo li small { opacity: .65; font-size: 12px; }
+.cal-voo .cal-aviso { margin: 0; opacity: .75; font-size: 12.5px; }
+.cal-voo .cal-prox { display: grid; gap: 6px; border-top: 1px dashed rgba(var(--menu-veu), .22); padding-top: 8px; }
+.cal-voo .cal-prox li > div > button { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
+.cal-voo .cal-novo { margin: 0; width: 100%; border: 1px dashed rgba(var(--menu-veu), .35); background: transparent; color: inherit; border-radius: 8px; padding: 6px 8px; font: inherit; cursor: pointer; }
+.cal-voo .cal-novo:hover { background: rgba(var(--menu-veu), .12); }
+.cal-voo-abrir { width: 100%; border: 0; border-radius: 8px; padding: 7px 8px; background: rgba(var(--menu-veu), .16); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.cal-voo-abrir:hover { background: rgba(var(--menu-veu), .26); }
+.cal-voo-abrir:focus-visible, .cal-voo .cal-novo:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.cal-voo .k-feriado { --c: #ff8a7a; } .cal-voo .k-municipal { --c: #8ab6ff; } .cal-voo .k-facultativo { --c: #f7b4d2; } .cal-voo .k-evento { --c: #7fe0a4; }
+.cal-voo .k-ag0 { --c: #8ab6ff; } .cal-voo .k-ag1 { --c: #ffd27a; } .cal-voo .k-ag2 { --c: #7fe0a4; } .cal-voo .k-ag3 { --c: #f7b4d2; }
+:root[data-menu=claro] .cal-voo .k-feriado { --c: #cf222e; } :root[data-menu=claro] .cal-voo .k-municipal { --c: #0969da; } :root[data-menu=claro] .cal-voo .k-facultativo { --c: #bf3989; } :root[data-menu=claro] .cal-voo .k-evento { --c: #1a7f37; }
+:root[data-menu=claro] .cal-voo .k-ag0 { --c: #0969da; } :root[data-menu=claro] .cal-voo .k-ag1 { --c: #9a6700; } :root[data-menu=claro] .cal-voo .k-ag2 { --c: #1a7f37; } :root[data-menu=claro] .cal-voo .k-ag3 { --c: #bf3989; }
+@media (max-width: 860px) { .cal-voo-casca { display: none; } }
+
+/* Painel dos compromissos do calendário do menu: vidro (mesmo efeito dos outros painéis), na cor do menu para manter o contraste do texto. */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .cal-voo {
+    background: linear-gradient(150deg, color-mix(in srgb, var(--menu) 78%, transparent), color-mix(in srgb, var(--menu) 64%, transparent));
+    -webkit-backdrop-filter: var(--vidro-desfoque); backdrop-filter: var(--vidro-desfoque);
+    border: 1px solid var(--vidro-borda); border-left: 0;
+    box-shadow: 8px 0 28px rgba(0, 0, 0, .28), inset 0 1px 0 var(--vidro-brilho);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .cal-voo { background: var(--menu); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Calendário (tela cheia): barra de navegação, legendas e ações organizadas pela largura da própria barra (container query),
+   não pela da janela: em telas médias e no celular (ex.: iPhone 14, 390 px) cada grupo ocupa uma linha, e as legendas viram uma grade. */
+.calp-barra { container: calbarra / inline-size; }
+@container calbarra (max-width: 900px) {
+  .calp-barra { gap: 8px; }
+  .calp-barra > .calp-nav { flex: 1 1 100%; justify-content: space-between; gap: 6px; }
+  .calp-nav h2 { flex: 1 1 auto; min-width: 0; margin: 0; }
+  .calp-nav .btn { margin-left: 0; }
+  .calp-barra > .calp-legenda { flex: 1 1 100%; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .calp-barra .calp-legenda .calp-filtros { flex: none; width: 100%; }
+  .calp-barra > .cal-acoes { flex: 1 1 100%; margin-left: 0; }
+  .calp-barra > .cal-acoes .btn { flex: 1 1 0; justify-content: center; }
+}
+@container calbarra (max-width: 520px) {
+  .calp-nav h2 { font-size: 16px; }
+  .calp-barra .calp-legenda .calp-filtros { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .calp-filtro { font-size: 11.5px; padding: 4px 9px; border-radius: 12px; white-space: normal; text-align: left; line-height: 1.2; align-items: flex-start; }
+  .calp-filtro i { margin-top: 3px; }
+  .calp-barra > .cal-acoes { flex-wrap: wrap; }
+}
+
+/* Calendário (tela cheia) no celular: a grade mostra só o número do dia e pontinhos coloridos (os títulos não cabem em células de ~50 px);
+   ao tocar no dia, os detalhes aparecem logo abaixo, em letra maior. */
+.calp-pontos { display: none; }
+@media (max-width: 600px) {
+  .calp-mes { gap: 8px; }
+  .calp-sem { font-size: 10px; padding: 7px 0; letter-spacing: 0; }
+  .calp-dia, .calp-vazio { min-height: 50px; padding: 5px 2px 4px; }
+  .calp-dia { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .calp-dia > b { align-self: center; font-size: 14px; padding: 2px 8px; }
+  .calp-dia > .calp-chip, .calp-dia > small { display: none; }
+  .calp-pontos { display: flex; gap: 3px; justify-content: center; }
+  .calp-pontos i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--cor) 45%, var(--menu-polo)); }
+  .calp-lado { padding: 14px; gap: 8px; }
+  .calp-lado h3 { font-size: 15px; }
+  .calp-lista { gap: 10px; }
+  .calp-lista li > div { font-size: 14px; }
+  .calp-lista small { font-size: 12.5px; }
+}
+
+/* Data/período dos avatares (aniversariantes, tempo de casa, novos colaboradores, destaque do ano): fica na borda de baixo da foto,
+   como uma etiqueta, para não cobrir o rosto. */
+.pessoa-foto { position: relative; flex: none; width: min(100%, 132px); margin: 0 auto 14px; }
+.pessoa-foto > .capa-pessoa, .destaques .pessoa .pessoa-foto > .capa-pessoa, .destaques.compacto .pessoa .pessoa-foto > .capa-pessoa { width: 100%; margin-inline: 0; }
+.pessoa-foto > .pessoa-periodo, .pessoa .pessoa-foto > .pessoa-periodo { top: auto; bottom: -15px; left: 50%; right: auto; transform: translateX(-50%); max-width: calc(100% + 18px); box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+
+/* Celular: ao tocar em Aplicativos, a barra abre recolhida (faixa estreita com os ícones dos favoritos, como no computador);
+   o botão do topo da faixa expande a lista completa e a seta a recolhe de novo. Tocar fora fecha. */
+@media (max-width: 860px) {
+  .lancador.barra-mob:not(.aberto) { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom)); width: 68px; box-shadow: -10px 0 28px rgba(0, 0, 0, .3); }
 }

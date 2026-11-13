@@ -1,5 +1,6 @@
 import { confirmar } from './Confirmar.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from './api';
 import { MESES_LONGOS } from './dados';
 import { Icone } from './icones';
@@ -48,6 +49,40 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
     return window.innerHeight < 900;
   });
   const alternar = () => setRecolhido((r) => { try { localStorage.setItem('cal-menu-recolhido', r ? '0' : '1'); } catch { /* ignora */ } return !r; });
+  // Painel lateral com os compromissos do dia: abre à direita do menu, por cima da tela (seta na borda do calendário).
+  const [voo, setVooAberto] = useState(false);
+  const [medida, setMedida] = useState<{ esq: number; base: number; alt: number; recuo: number } | null>(null);
+  const painel = useRef<HTMLElement>(null);
+  const casca = useRef<HTMLDivElement>(null);
+  /** Mede o calendário em px de CSS (dentro do zoom da página): a aba e o painel ficam colados na borda do menu, alinhados ao calendário. */
+  const medir = () => {
+    const el = caixa.current, menu = el?.closest('.menu') as HTMLElement | null;
+    if (!el || !menu) return;
+    let topo = 0, esq = 0; for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) { topo += n.offsetTop; esq += n.offsetLeft; }
+    topo -= menu.scrollTop;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom')) || 1;
+    const m = { esq: menu.offsetWidth, base: Math.max(0, window.innerHeight / z - (topo + el.offsetHeight)), alt: el.offsetHeight, recuo: Math.max(0, Math.round(menu.offsetWidth - (esq + el.offsetWidth))) };
+    setMedida((v) => (v && v.esq === m.esq && Math.abs(v.base - m.base) < 0.5 && v.alt === m.alt && v.recuo === m.recuo ? v : m));
+  };
+  useEffect(() => {
+    medir();
+    const el = caixa.current, menu = el?.closest('.menu');
+    const ro = new ResizeObserver(medir);
+    if (el) ro.observe(el);
+    if (menu) ro.observe(menu);
+    window.addEventListener('resize', medir);
+    menu?.addEventListener('scroll', medir);
+    return () => { ro.disconnect(); window.removeEventListener('resize', medir); menu?.removeEventListener('scroll', medir); };
+  }, [recolhido]);
+  const alternarVoo = () => setVooAberto((v) => !v);
+  useEffect(() => {
+    if (!voo) return;
+    const fora = (e: MouseEvent) => { const alvo = e.target as Node; if (!casca.current?.contains(alvo) && !caixa.current?.contains(alvo)) setVooAberto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setVooAberto(false); };
+    const fechar = () => setVooAberto(false);
+    document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc); window.addEventListener('resize', fechar);
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc); window.removeEventListener('resize', fechar); };
+  }, [voo]);
   // A legenda abre pelo "i" e fecha ao clicar fora, no "i" de novo ou com Esc.
   useEffect(() => {
     if (!verLegenda) return;
@@ -102,6 +137,7 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
 
   return (
     <section className="cal-menu" aria-label="Calendário de datas importantes" ref={caixa}>
+      <div className="cal-corpo">
       <div className="cal-topo">
         <button className="cal-nav" onClick={() => mover(-1)} aria-label="Mês anterior"><Icone nome="esq" tamanho={14} /></button>
         <b aria-live="polite">{MESES_LONGOS[ref.mes]} {ref.ano}
@@ -122,27 +158,32 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
             <button key={i} role="gridcell" className={`cal-dia${dia === hojeIso ? ' hoje' : ''}${dia === sel ? ' sel' : ''}${n ? ' tem' : ''}`}
               title={n ? lista.slice(0, 4).map((e) => e.titulo).join('\n') + (n > 4 ? `\n+ ${n - 4}` : '') : undefined}
               aria-label={`${d} de ${MESES_LONGOS[ref.mes].toLowerCase()}${n ? `, ${n} ${n > 1 ? 'datas importantes' : 'data importante'}` : ''}`}
-              aria-pressed={dia === sel} onClick={() => { setSel(dia); abrirCalendario?.(dia); }}>
+              aria-pressed={dia === sel} onClick={() => { setSel(dia); setVooAberto(true); }}>
               {d}
               {n > 0 && <span className="cal-pontos" aria-hidden="true">{cores.map((c) => <i key={c} className={c} />)}</span>}
             </button>
           );
         })}
       </div>
-      <div className="cal-lista" aria-live="polite">
-        <div className="cal-data-linha"><small className="cal-data">{rotuloSel}</small></div>
+      </>}
+      </div>
+      {!recolhido && medida && createPortal(
+        <div className={`cal-voo-casca${voo ? ' aberta' : ''}`} ref={casca} style={{ left: medida.esq, bottom: medida.base, minHeight: medida.alt }}>
+          <button type="button" className="cal-voo-btn" style={voo ? undefined : { left: -medida.recuo, right: 'auto' }} onClick={alternarVoo} aria-expanded={voo} aria-label={voo ? 'Recolher os compromissos do dia' : 'Ver os compromissos do dia'} title={voo ? 'Recolher os compromissos' : 'Ver os compromissos do dia'}><Icone nome={voo ? 'esq' : 'dir'} tamanho={14} /></button>
+          {voo && <aside className="cal-voo" ref={painel} aria-label={`Compromissos de ${rotuloSel}`}>
+      <div className="cal-voo-lista" aria-live="polite">
+        <div className="cal-voo-topo"><b className="cal-data">{rotuloSel}</b><button type="button" className="cal-nav" onClick={() => setVooAberto(false)} aria-label="Recolher os compromissos"><Icone nome="esq" tamanho={14} /></button></div>
         {resp && !resp.conectado && !porDia.size && <p className="cal-aviso">Agenda ainda não conectada ao Zimbra.</p>}
         {resp?.sem_agenda && !porDia.size && <p className="cal-aviso">Nenhuma agenda escolhida ainda. O administrador define em Configurações › Calendário.</p>}
         {resp?.erro && <p className="cal-aviso">{resp.erro}</p>}
         {falhou && <p className="cal-aviso">Não foi possível carregar o calendário.</p>}
         {doDia.length === 0 && (resp?.conectado ? !resp.sem_agenda && !resp.erro : !!resp) && <p className="cal-aviso">Nenhuma data importante.</p>}
         <ul>
-          {doDia.slice(0, 4).map((e) => (
+          {doDia.map((e) => (
             <li key={`${e.id}${e.inicio}`} className={classe(e)} title={[e.titulo, quem(e), e.local].filter(Boolean).join(' · ')}><i aria-hidden="true" /><div><span>{hora(e)}</span> {e.titulo}<small>{quem(e)}</small></div></li>
           ))}
         </ul>
-        {doDia.length > 4 && <small className="cal-aviso">+ {doDia.length - 4} outras</small>}
-        {doDia.length === 0 && proximas.length > 0 && (
+                {doDia.length === 0 && proximas.length > 0 && (
           <div className="cal-prox">
             <small className="cal-data">Próximas datas</small>
             <ul>{proximas.map(({ e, dia }) => (
@@ -152,8 +193,10 @@ export function Calendario({ podeCriar = false, podeExcluir = false, abrirCalend
         )}
         {erroAcao && <p className="cal-aviso" role="alert">{erroAcao}</p>}
         {podeCriar && resp?.conectado && !resp.sem_agenda && <button type="button" className="cal-novo" onClick={() => setNovo({ titulo: '', data: sel, data_fim: '', dia_inteiro: true, hora_inicio: '09:00', hora_fim: '10:00', local: '' })}>+ Data importante</button>}
-      </div>
-      </>}
+        {abrirCalendario && <button type="button" className="cal-voo-abrir" onClick={() => { setVooAberto(false); abrirCalendario(sel); }}>Abrir calendário completo</button>}
+        </div>
+          </aside>}
+        </div>, document.body)}
       {novo && (
         <JanelaForm titulo="Nova data importante" rotuloEnviar="Cadastrar" aoFechar={() => setNovo(null)}
           aoEnviar={async () => {

@@ -11,9 +11,9 @@ Para todas as pessoas que usam o portal, no computador ou no celular.
 
 ## 2. Conhecer a tela
 - **Menu à esquerda:** Início, Comunicados, Documentos, Contatos, Pesquisas, Ajuda e, se você tiver permissão, Publicar e Configurações. O botão no topo do menu recolhe e expande. No celular o menu abre como gaveta.
-- **Calendário no menu:** mostra o dia de hoje; clique para abrir o calendário completo. Em telas baixas ele sobe e mostra os detalhes do dia.
+- **Calendário no menu:** fica embaixo do menu, junto da frase da empresa. Clique num dia, ou na setinha na borda direita do calendário, para abrir à direita a lista de compromissos do dia; clique de novo na setinha para recolher. Em "Abrir calendário completo" você vai para a tela cheia.
 - **Barra superior:** título da tela, **busca global**, **temas**, **sino** de avisos e o **avatar** (menu da conta).
-- **Barra de aplicativos à direita:** seus favoritos e o botão de grade com todos os aplicativos.
+- **Barra de aplicativos à direita:** seus favoritos e o botão de grade com todos os aplicativos. No celular, toque em **Aplicativos**: abre uma faixa estreita com os favoritos; toque no ícone de grade do topo da faixa para ver a lista completa e na seta para voltar à faixa; toque fora para fechar.
 - **Rodapé:** nome da empresa e do portal.
 
 ## 3. Início
@@ -45,7 +45,7 @@ Canal de cada área (e-mail, ramal, celular corporativo ou link). Se não achar,
 Mostra comunicados urgentes, pedidos de autorização de edição, respostas de aprovação e outros avisos. O que você abre ou limpa vale em qualquer aparelho. Em **Meu perfil › Avisos** você escolhe receber também por **e-mail** e por **notificação push** neste aparelho.
 
 ## 10. Calendário
-Datas importantes, feriados e compromissos da empresa. Um compromisso que se repete aparece em cada dia em que acontece.
+Datas importantes, feriados e compromissos da empresa. Um compromisso que se repete aparece em cada dia em que acontece. As **Legendas** mostram o que cada cor significa e deixam esconder o que você não quer ver. No celular a grade mostra o número do dia e pontinhos coloridos; **toque no dia** para ver os compromissos logo abaixo.
 
 ## 11. Busca global
 A busca do topo procura em comunicados, documentos, aplicativos e contatos, **só no que você pode ver**. No celular, nas telas que já têm busca própria (Comunicados, Documentos, Contatos e Ajuda), a busca do topo fica escondida para não duplicar.

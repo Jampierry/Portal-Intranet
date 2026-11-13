@@ -56,7 +56,6 @@ export function Menu(p: Props) {
       </div>
 
       <nav aria-label="Seções do portal">
-        {!mini && <span className="menu-label">ESPAÇO DE TRABALHO</span>}
         {itens.map(([id, nome]) => (
           <button key={id} className="nitem" title={nome} aria-label={mini ? nome : undefined} aria-current={p.tela === id ? 'page' : undefined}
             onClick={() => { p.fecharGaveta(); p.irPara(id); }}>

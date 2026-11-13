@@ -15,10 +15,34 @@ export function fatorAuto(largura: number, altura: number): number {
   return Math.round(Math.max(FATOR_MIN, f) * 100) / 100;
 }
 
+/** Menor tamanho de letra (px reais, já com a redução) que ainda se lê bem; texto menor que isso é ampliado na regra. */
+export const FONTE_MIN_REAL = 10;
+
+/** Tamanho (px de CSS) a usar para uma letra de `n` px quando o portal está reduzido por `fator`. */
+export function fonteAjustada(n: number, fator: number): number {
+  if (fator >= 1) return n;
+  return Math.round(Math.max(n, FONTE_MIN_REAL / fator) * 10) / 10;
+}
+
 const originais = new WeakMap<CSSMediaRule, string>();
+const fontesOriginais = new WeakMap<CSSStyleRule, string>();
+
+/** Elementos que mantêm o tamanho de projeto (o lema e o rótulo "Espaço de trabalho" do menu e o título do mês do calendário lateral são largos/delicados). */
+const SEM_PISO = /\.menu-rodape|\.menu-label|\.lema|\.cal-topo/;
+
+function ajustarFonte(r: CSSStyleRule, fator: number) {
+  if (SEM_PISO.test(r.selectorText)) fator = 1;
+  let orig = fontesOriginais.get(r);
+  if (orig === undefined) { orig = r.style.fontSize; fontesOriginais.set(r, orig); }
+  const m = /^(\d+(?:\.\d+)?)px$/.exec(orig);
+  if (!m) return;
+  const novo = `${fonteAjustada(Number(m[1]), fator)}px`;
+  if (r.style.fontSize !== novo) r.style.fontSize = novo;
+}
 
 function visitar(regras: CSSRuleList, fator: number) {
   for (const r of Array.from(regras)) {
+    if (r instanceof CSSStyleRule) ajustarFonte(r, fator);
     if (r instanceof CSSMediaRule) {
       const orig = originais.get(r) ?? r.media.mediaText;
       originais.set(r, orig);
@@ -32,7 +56,7 @@ function visitar(regras: CSSRuleList, fator: number) {
   }
 }
 
-/** Reescreve as consultas de mídia em px para o espaço projetado (fator 1 = original). */
+/** Reescreve as consultas de mídia em px para o espaço projetado e garante letra legível (fator 1 = original). */
 export function ajustarConsultasDeMidia(fator: number) {
   if (typeof document === 'undefined') return;
   for (const folha of Array.from(document.styleSheets)) {

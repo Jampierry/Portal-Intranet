@@ -159,6 +159,10 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const tela = rota.tela;
   const [gaveta, setGaveta] = useState(false);
   const [lancador, setLancador] = useState(false);
+  /** Celular: a barra de aplicativos abre primeiro "recolhida" (só os ícones dos favoritos); o botão da barra a expande (`lancador`). */
+  const [barraMob, setBarraMob] = useState(false);
+  const alternarAppsMobile = () => { setLancador(false); setBarraMob(!(barraMob || lancador)); };
+  const fecharApps = () => { setLancador(false); setBarraMob(false); };
   const [busca, setBusca] = useState('');
   const [favoritos, setFavoritos] = useState<string[]>([]);
   const [avisoFav, setAvisoFav] = useState('');
@@ -239,11 +243,11 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 
   useEffect(() => { api<Saude>('/api/saude').then(setSaude).catch(() => setSaude(null)); }, []);
   useEffect(() => {
-    if (!lancador) return;
-    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') setLancador(false); };
+    if (!lancador && !barraMob) return;
+    const tecla = (e: KeyboardEvent) => { if (e.key === 'Escape') { setLancador(false); setBarraMob(false); } };
     addEventListener('keydown', tecla);
     return () => removeEventListener('keydown', tecla);
-  }, [lancador]);
+  }, [lancador, barraMob]);
   useEffect(() => { const f = () => setRota(rotaDoEndereco()); addEventListener('popstate', f); return () => removeEventListener('popstate', f); }, []);
   useEffect(() => { api<string[]>('/api/favoritos').then(setFavoritos).catch(() => setFavoritos([])); }, []);
 
@@ -277,7 +281,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
-          <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={lancador} onClick={() => setLancador(!lancador)}><Icone nome="apps" /></button>
+          <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={barraMob || lancador} onClick={alternarAppsMobile}><Icone nome="apps" /></button>
           <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} />
           <MenuConta usuario={usuario} avatar={perfil.avatar} foto={perfil.foto} mudarAvatar={mudarAvatar} abrirPerfil={() => irPara('perfil')} sair={() => void sair()} />
         </header>
@@ -302,13 +306,13 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           </main>
           <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
           </div>
-          <Lancador aberto={lancador} alternar={() => setLancador(!lancador)} fechar={() => setLancador(false)} favoritos={favoritos} alternarFavorito={alternarFavorito} />
+          <Lancador aberto={lancador} barraMobile={barraMob} alternar={() => setLancador(!lancador)} fechar={fecharApps} favoritos={favoritos} alternarFavorito={alternarFavorito} />
         </div>
       </div>
 
       <nav className="abas-mobile" aria-label="Navegação principal">
         {ABAS.filter(([id]) => id === 'menu' || id === 'apps' || libera(id as Tela)).map(([id, nome, ico]) => (
-          <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : id === 'apps' ? setLancador(true) : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
+          <button key={id} aria-current={id === tela ? 'page' : undefined} onClick={() => (id === 'menu' ? setGaveta(true) : id === 'apps' ? alternarAppsMobile() : irPara(id))}><Icone nome={ico} tamanho={22} /><span>{nome}</span></button>
         ))}
       </nav>
     </div>

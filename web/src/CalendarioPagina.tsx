@@ -27,8 +27,16 @@ export function CalendarioPagina({ podeConfigurar, irConfig, dia }: { podeConfig
   const [novo, setNovo] = useState<{ titulo: string; data: string; data_fim: string; tipo: TipoData; anual: boolean } | null>(null);
   const [versao, setVersao] = useState(0);
   // Legendas/camadas: a pessoa escolhe quais ver (clicando em cada uma) e pode minimizar a faixa para dar mais espaço ao calendário; a escolha é lembrada.
-  const [legendaAberta, setLegendaAberta] = useState(() => { try { return localStorage.getItem('calp-legenda') !== '0'; } catch { return true; } });
+  const [legendaAberta, setLegendaAberta] = useState(() => { try { const v = localStorage.getItem('calp-legenda'); if (v !== null) return v !== '0'; } catch { /* sem armazenamento: usa o padrão */ } return window.innerWidth > 600; });
   const alternarLegenda = () => setLegendaAberta((a) => { try { localStorage.setItem('calp-legenda', a ? '0' : '1'); } catch { /* ignora */ } return !a; });
+
+  /** Escolhe o dia; no celular, rola até os detalhes do dia (ficam abaixo da grade). */
+  const escolherDia = (dia: string) => {
+    setSel(dia);
+    if (window.innerWidth > 600) return;
+    const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    requestAnimationFrame(() => document.querySelector('.calp-lado')?.scrollIntoView({ behavior: calmo ? 'auto' : 'smooth', block: 'nearest' }));
+  };
 
   // Vindo do calendário do menu (clique duplo ou "Abrir calendário"): abre já no mês e no dia escolhidos.
   useEffect(() => {
@@ -107,11 +115,12 @@ export function CalendarioPagina({ podeConfigurar, irConfig, dia }: { podeConfig
               if (!d) return <span key={i} className="calp-vazio" />;
               const dia = isoDe(ref.ano, ref.mes, d), lista = porDia.get(dia) ?? [], fimSemana = [0, 6].includes((primeiro + d - 1) % 7);
               return (
-                <button key={i} role="gridcell" className={`calp-dia${dia === hojeIso ? ' hoje' : ''}${dia === sel ? ' sel' : ''}${fimSemana ? ' fds' : ''}`} aria-pressed={dia === sel} onClick={() => setSel(dia)}
+                <button key={i} role="gridcell" className={`calp-dia${dia === hojeIso ? ' hoje' : ''}${dia === sel ? ' sel' : ''}${fimSemana ? ' fds' : ''}`} aria-pressed={dia === sel} onClick={() => escolherDia(dia)}
                   aria-label={`${d} de ${MESES_LONGOS[ref.mes].toLowerCase()}${lista.length ? `, ${lista.length} ${lista.length > 1 ? 'itens' : 'item'}` : ''}`}>
                   <b>{d}</b>
                   {lista.slice(0, 3).map((it) => <span key={it.chave} className={`calp-chip ${it.classe}`} title={it.titulo}>{it.titulo}</span>)}
                   {lista.length > 3 && <small className="suave">+{lista.length - 3}</small>}
+                  {lista.length > 0 && <span className="calp-pontos" aria-hidden="true">{[...new Set(lista.map((it) => it.classe))].slice(0, 4).map((c) => <i key={c} className={c} />)}</span>}
                 </button>
               );
             })}

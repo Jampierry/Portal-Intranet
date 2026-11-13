@@ -7,9 +7,9 @@ import { LinkApp } from './LinkApp';
 
 
 /** Barra lateral direita de aplicativos. Recolhida (desktop): só os ícones dos favoritos. Aberta: abas Todos os apps / Favoritos.
- *  No celular some e vira uma gaveta sobre a página, aberta pelo botão de apps do topo. */
-export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito }: {
-  aberto: boolean; alternar: () => void; fechar: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+ *  No celular some e, ao tocar em Aplicativos, aparece primeiro recolhida (só os ícones, `barraMobile`); o botão da barra a expande numa gaveta. */
+export function Lancador({ aberto, barraMobile = false, alternar, fechar, favoritos, alternarFavorito }: {
+  aberto: boolean; barraMobile?: boolean; alternar: () => void; fechar: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
 }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
   const [aba, setAba] = useState<'favoritos' | 'todos'>('todos');
@@ -21,8 +21,8 @@ export function Lancador({ aberto, alternar, fechar, favoritos, alternarFavorito
   const lista = aba === 'favoritos' ? favs : todos;
   return (
     <>
-      {aberto && <div className="cortina-lancador" onClick={fechar} />}
-      <aside className={`lancador${aberto ? ' aberto' : ''}`} aria-label="Aplicativos">
+      {(aberto || barraMobile) && <div className="cortina-lancador" onClick={fechar} />}
+      <aside className={`lancador${aberto ? ' aberto' : ''}${barraMobile ? ' barra-mob' : ''}`} aria-label="Aplicativos">
         <div className="lancador-topo">
           {aberto && <h2>Aplicativos</h2>}
           <button className="icone-btn" aria-expanded={aberto} aria-label={aberto ? 'Recolher aplicativos' : 'Abrir aplicativos'} title={aberto ? 'Recolher' : 'Aplicativos'} onClick={alternar}>

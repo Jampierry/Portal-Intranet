@@ -322,3 +322,16 @@
 - **Verificação:** lint 0 erros, typecheck e 164 testes OK. **NÃO conferido no navegador de 19"**: o usuário precisa dar F5 e comparar com a captura grande. Ajustes possíveis: `REF_LARGURA`/`REF_ALTURA`/`FATOR_MIN` em `escala-auto.ts` (valores maiores = letras maiores, layout mais apertado).
 - **Máquinas:** o usuário programa de duas máquinas; ao retomar na outra, `git pull` + `npm install` + `npm run banco:migrar`. `org/main` continua em `5460494` (falta `enviar org`).
 - **Próximo:** conferir a escala automática no 19"; conferir no navegador vídeo/divisa da entrada/menu/favicon/vidro; `enviar org`; manuais por perfil; 2FA TOTP; Playwright; mídia fora do SQLite; aguardar a TI.
+
+## Ponto de parada — 13/11/2026 (fim do dia) — escala automática, calendário e celular
+- **Escala automática** (ver seção anterior) ganhou **letra mínima** de 10 px reais (`fonteAjustada`); ficam de fora `.menu-rodape`, `.menu-label`, `.lema`, `.cal-topo` (`SEM_PISO` em `escala-auto.ts`). 165 testes.
+- **Menu:** rótulo "ESPAÇO DE TRABALHO" removido; itens a ~10 px da frase da logo; calendário sempre embaixo, junto de "Juntos vamos mais longe".
+- **Calendário do menu:** sem a lista de compromissos no menu. Aba (seta) presa à borda do menu, na altura do calendário; abre painel em vidro à direita, por cima dos cards (`.cal-voo-casca` em portal, `Calendario.tsx`); aba acompanha a borda do painel e recolhe. Clicar num dia seleciona e abre o painel (não abre mais a tela cheia). Bug corrigido: o painel era espremido a 19 px (`flex: none`).
+- **Calendário tela cheia:** barra por container query; no celular, grade com número + pontinhos, detalhes abaixo e rolagem ao tocar; legendas recolhidas por padrão em ≤ 600 px.
+- **Barra de aplicativos no celular:** abre recolhida (faixa de ícones); botão do topo expande, seta recolhe, tocar fora fecha (`barraMob` em `App.tsx`, `.barra-mob`).
+- **Datas dos avatares** (aniversariantes, tempo de casa, novos, destaque do ano): etiqueta na borda de baixo da foto (`.pessoa-foto`).
+- **Docs atualizados:** `arquitetura.md`, `manuais/manual-colaborador.md`, `mapa-do-sistema.md`, `modulos-status.md`.
+- **Testado no navegador por mim** (Edge headless via `playwright-core` em pasta temporária; ver [[portal-como-subir-e-licoes]]): menu, painel do calendário, calendário no iPhone/tablet/PC, barra de apps no celular, avatares. Tema escuro do celular e toque real não conferidos.
+- **Rede/celular:** `npm run dev:rede` + regra de firewall da porta 5174 (precisa de administrador; pode sumir por política do domínio — TI). O serviço **Zimbra** (`MCP/zimbra-mcp`, porta 8765) não sobe sozinho: subir com `MCP\zimbra-mcp\.venv\Scripts\python zimbra_web.py` quando der "Não foi possível falar com o serviço Zimbra".
+- **Git:** `origin/main` recebe este envio; **organização (`org/main`) = `5460494`**, falta rodar `enviar org`.
+- **Próximo:** conferir tema escuro/celular real; `enviar org`; manuais por perfil; 2FA TOTP; Playwright no repositório; mídia fora do SQLite; aguardar a TI.

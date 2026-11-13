@@ -20,8 +20,8 @@ Leia este arquivo antes de procurar código. Ele resume **o que existe, onde est
 | Ajuda (FAQ no código) | `ajuda/Ajuda.tsx` | `ver.ajuda` |
 | Publicar (abas) | `gestao/Gestao.tsx` + `Crud.tsx` | `pub.<aba>.ver` |
 | Configurações (abas) | `gestao/Gestao.tsx`, `Administracao.tsx`, `Permissoes.tsx`, `Integracoes.tsx` | `cfg.<aba>.ver` |
-| Menu lateral + Calendário | `Menu.tsx`, `Calendario.tsx` | `ver.calendario` (criar/excluir datas: `calendario.criar/excluir`) |
-| Barra de aplicativos (direita) | `aplicacoes/Lancador.tsx` | todos |
+| Menu lateral + Calendário (aba/painel lateral dos compromissos) | `Menu.tsx`, `Calendario.tsx` | `ver.calendario` (criar/excluir datas: `calendario.criar/excluir`) |
+| Barra de aplicativos (direita; no celular abre recolhida) | `aplicacoes/Lancador.tsx` | todos |
 | Busca global (topo) | `BuscaGlobal.tsx` | todos (só mostra o que a pessoa pode ver) |
 | Conta (avatar, senha), login, tema | `Conta.tsx`, `Login.tsx`, `tema.tsx` | todos |
 
