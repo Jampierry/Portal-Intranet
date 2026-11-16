@@ -38,6 +38,9 @@ services:
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
       KEYCLOAK_REDIRECT_URI: ${KEYCLOAK_REDIRECT_URI:-}
+      # Quem é do realm e não tem cadastro é criado como consulta. 0 = só entra quem já está cadastrado. Perfil padrão: KEYCLOAK_PERFIL_PADRAO.
+      KEYCLOAK_CRIAR_USUARIOS: ${KEYCLOAK_CRIAR_USUARIOS:-}
+      KEYCLOAK_PERFIL_PADRAO: ${KEYCLOAK_PERFIL_PADRAO:-}
       # Modo debug: 1 mostra o detalhe dos erros 500 (use só em homologação; ignorado em prod).
       MODO_DEBUG: ${MODO_DEBUG:-0}
       APP_ENV: ${APP_ENV}

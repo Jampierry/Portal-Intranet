@@ -1,6 +1,8 @@
 // Login único pelo Keycloak (OpenID Connect, fluxo "authorization code" com PKCE). Complementa o login local, que continua valendo.
 // O servidor troca o código por um token e lê o e-mail em /userinfo (chamada direta ao Keycloak, por HTTPS); a pessoa só entra se o
-// e-mail corporativo dela estiver cadastrado em um usuário ATIVO do portal (nada é criado sozinho).
+// e-mail corporativo dela estiver em um usuário ATIVO do portal. Quem é do realm e ainda não tem cadastro é CRIADO na hora com o perfil
+// padrão (consulta, só leitura; KEYCLOAK_PERFIL_PADRAO), sem senha local; o administrador vincula depois, à mão, os papéis de quem precisa
+// de mais acesso. KEYCLOAK_CRIAR_USUARIOS=0 volta ao modo "só quem já está cadastrado".
 // Variáveis: KEYCLOAK_ISSUER_URL (ou KEYCLOAK_URL + KEYCLOAK_REALM), KEYCLOAK_CLIENT_ID,
 // KEYCLOAK_CLIENT_SECRET e, opcional, KEYCLOAK_REDIRECT_URI (padrão: <ORIGENS_PERMITIDAS[0]>/api/v1/admin/auth/callback, o endereço
 // que a TI cadastrou no cliente). Sem elas, o login por Keycloak fica desligado.
@@ -8,6 +10,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
+import { hashSenha } from '../../acessos/api/senha.ts';
+import { perfilExiste } from '../../acessos/api/permissoes.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, horasDaSessao } from '../../acessos/api/guard.ts';
 import { registrarUso } from '../../uso/api/registro.ts';
 
@@ -25,6 +29,15 @@ export function lerCfg(env: NodeJS.ProcessEnv = process.env): Cfg | null {
   const redirect = env.KEYCLOAK_REDIRECT_URI?.trim() || (origem ? `${origem}${CAMINHOS_RETORNO[0]}` : '');
   if (!redirect) return null;
   return { base: `${emissor}/protocol/openid-connect`, clientId, segredo, redirect };
+}
+
+/** Login livre a partir do e-mail (letras minúsculas, números, ponto, hífen e sublinhado; 3 a 32 caracteres). */
+function loginLivre(db: Banco, sugestao: string): string {
+  let base = sugestao.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9._-]+/g, '.').replace(/^[._-]+|[._-]+$/g, '').slice(0, 28);
+  if (base.length < 3) base = `${base}usuario`.slice(0, 28);
+  let login = base, n = 2;
+  while (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) login = `${base}${n++}`;
+  return login;
 }
 
 const b64 = (b: Buffer) => b.toString('base64url');
@@ -63,7 +76,7 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
       auditar(db, null, 'sso_falhou', { motivo: error ? 'recusado_no_keycloak' : 'estado_invalido', detalhe, ip: req.ip });
       return falha(resp, 'erro', detalhe);
     }
-    let email = '', verificado: boolean | undefined;
+    let email = '', verificado: boolean | undefined, nomeKc = '', usuarioKc = '';
     try {
       const t = await fetch(`${cfg.base}/token`, {
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(10_000),
@@ -72,9 +85,11 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
       const tj = await t.json().catch(() => ({})) as { access_token?: string; error?: string; error_description?: string };
       if (!t.ok || !tj.access_token) throw new Error(`troca do código recusada (HTTP ${t.status}${tj.error ? `, ${tj.error}` : ''}${tj.error_description ? `: ${tj.error_description}` : ''}); endereço de retorno usado: ${cfg.redirect}`);
       const u = await fetch(`${cfg.base}/userinfo`, { headers: { Authorization: `Bearer ${tj.access_token}` }, signal: AbortSignal.timeout(10_000) });
-      const uj = await u.json() as { email?: string; email_verified?: boolean };
+      const uj = await u.json() as { email?: string; email_verified?: boolean; name?: string; given_name?: string; family_name?: string; preferred_username?: string };
       if (!u.ok) throw new Error(`consulta do usuário recusada (HTTP ${u.status})`);
       email = String(uj.email ?? '').trim().toLowerCase(); verificado = uj.email_verified;
+      nomeKc = String(uj.name ?? `${uj.given_name ?? ''} ${uj.family_name ?? ''}`).trim().replace(/\s+/g, ' ').slice(0, 80);
+      usuarioKc = String(uj.preferred_username ?? '').trim();
     } catch (e) {
       app.log.error(e);
       const detalhe = (e as Error).message;
@@ -83,7 +98,20 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
     }
     if (!email || verificado === false) { auditar(db, null, 'sso_recusado', { motivo: 'sem_email_verificado' }); return falha(resp, 'sem_conta'); }
     const achados = db.prepare('SELECT id, ativo FROM usuarios WHERE lower(email) = ?').all(email) as { id: number; ativo: number }[];
-    if (achados.length !== 1) { auditar(db, null, 'sso_recusado', { email, motivo: achados.length ? 'email_repetido' : 'sem_cadastro' }); return falha(resp, 'sem_conta'); }
+    if (achados.length > 1) { auditar(db, null, 'sso_recusado', { email, motivo: 'email_repetido' }); return falha(resp, 'sem_conta'); }
+    if (achados.length === 0) {
+      // Pessoa do realm ainda sem cadastro: entra como consulta (ou o perfil padrão definido); papéis maiores o administrador vincula depois.
+      if (process.env.KEYCLOAK_CRIAR_USUARIOS === '0') { auditar(db, null, 'sso_recusado', { email, motivo: 'sem_cadastro' }); return falha(resp, 'sem_conta'); }
+      const pedido = process.env.KEYCLOAK_PERFIL_PADRAO?.trim() || 'consulta';
+      const perfil = pedido !== 'admin' && perfilExiste(db, pedido) ? pedido : 'consulta';
+      const login = loginLivre(db, usuarioKc.includes('@') || !usuarioKc ? email.split('@')[0] : usuarioKc);
+      const nome = nomeKc.length >= 2 ? nomeKc : login;
+      const agora = new Date().toISOString();
+      // Sem senha local utilizável: a pessoa entra só pelo Keycloak (o administrador pode definir uma senha depois, se quiser).
+      const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em) VALUES (?, ?, ?, ?, ?, 0, ?)').run(login, nome, email, hashSenha(randomBytes(24).toString('base64url')), perfil, agora);
+      achados.push({ id: Number(r.lastInsertRowid), ativo: 1 });
+      auditar(db, achados[0].id, 'usuario_criado_sso', { login, email, perfil });
+    }
     if (achados[0].ativo !== 1) { auditar(db, achados[0].id, 'sso_recusado', { motivo: 'inativo' }); return falha(resp, 'inativo'); }
     const id = achados[0].id;
     db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(new Date().toISOString(), id);

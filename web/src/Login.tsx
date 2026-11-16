@@ -6,7 +6,7 @@ import { FormTrocarSenha } from './Conta';
 import { ErroBiometria, useBiometriaDisponivel } from './biometria';
 
 const MENSAGENS_SSO: Record<string, string> = {
-  sem_conta: 'Seu e-mail corporativo não está cadastrado no portal. Peça ao administrador para cadastrar o seu e-mail.',
+  sem_conta: 'Não foi possível identificar o seu e-mail corporativo no portal. Fale com o administrador.',
   inativo: 'Seu acesso ao portal está desativado. Fale com o administrador.',
   erro: 'Não foi possível entrar pelo login corporativo. Tente de novo.',
   desligado: 'O login corporativo não está ligado neste ambiente.',

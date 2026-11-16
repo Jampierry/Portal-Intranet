@@ -21,7 +21,7 @@ before(async () => {
       });
     } else if (req.url?.endsWith('/userinfo')) {
       if (req.headers.authorization !== 'Bearer tok') return fim(401, {});
-      fim(200, { email: emailDoKeycloak, email_verified: verificado });
+      fim(200, { email: emailDoKeycloak, email_verified: verificado, name: 'Ana Souza', preferred_username: 'ana.souza' });
     } else fim(404, {});
   });
   await new Promise<void>((ok) => kc.listen(0, '127.0.0.1', ok));
@@ -66,22 +66,50 @@ test('entrar leva ao Keycloak com PKCE e o endereço de retorno cadastrado pela 
   assert.equal(outra.headers.location, '/login?sso=erro', 'o state vale uma vez só');
 });
 
-test('recusa e-mail sem cadastro, repetido, não verificado e usuário inativo; nada é criado sozinho', async () => {
+test('quem é do realm e ainda não tem cadastro entra como consulta, sem senha local; repetido, não verificado e inativo seguem recusados', async () => {
   const { app, db } = await criarAppTeste();
   const total = () => (db.prepare('SELECT COUNT(*) n FROM usuarios').get() as { n: number }).n;
+  const tentar = async () => (await app.inject({ url: `/api/v1/admin/auth/callback?code=codigo-ok&state=${(await iniciar(app)).state}` }));
   const antes = total();
-  const tentar = async () => (await app.inject({ url: `/api/v1/admin/auth/callback?code=codigo-ok&state=${(await iniciar(app)).state}` })).headers.location;
 
-  assert.equal(await tentar(), '/login?sso=sem_conta'); // ninguém com esse e-mail
+  const nova = await tentar(); // ninguém com esse e-mail: é criado
+  assert.equal(nova.headers.location, '/');
+  assert.equal(total(), antes + 1);
+  const criado = db.prepare("SELECT login, nome, perfil, ativo, trocar_senha, senha_hash FROM usuarios WHERE email = 'ana@dipaula.com.br'").get() as { login: string; nome: string; perfil: string; ativo: number; trocar_senha: number; senha_hash: string };
+  assert.equal(criado.perfil, 'consulta'); assert.equal(criado.ativo, 1); assert.equal(criado.trocar_senha, 0);
+  assert.equal(criado.login, 'ana.souza'); assert.equal(criado.nome, 'Ana Souza');
+  const login = await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'ana.souza', senha: 'qualquer-coisa-1' } });
+  assert.equal(login.statusCode, 401, 'não há senha local utilizável');
+  assert.ok(db.prepare("SELECT 1 FROM auditoria WHERE acao = 'usuario_criado_sso'").get());
+
+  assert.equal((await tentar()).headers.location, '/', 'na volta seguinte entra no mesmo cadastro');
+  assert.equal(total(), antes + 1);
+
+  db.prepare("UPDATE usuarios SET perfil = 'editor' WHERE login = 'ana.souza'").run(); // o administrador promove depois
+  await tentar();
+  assert.equal((db.prepare("SELECT perfil FROM usuarios WHERE login = 'ana.souza'").get() as { perfil: string }).perfil, 'editor', 'o perfil dado à mão não é mexido');
+
   db.prepare("UPDATE usuarios SET email = ? WHERE login IN ('le', 'edita')").run('ana@dipaula.com.br');
-  assert.equal(await tentar(), '/login?sso=sem_conta'); // e-mail repetido: não adivinha quem é
-  db.prepare("UPDATE usuarios SET email = NULL WHERE login = 'edita'").run();
+  assert.equal((await tentar()).headers.location, '/login?sso=sem_conta'); // e-mail repetido: não adivinha quem é
+  db.prepare("UPDATE usuarios SET email = NULL WHERE login IN ('le', 'edita')").run();
   verificado = false;
-  assert.equal(await tentar(), '/login?sso=sem_conta'); // e-mail não verificado
+  assert.equal((await tentar()).headers.location, '/login?sso=sem_conta'); // e-mail não verificado
   verificado = true;
-  db.prepare("UPDATE usuarios SET ativo = 0 WHERE login = 'le'").run();
-  assert.equal(await tentar(), '/login?sso=inativo');
-  assert.equal(total(), antes);
+  db.prepare("UPDATE usuarios SET ativo = 0 WHERE login = 'ana.souza'").run();
+  assert.equal((await tentar()).headers.location, '/login?sso=inativo');
+});
+
+test('KEYCLOAK_CRIAR_USUARIOS=0 volta a exigir cadastro prévio; login repetido ganha número', async () => {
+  const { app, db } = await criarAppTeste();
+  process.env.KEYCLOAK_CRIAR_USUARIOS = '0';
+  try {
+    const s1 = (await iniciar(app)).state;
+    assert.equal((await app.inject({ url: `/api/v1/admin/auth/callback?code=codigo-ok&state=${s1}` })).headers.location, '/login?sso=sem_conta');
+  } finally { delete process.env.KEYCLOAK_CRIAR_USUARIOS; }
+  db.prepare("UPDATE usuarios SET login = 'ana.souza' WHERE login = 'le'").run();
+  const s2 = (await iniciar(app)).state;
+  await app.inject({ url: `/api/v1/admin/auth/callback?code=codigo-ok&state=${s2}` });
+  assert.ok(db.prepare("SELECT 1 FROM usuarios WHERE login = 'ana.souza2' AND email = 'ana@dipaula.com.br'").get());
 });
 
 test('KEYCLOAK_ISSUER_URL sozinho basta e tem prioridade sobre URL + realm', async () => {
