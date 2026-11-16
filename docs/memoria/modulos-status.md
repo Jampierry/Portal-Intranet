@@ -24,4 +24,4 @@ Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). M
 
 - **Meu perfil** (12/11/2026): contato, emergência, foto e e-mail; ficha de emergência para admin/permissão `cfg.usuarios.emergencia` (auditada).
 
-- **Mídia no disco, Playwright, manuais com prints, logo oficial, revisão de código** (13/11/2026): imagens, vídeos e anexos em `PASTA_MIDIA`; `npm run e2e` (33 testes de tela); prints com setas nos 4 manuais (`npm run manuais:prints`); logo oficial em `web/public/marca` + `npm run marca:logo`; correções de segurança (escalada de privilégio por perfil, chave de login, push). Detalhes em `estado-e-ponto-de-parada.md`.
+- **Mídia no disco, Playwright, manuais com prints, logo oficial, revisão de código** (13/11/2026): imagens, vídeos e anexos em `PASTA_MIDIA`; `npm run e2e` (40 testes de tela, incluindo aprovação, pesquisa, permissões, confirmação de leitura e pedido de edição); prints com setas nos 4 manuais (`npm run manuais:prints`); logo oficial em `web/public/marca` + `npm run marca:logo`; correções de segurança (escalada de privilégio por perfil, chave de login, push). Detalhes em `estado-e-ponto-de-parada.md`.

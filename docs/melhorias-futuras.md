@@ -13,7 +13,7 @@ Limite de login por login+IP, por IP e por login · CSP, Permissions-Policy e HS
 | Média | Teste do CSV de exportação com respostas reais | O teste atual aceita 200 ou 409. |
 | Média | Atraso progressivo no login | Hoje só há bloqueio de 15 min. |
 | Média | Aviso de expiração da sessão e "sair de todos os aparelhos" | A sessão é fixa de 12 h, sem aviso. |
-| Baixa | **Mais fluxos nos testes de tela**: publicar com aprovação, responder pesquisa (hoje: login, navegação, 8 estilos × claro/escuro, celular, mídia) | `npm run e2e` já existe; faltam os fluxos de escrita. |
+| Baixa | **Mais fluxos nos testes de tela**: já cobrem aprovação, pesquisa, permissões, confirmação de leitura e pedido de edição (14/11/2026). Faltam: publicar pela tela (formulário do Crud), pedido de edição pelo sino, resultado da pesquisa (5+ respostas), aprovar banner/documento/rede. | `e2e/aprovacao.spec.ts`, `pesquisa.spec.ts`, `permissoes.spec.ts`; dados criados pela API em cada teste. |
 | Média | Consolidar regras CSS repetidas (ex.: `.entrar`, `.rodape-portal`) e padronizar alturas com `--zoom` | Exige teste visual; ver `web/src/css/LEIA-ME.md`. |
 | Média | Auditoria: política de retenção e exportação para a TI | Depende da decisão de LGPD. |
 | Baixa | Avatar guardado no servidor | Hoje o avatar escolhido fica só no navegador; a foto já vale em qualquer aparelho. |

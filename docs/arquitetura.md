@@ -9,7 +9,7 @@ Portal interno responsivo (computador e celular) da Di Paula: comunicados, aplic
 | Site | React 19 + Vite + TypeScript, CSS puro com temas (`data-tema` claro/escuro × `data-estilo`: Di Paula, Bordô, Meia-noite, Ardósia, Grafite, Oceano), fonte Plus Jakarta Sans |
 | API | Fastify 5 + TypeScript (Node 24+ roda `.ts` direto) |
 | Banco | SQLite nativo (`node:sqlite`), migrações SQL versionadas; imagens, vídeos e anexos em arquivos (`PASTA_MIDIA`) |
-| Testes de tela | Playwright (`e2e/`, `npm run e2e`): API e site isolados (3200/5274, banco novo), Edge local / Chromium no CI |
+| Testes de tela | Playwright (`e2e/`, `npm run e2e`): API e site isolados (3200/5274, banco novo), Edge local / Chromium no CI. Testes que gravam criam perfil, pessoa e conteúdo pela API (`e2e/ajuda.ts`: `apiComo`, `criarPerfil`, `criarPessoa`). Se der `EADDRINUSE 3200`, sobrou uma API de teste de rodada anterior: encerrar o processo `servidor/src/main.ts` da porta 3200 |
 | Avisos | Web Push (`web-push`) e e-mail via serviço Zimbra separado |
 | Testes | `node:test` (147 testes: API com banco em memória, contraste WCAG dos temas, regras de links) |
 | Repositório | npm workspaces (`web`, `servidor`); sem Next.js nem pnpm |
