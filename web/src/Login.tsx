@@ -38,6 +38,7 @@ export function Login({ entrar, entrarBiometria }: { entrar: (login: string, sen
   const [manter, setManter] = useState(() => { try { return localStorage.getItem('portal.manter') === '1'; } catch { return false; } });
   const biometria = useBiometriaDisponivel();
   const [erro, setErro] = useState(() => MENSAGENS_SSO[new URLSearchParams(window.location.search).get('sso') ?? ''] ?? '');
+  const [detalheSso] = useState(() => new URLSearchParams(window.location.search).get('detalhe') ?? '');
   const [sso, setSso] = useState(false);
   useEffect(() => { void fetch('/api/auth/keycloak/ativo', { credentials: 'same-origin' }).then((r) => r.json()).then((j: { ativo?: boolean }) => setSso(j.ativo === true)).catch(() => setSso(false)); }, []);
   const [semBio, setSemBio] = useState(false);
@@ -90,6 +91,7 @@ export function Login({ entrar, entrarBiometria }: { entrar: (login: string, sen
         </label>
         <label className="entrar-manter"><input type="checkbox" checked={manter} onChange={(e) => setManter(e.target.checked)} /><span><b>Manter conectado neste aparelho</b><small>30 dias · use só em aparelho seu</small></span></label>
         {erro && <p className="erro" role="alert">{erro}</p>}
+        {detalheSso && <p className="erro" role="status"><b>[debug]</b> {detalheSso}</p>}
         {semBio && (
           <div className="entrar-dica" role="status">
             <Icone nome="digital" tamanho={20} />

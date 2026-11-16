@@ -33,7 +33,8 @@ const VALE_MS = 10 * 60_000;
 export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db: Banco; producao: boolean }) {
   const pendentes = new Map<string, { verificador: string; expira: number }>(); // state -> PKCE (10 min, uso único)
   const limpar = () => { const t = Date.now(); for (const [k, v] of pendentes) if (v.expira < t) pendentes.delete(k); };
-  const falha = (resp: FastifyReply, motivo: string) => resp.redirect(`/login?sso=${motivo}`);
+  // Com MODO_DEBUG=1 o motivo técnico também vai na tela de entrada (parâmetro `detalhe`); a auditoria sempre o guarda (sem segredos).
+  const falha = (resp: FastifyReply, motivo: string, detalhe?: string) => resp.redirect(`/login?sso=${motivo}${config.modoDebug && detalhe ? `&detalhe=${encodeURIComponent(detalhe.slice(0, 300))}` : ''}`);
 
   app.get('/api/auth/keycloak/ativo', async () => ({ ativo: lerCfg() !== null }));
 
@@ -54,12 +55,13 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
   const retorno = async (req: FastifyRequest, resp: FastifyReply) => {
     const cfg = lerCfg();
     if (!cfg) return falha(resp, 'desligado');
-    const { code, state, error } = req.query as { code?: string; state?: string; error?: string };
+    const { code, state, error, error_description: descricao } = req.query as { code?: string; state?: string; error?: string; error_description?: string };
     const pend = state ? pendentes.get(state) : undefined;
     if (state) pendentes.delete(state); // cada state vale uma vez
     if (error || !code || !pend || pend.expira < Date.now()) {
-      auditar(db, null, 'sso_falhou', { motivo: error ? 'recusado_no_keycloak' : 'estado_invalido', ip: req.ip });
-      return falha(resp, 'erro');
+      const detalhe = error ? `Keycloak recusou: ${error}${descricao ? ` (${descricao})` : ''}` : !code ? 'faltou o código na volta' : !pend ? 'estado desconhecido ou já usado (sessão de login perdida)' : 'estado expirado';
+      auditar(db, null, 'sso_falhou', { motivo: error ? 'recusado_no_keycloak' : 'estado_invalido', detalhe, ip: req.ip });
+      return falha(resp, 'erro', detalhe);
     }
     let email = '', verificado: boolean | undefined;
     try {
@@ -67,16 +69,17 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(10_000),
         body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: cfg.redirect, client_id: cfg.clientId, client_secret: cfg.segredo, code_verifier: pend.verificador }),
       });
-      const tj = await t.json() as { access_token?: string };
-      if (!t.ok || !tj.access_token) throw new Error(`token ${t.status}`);
+      const tj = await t.json().catch(() => ({})) as { access_token?: string; error?: string; error_description?: string };
+      if (!t.ok || !tj.access_token) throw new Error(`troca do código recusada (HTTP ${t.status}${tj.error ? `, ${tj.error}` : ''}${tj.error_description ? `: ${tj.error_description}` : ''}); endereço de retorno usado: ${cfg.redirect}`);
       const u = await fetch(`${cfg.base}/userinfo`, { headers: { Authorization: `Bearer ${tj.access_token}` }, signal: AbortSignal.timeout(10_000) });
       const uj = await u.json() as { email?: string; email_verified?: boolean };
-      if (!u.ok) throw new Error(`userinfo ${u.status}`);
+      if (!u.ok) throw new Error(`consulta do usuário recusada (HTTP ${u.status})`);
       email = String(uj.email ?? '').trim().toLowerCase(); verificado = uj.email_verified;
     } catch (e) {
       app.log.error(e);
-      auditar(db, null, 'sso_falhou', { motivo: 'troca_de_codigo', ip: req.ip });
-      return falha(resp, 'erro');
+      const detalhe = (e as Error).message;
+      auditar(db, null, 'sso_falhou', { motivo: 'troca_de_codigo', detalhe, ip: req.ip });
+      return falha(resp, 'erro', detalhe);
     }
     if (!email || verificado === false) { auditar(db, null, 'sso_recusado', { motivo: 'sem_email_verificado' }); return falha(resp, 'sem_conta'); }
     const achados = db.prepare('SELECT id, ativo FROM usuarios WHERE lower(email) = ?').all(email) as { id: number; ativo: number }[];

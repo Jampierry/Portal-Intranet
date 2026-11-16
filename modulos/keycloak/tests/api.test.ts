@@ -95,6 +95,17 @@ test('KEYCLOAK_ISSUER_URL sozinho basta e tem prioridade sobre URL + realm', asy
   process.env.KEYCLOAK_URL = base; process.env.KEYCLOAK_REALM = 'dipaula';
 });
 
+test('falha na troca do código fica na auditoria com o motivo do Keycloak (sem segredos)', async () => {
+  const { app, db } = await criarAppTeste();
+  const { state } = await iniciar(app);
+  const r = await app.inject({ url: `/api/v1/admin/auth/callback?code=codigo-errado&state=${state}` });
+  assert.equal(r.headers.location, '/login?sso=erro');
+  const linha = db.prepare("SELECT detalhe FROM auditoria WHERE acao = 'sso_falhou' ORDER BY id DESC").get() as { detalhe: string };
+  assert.match(linha.detalhe, /invalid_grant/);
+  assert.match(linha.detalhe, /api\/v1\/admin\/auth\/callback/);
+  assert.ok(!linha.detalhe.includes('segredo-de-teste'));
+});
+
 test('sem as variáveis o login por Keycloak fica desligado; erro vindo do Keycloak volta ao login', async () => {
   const { app } = await criarAppTeste();
   assert.equal((await app.inject({ url: '/api/v1/admin/auth/callback?error=access_denied&state=x' })).headers.location, '/login?sso=erro');
