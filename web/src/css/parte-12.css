@@ -102,3 +102,11 @@
 .visual-imagem { max-width: 100%; max-height: 100%; object-fit: contain; align-self: center; }
 .visual-sem-previa { align-self: center; text-align: center; display: grid; gap: 4px; justify-items: center; }
 @media (max-width: 860px) { .janela-visual, .janela-visual-grande { width: calc((100vw / var(--zoom, 1)) - 8px); height: calc((100vh / var(--zoom, 1)) - 8px); } .visual-palco { padding: 4px; } }
+
+/* Entrada: mensagens longas (ex.: o endereço do modo debug) quebram em vez de alargar o cartão além da tela;
+   no computador, em janela baixa, a coluna do formulário rola (a janela do portal não rola). */
+.entrar-card, .entrar-card > * { min-width: 0; }
+.entrar-card .erro, .entrar-card .ok, .entrar-card [role="status"] { overflow-wrap: anywhere; }
+@media (min-width: 861px) {
+  .entrar > .entrar-form { max-height: calc(100dvh / var(--zoom, 1)); overflow-y: auto; justify-content: safe center; }
+}
