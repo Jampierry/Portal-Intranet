@@ -53,7 +53,7 @@ function ajustesDoCorpo(c: Record<string, unknown>) {
   try { return validarAjustes(c.permissoes); } catch (e) { throw new ErroValidacao((e as Error).message); }
 }
 
-function validarSenhaNova(s: string, login?: string) {
+export function validarSenhaNova(s: string, login?: string) {
   if (s.length < SENHA_MIN) throw new ErroValidacao(`Senha: mínimo de ${SENHA_MIN} caracteres.`);
   if (s.length > 128) throw new ErroValidacao('Senha: máximo de 128 caracteres.');
   if (login && s.toLowerCase() === login.toLowerCase()) throw new ErroValidacao('Senha: não use o próprio login.');

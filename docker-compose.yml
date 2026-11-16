@@ -27,6 +27,8 @@ services:
       ADMIN_LOGIN: ${ADMIN_LOGIN:-}
       ADMIN_SENHA: ${ADMIN_SENHA:-}
       ADMIN_NOME: ${ADMIN_NOME:-}
+      # E-mail corporativo do administrador: é ele que liga a conta ao login pelo Keycloak (SSO).
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       # 1 = redefine a senha do ADMIN_LOGIN mesmo com o banco em uso (recuperação sem terminal). Remova depois de entrar.
       ADMIN_REDEFINIR: ${ADMIN_REDEFINIR:-}
       # Login pelo Keycloak (SSO). Liga com ISSUER_URL (ou URL + REALM) + CLIENT_ID + CLIENT_SECRET no .env do ambiente.
