@@ -29,7 +29,8 @@ services:
       ADMIN_NOME: ${ADMIN_NOME:-}
       # 1 = redefine a senha do ADMIN_LOGIN mesmo com o banco em uso (recuperação sem terminal). Remova depois de entrar.
       ADMIN_REDEFINIR: ${ADMIN_REDEFINIR:-}
-      # Login pelo Keycloak (SSO). Só liga se as quatro primeiras estiverem preenchidas no .env do ambiente.
+      # Login pelo Keycloak (SSO). Liga com ISSUER_URL (ou URL + REALM) + CLIENT_ID + CLIENT_SECRET no .env do ambiente.
+      KEYCLOAK_ISSUER_URL: ${KEYCLOAK_ISSUER_URL:-}
       KEYCLOAK_URL: ${KEYCLOAK_URL:-}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}

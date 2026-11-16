@@ -84,6 +84,17 @@ test('recusa e-mail sem cadastro, repetido, não verificado e usuário inativo; 
   assert.equal(total(), antes);
 });
 
+test('KEYCLOAK_ISSUER_URL sozinho basta e tem prioridade sobre URL + realm', async () => {
+  const { app } = await criarAppTeste();
+  const base = process.env.KEYCLOAK_URL!;
+  delete process.env.KEYCLOAK_URL; delete process.env.KEYCLOAK_REALM;
+  process.env.KEYCLOAK_ISSUER_URL = `${base}/realms/dipaula-corp/`;
+  const alvo = new URL((await app.inject({ url: '/api/auth/keycloak/entrar' })).headers.location as string);
+  assert.equal(alvo.pathname, '/realms/dipaula-corp/protocol/openid-connect/auth');
+  delete process.env.KEYCLOAK_ISSUER_URL;
+  process.env.KEYCLOAK_URL = base; process.env.KEYCLOAK_REALM = 'dipaula';
+});
+
 test('sem as variáveis o login por Keycloak fica desligado; erro vindo do Keycloak volta ao login', async () => {
   const { app } = await criarAppTeste();
   assert.equal((await app.inject({ url: '/api/v1/admin/auth/callback?error=access_denied&state=x' })).headers.location, '/login?sso=erro');

@@ -1,7 +1,7 @@
 // Login único pelo Keycloak (OpenID Connect, fluxo "authorization code" com PKCE). Complementa o login local, que continua valendo.
 // O servidor troca o código por um token e lê o e-mail em /userinfo (chamada direta ao Keycloak, por HTTPS); a pessoa só entra se o
 // e-mail corporativo dela estiver cadastrado em um usuário ATIVO do portal (nada é criado sozinho).
-// Variáveis: KEYCLOAK_URL (ex.: https://sso.empresa.com.br, com /auth se o servidor for antigo), KEYCLOAK_REALM, KEYCLOAK_CLIENT_ID,
+// Variáveis: KEYCLOAK_ISSUER_URL (ou KEYCLOAK_URL + KEYCLOAK_REALM), KEYCLOAK_CLIENT_ID,
 // KEYCLOAK_CLIENT_SECRET e, opcional, KEYCLOAK_REDIRECT_URI (padrão: <ORIGENS_PERMITIDAS[0]>/api/v1/admin/auth/callback, o endereço
 // que a TI cadastrou no cliente). Sem elas, o login por Keycloak fica desligado.
 import { createHash, randomBytes } from 'node:crypto';
@@ -15,13 +15,16 @@ export const CAMINHOS_RETORNO = ['/api/v1/admin/auth/callback', '/api/v1/auth/ca
 
 interface Cfg { base: string; clientId: string; segredo: string; redirect: string }
 export function lerCfg(env: NodeJS.ProcessEnv = process.env): Cfg | null {
+  // O jeito simples: KEYCLOAK_ISSUER_URL (ex.: https://auth.dipaula.com.br/realms/dipaula-corp). Alternativa: KEYCLOAK_URL + KEYCLOAK_REALM.
+  const issuer = env.KEYCLOAK_ISSUER_URL?.trim().replace(/\/+$/, '');
   const url = env.KEYCLOAK_URL?.trim().replace(/\/+$/, ''), realm = env.KEYCLOAK_REALM?.trim();
   const clientId = env.KEYCLOAK_CLIENT_ID?.trim(), segredo = env.KEYCLOAK_CLIENT_SECRET?.trim();
-  if (!url || !realm || !clientId || !segredo) return null;
+  const emissor = issuer || (url && realm ? `${url}/realms/${encodeURIComponent(realm)}` : '');
+  if (!emissor || !clientId || !segredo) return null;
   const origem = config.origensPermitidas[0]?.replace(/\/+$/, '');
   const redirect = env.KEYCLOAK_REDIRECT_URI?.trim() || (origem ? `${origem}${CAMINHOS_RETORNO[0]}` : '');
   if (!redirect) return null;
-  return { base: `${url}/realms/${encodeURIComponent(realm)}/protocol/openid-connect`, clientId, segredo, redirect };
+  return { base: `${emissor}/protocol/openid-connect`, clientId, segredo, redirect };
 }
 
 const b64 = (b: Buffer) => b.toString('base64url');
