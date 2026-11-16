@@ -7,7 +7,7 @@ SQLite (`node:sqlite`), arquivo `dados-privados/portal.db` (fora do Git; muda co
 |---|---|
 | Acesso | `usuarios`, `sessoes`, `tentativas_login`, `perfis_permissoes`, `usuarios_aplicativos`, `perfis_aplicativos`, `pedidos_senha`, `auditoria`, `passkeys` (biometria), `uso_eventos` (uso do portal) |
 | Perfil pessoal | `usuarios_perfil` (apelido, celular, e-mail alternativo, 2 contatos de emergência, observação de saúde, foto) |
-| Conteúdo | `comunicados`, `comunicado_leituras`, `banners`, `institucional`, `documentos`, `documento_origens`, `destaques`, `periodos_destaque`, `contatos`, `departamentos`, `aplicacoes`, `favoritos`, `publicacoes_externas`, `publicacoes_anexos` |
+| Conteúdo | `comunicados`, `comunicado_leituras`, `comunicado_aberturas`, `publico_departamentos`, `banners`, `institucional`, `documentos`, `documento_origens`, `destaques`, `periodos_destaque`, `contatos`, `departamentos`, `aplicacoes`, `favoritos`, `publicacoes_externas`, `publicacoes_anexos` |
 | Pessoas do mês | `aniversariantes`, `novos_colaboradores` |
 | Pesquisas | `pulsos`, `pulso_perguntas`, `pulso_respostas`, `pulso_respostas_item`, `pulso_participacao`, `pulso_rodadas`, `pulso_resultados_vistos` |
 | Fluxos | `aprovacoes`, `pedidos_edicao` |
@@ -48,3 +48,4 @@ Observações de projeto: **imagens e vídeos ficam no disco** (`modulos/imagens
 | 046–047 | Meu perfil (contato e emergência) e foto |
 | 048 | Vídeos curtos (`videos_arquivo`) para banners e tela de entrada |
 | 049 | Biometria e uso: `usuarios.departamento_id`, `sessoes.manter` ("manter conectado"), `passkeys` (só a chave pública) e `uso_eventos` (entrada/tela, dia e hora locais, aparelho; guardado 12 meses) |
+| 050 | Público por departamento (`publico_departamentos`: tipo `comunicado`/`pulso`, sem linhas = todos), aberturas de comunicado (`comunicado_aberturas`, alimenta lidos × publicados) e `usuarios.segundo_fator` (biometria como 2º fator opcional) |

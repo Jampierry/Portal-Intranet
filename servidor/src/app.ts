@@ -65,7 +65,7 @@ export async function criarApp(db: Banco, producao = false, opcoes: { pastaSite?
     const csp = [
       "default-src 'self'", `script-src 'self' ${hashes}`.trim(), "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:", "media-src 'self' blob:", "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'",
-      "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+      "frame-src 'self' blob:", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
     ].join('; ');
     app.addHook('onSend', async (req, resp) => {
       resp.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'same-origin')

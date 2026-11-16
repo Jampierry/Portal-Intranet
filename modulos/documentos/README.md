@@ -1,6 +1,6 @@
 # Módulo documentos
 
-**Escopo:** catálogo demonstrativo de documentos (sem arquivos/download).
+**Escopo:** catálogo de documentos (links ou arquivos em pasta do servidor) com visualizador dentro do portal: PDF, Word (.docx), texto, CSV e imagem, com maximizar, imprimir e baixar (`web/src/VisualizadorArquivo.tsx`; `.docx` lido no navegador com mammoth). Formatos sem prévia (.doc, Excel...) só baixam.
 
 **Status:** Catálogo pronto; versão/responsável pendentes.
 

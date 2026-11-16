@@ -4,16 +4,19 @@ import { dataCurta } from '../dados';
 import { Icone } from '../icones';
 import { DicaAba } from '../Dica';
 import { useOrdenacao } from './Ordenar';
+import { relatorioPdf } from './UsoPdf';
 
-interface Resumo {
+export interface Resumo {
   dias: number; desde: string; cadastrados: number; ativos: number; semAcesso: number;
   serie: { dia: string; ativos: number; entradas: number; telas: number }[];
   horas: { hora: number; eventos: number }[];
   telas: { tela: string; acessos: number; pessoas: number }[];
   aparelhos: { aparelho: string; pessoas: number; eventos: number }[];
   departamentos: { id: number | null; nome: string; pessoas: number; ativos: number; eventos: number }[];
+  comunicados: { publicados: number; esperadas: number; abriram: number; itens: ComunicadoUso[] };
 }
-interface Pessoa {
+interface ComunicadoUso { id: number; titulo: string; publicado_em: string; publico: string; esperadas: number; abriram: number; confirmaram: number; exige_leitura: boolean }
+export interface Pessoa {
   id: number; nome: string; login: string; perfil_nome: string; departamento_id: number | null; departamento: string | null; ultimo_acesso: string | null;
   entradas: number; telas: number; dias_ativos: number; aparelho: string | null; tela_preferida: string | null;
 }
@@ -71,6 +74,10 @@ export function UsoPortal() {
           {PERIODOS.map(([n, nome]) => <button key={n} role="tab" aria-selected={dias === n} onClick={() => setDias(n)}>{nome}</button>)}
         </div>
         <p className="suave uso-aviso"><Icone nome="escudo" tamanho={14} /> Dados de uso identificam pessoas: use só para entender a adoção do portal.</p>
+        <div className="uso-exportar">
+          <a className="btn btn-sec btn-pequeno" href={`/api/gestao/uso/exportar?dias=${dias}`} download>Exportar CSV</a>
+          <button className="btn btn-sec btn-pequeno" disabled={!resumo || !pessoas} onClick={() => { if (resumo && pessoas) void relatorioPdf(resumo, pessoas, telaNome); }}>Exportar PDF</button>
+        </div>
       </div>
       {erro && <p className="erro" role="alert">{erro}</p>}
       {!resumo && !erro && <p className="vazio">Carregando…</p>}
@@ -81,6 +88,8 @@ export function UsoPortal() {
           <div className="uso-kpi"><small>Sem acesso no período</small><b>{resumo.semAcesso}</b><small>{pct(resumo.semAcesso, resumo.cadastrados)}% dos usuários</small></div>
           <div className="uso-kpi"><small>Entradas</small><b>{resumo.serie.reduce((s, d) => s + d.entradas, 0)}</b><small>logins no período</small></div>
           <div className="uso-kpi"><small>Telas abertas</small><b>{resumo.serie.reduce((s, d) => s + d.telas, 0)}</b><small>no período</small></div>
+          <div className="uso-kpi"><small>Comunicados publicados</small><b>{resumo.comunicados.publicados}</b><small>no período</small></div>
+          <div className="uso-kpi"><small>Comunicados lidos</small><b>{pct(resumo.comunicados.abriram, resumo.comunicados.esperadas)}%</b><small>{resumo.comunicados.abriram} de {resumo.comunicados.esperadas} leituras possíveis</small></div>
         </div>
 
         <div className="uso-linha-1">
@@ -135,6 +144,17 @@ export function UsoPortal() {
                 </tbody>
               </table>
             </div>
+          </section>
+          <section className="cartao-sec uso-cartao uso-coms">
+            <h3>Comunicados: lidos × publicados</h3>
+            <ul className="uso-lista uso-comunicados">
+              {resumo.comunicados.itens.length === 0 && <li className="vazio">Nenhum comunicado publicado no período.</li>}
+              {resumo.comunicados.itens.map((c) => (
+                <li key={c.id} title={`${c.titulo} — para: ${c.publico}${c.exige_leitura ? `; ${c.confirmaram} confirmaram a leitura` : ''}`}>
+                  <span>{c.titulo}</span><Barra valor={c.abriram} max={c.esperadas} rotulo={`${c.titulo}: ${c.abriram} de ${c.esperadas} leram`} /><b>{pct(c.abriram, c.esperadas)}%</b><small className="suave">{c.abriram}/{c.esperadas}</small>
+                </li>
+              ))}
+            </ul>
           </section>
           {pessoas ? (
         <section className="cartao-sec uso-cartao uso-pessoas">

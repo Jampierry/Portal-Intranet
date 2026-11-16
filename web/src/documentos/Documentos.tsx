@@ -5,6 +5,7 @@ import { iconePorTexto } from '../iconesAuto';
 import { Cabecalho, Estado } from '../Cabecalho';
 import { LinkApp } from '../aplicacoes/LinkApp';
 import { dataCurta, useLista, type Documento } from '../dados';
+import { VisualizadorArquivo, type ArquivoParaVer } from '../VisualizadorArquivo';
 
 /** Navegador não abre pasta de rede a partir de página web: o botão copia o caminho para colar no Explorer. */
 function CopiarCaminho({ caminho }: { caminho: string }) {
@@ -22,6 +23,7 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
   const [categoria, setCategoria] = useState('Todas');
   const categorias = useMemo(() => ['Todas', ...new Set((dados ?? []).map((d) => d.categoria))], [dados]);
   const [q, setQ] = useState('');
+  const [vendo, setVendo] = useState<ArquivoParaVer | null>(null);
   const norm = (s: string) => s.trim().toLocaleLowerCase('pt-BR');
   const termos = [norm(busca), norm(q)].filter(Boolean);
   const lista = (dados ?? []).filter((d) =>
@@ -50,11 +52,12 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
               {d.link_oficial && (d.origem === 'rede'
                 ? <CopiarCaminho caminho={d.link_oficial} />
                 : (d.origem === 'pasta' || d.origem === 'servidor') && d.link_oficial.startsWith('/')
-                ? <a href={d.link_oficial} target="_blank" rel="noopener noreferrer" className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></a>
+                ? <button type="button" className="btn btn-pri btn-pequeno abrir-doc" onClick={() => setVendo({ titulo: d.titulo, url: d.link_oficial!, formato: d.formato })}>Visualizar <Icone nome="documentos" tamanho={13} /></button>
                 : <LinkApp url={d.link_oficial} className="btn btn-pri btn-pequeno abrir-doc">Abrir documento <Icone nome="externo" tamanho={13} /></LinkApp>)}</div>
           </article>
         ))}
       </div>
+      {vendo && <VisualizadorArquivo arquivo={vendo} aoFechar={() => setVendo(null)} />}
     </>
   );
 }

@@ -11,6 +11,7 @@ Para todas as pessoas que usam o portal, no computador ou no celular.
 4. **Esqueci a senha:** na tela de entrada use "Esqueci minha senha". O administrador recebe o aviso, redefine e passa uma senha provisória.
 5. A sessão dura 12 horas; depois disso é preciso entrar de novo. Marque **Manter conectado neste aparelho** para ficar conectado por 30 dias (use só em aparelho seu; em computador compartilhado, não marque e use Sair).
 6. **Entrar com digital ou rosto:** depois de cadastrar a biometria em Meu perfil, a tela de entrada mostra **Entrar com biometria** (só em aparelho com biometria ou PIN configurados e quando o portal é aberto em endereço seguro, https). A biometria fica no seu aparelho; o portal não a guarda. Se o aparelho ainda não tiver sua biometria, depois do login com a senha o portal sugere cadastrá-la ("Entrar com digital ou rosto?"); na tela de entrada ela aparece como o ícone de digital ao lado de Entrar. A senha continua valendo.
+7. **Segundo fator (opcional):** se quiser mais segurança, em **Meu perfil › Acesso e segurança** marque "Pedir minha biometria também ao entrar com a senha" (só aparece depois de cadastrar a biometria). Daí em diante, ao entrar com login e senha o aparelho pede também a digital ou o rosto. Para desligar, desmarque e digite a sua senha. Perdeu o aparelho? Peça ao administrador para desligar o segundo fator.
 
 ## 2. Conhecer a tela
 
@@ -34,6 +35,7 @@ Reúne novidades em três carrosséis, missão, visão e valores, **Colaborador 
 
 ![Lista de comunicados: use a busca e clique num cartão para ler.](img/comunicados-lista.png)
 - Lista com busca e filtro por área; clique para ler o texto completo.
+- Alguns comunicados são **só para certos departamentos**: você vê apenas os que são para o seu departamento e para todos. Se acha que deveria ver algum e não vê, confira com o RH se o seu departamento está certo no cadastro.
 - Os **urgentes** aparecem também no sino e em "Avisos importantes" no Início.
 - Alguns comunicados pedem **confirmação de leitura**: clique em **"Li e estou ciente"**. Enquanto não confirmar, ele continua em Avisos.
 
@@ -41,6 +43,14 @@ Reúne novidades em três carrosséis, missão, visão e valores, **Colaborador 
 
 ![Documentos: busque pelo título e abra pelo link oficial.](img/documentos-lista.png)
 Cada documento mostra versão, responsável e data de revisão. Abra sempre pelo **link oficial** para usar a versão vigente. Alguns documentos são **restritos** e só aparecem para quem tem acesso. Um documento pode ter data de publicação futura: só aparece a partir dela.
+
+**Visualizar dentro do portal:** nos documentos que estão numa pasta do portal, o botão **Visualizar** abre o arquivo numa janela, sem sair do portal. Funciona com **PDF**, **Word (.docx)**, texto (.txt), planilha simples (.csv) e imagens. No alto da janela:
+- **Maximizar** (ícone de setas) ocupa a tela toda; clique de novo para reduzir.
+- **Imprimir** manda o documento para a impressora (ou "Salvar como PDF").
+- **Baixar** salva o arquivo no seu computador, com o nome original.
+- **Fechar** (ou a tecla Esc) volta para a lista.
+
+Word antigo (.doc), Excel, PowerPoint e outros formatos não têm pré-visualização: a janela avisa e você usa **Baixar**. Documentos com link externo continuam abrindo no endereço oficial, em outra aba.
 
 ## 6. Contatos
 
@@ -60,6 +70,7 @@ Canal de cada área (e-mail, ramal, celular corporativo ou link). Se não achar,
 ## 8. Pesquisas
 
 ![Tela Pesquisas: responda as abertas e veja os resultados liberados pelo RH.](img/pesquisas-tela.png)
+- Algumas pesquisas são enviadas só a certos departamentos; você só recebe as do seu departamento e as para todos.
 - Quando há pesquisa aberta para você, um **pop-up em passos** aparece (com bolinhas de progresso). Responda, ou feche e responda depois na tela **Pesquisas**.
 - Pesquisas **anônimas** (padrão) não ligam sua resposta ao seu nome. Pesquisas **identificadas** avisam isso antes.
 - Quando o RH divulga o resultado, um pop-up aparece uma vez; depois ele fica na tela **Pesquisas**.

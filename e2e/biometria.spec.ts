@@ -85,3 +85,51 @@ test('sem biometria cadastrada: o ícone avisa com calma e, depois do login, o p
   expect(lista).toHaveLength(1);
   await admin.dispose();
 });
+
+test('segundo fator: depois de ligar, login e senha pedem também a biometria; desligar exige a senha', async ({ page, context, baseURL }) => {
+  const id = unico();
+  const admin = await apiComo(baseURL!, ADMIN);
+  const perfil = await criarPerfil(admin, `Fator ${id}`, ['ver.comunicados']);
+  const pessoa = await criarPessoa(admin, baseURL!, { login: `fator.${id}`, nome: `Fator ${id}`, perfil });
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+  });
+
+  await entrar(page, pessoa);
+  await page.evaluate(() => { location.hash = '#perfil'; });
+  // a opção só aparece depois de cadastrar uma biometria
+  await expect(page.getByLabel(/Pedir minha biometria também/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Cadastrar a biometria deste aparelho' }).click();
+  await expect(page.locator('.biometria-lista li')).toHaveCount(1);
+  await page.getByLabel(/Pedir minha biometria também/).click();
+  await expect(page.getByText('Segundo fator ligado')).toBeVisible();
+  await expect(page.getByLabel(/Pedir minha biometria também/)).toBeChecked();
+
+  // sai e volta só com login e senha: o portal confirma pela biometria do aparelho antes de abrir
+  await page.evaluate(() => fetch('/api/sair', { method: 'POST' }));
+  await page.reload();
+  await page.getByLabel('Login').fill(pessoa.login);
+  await page.getByLabel('Senha', { exact: true }).fill(pessoa.senha);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.locator('.rodape-portal')).toBeVisible();
+
+  // a API direta não entrega sessão só com a senha
+  const sem = await (await import('@playwright/test')).request.newContext({ baseURL, extraHTTPHeaders: { origin: baseURL! } });
+  const r = await sem.post('/api/login', { data: { login: pessoa.login, senha: pessoa.senha } });
+  expect((await r.json()).segundo_fator).toBe(true);
+  expect(r.headers()['set-cookie'] ?? '').not.toContain('portal_sessao');
+  await sem.dispose();
+
+  // desligar pede a senha
+  await page.evaluate(() => { location.hash = '#perfil'; });
+  await page.getByLabel(/Pedir minha biometria também/).click(); // abre o campo da senha
+  await page.getByLabel('Sua senha').fill('senha-errada');
+  await page.getByRole('button', { name: 'Desligar', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Senha incorreta');
+  await page.getByLabel('Sua senha').fill(pessoa.senha);
+  await page.getByRole('button', { name: 'Desligar', exact: true }).click();
+  await expect(page.getByText('Segundo fator desligado.')).toBeVisible();
+  await admin.dispose();
+});

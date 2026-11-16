@@ -10,6 +10,7 @@ Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **históric
 - **Aprovar** publica; **Rejeitar** exige um **motivo**, que a pessoa lê no sino.
 - Quem precisa de aprovação é definido **por aba e por pessoa**: o administrador marca "Precisa da aprovação do RH para publicar" em Comunicados, Redes sociais, Banners e Documentos, nas permissões do perfil ou do usuário. Quem decide precisa de `pub.aprovacoes.ver` e `pub.aprovacoes.decidir`.
 - Novos pedidos chegam no **sino**.
+- Quem pode editar usuários também recebe no sino o aviso **"está sem departamento"**, com o nome da pessoa e o botão **Atualizar cadastro**, que abre a edição dela. Sem departamento, a pessoa só vê o que é para todos; escolha o departamento e salve para o aviso sumir.
 
 ## 2. Aniversariantes e novos colaboradores
 
@@ -27,6 +28,7 @@ Só com **consentimento registrado** da pessoa. Sem ranking nem pontuação.
 
 ![Editor de pesquisa: título (1), anônima ou identificada (2), período (3) e perguntas (4).](img/rh-pesquisa-editor.png)
 **Montar**
+- **Quem recebe:** todos ou só alguns **departamentos**. O pop-up, o aviso e o resultado liberado aparecem só para o público escolhido; os números de "pendentes" e "alvo" contam só esse público. O envio é por departamento, e não por pessoa, de propósito: numa pesquisa anônima, mandar para poucas pessoas deixaria o RH deduzir quem respondeu. Por isso o resultado continua escondido enquanto houver menos de 5 respostas (um departamento com menos de 5 pessoas nunca libera resultado).
 - Título e explicação, com **várias perguntas**. Tipos: **nota de 1 a 5** (com comentário opcional), **escolha única**, **múltipla escolha** e **texto**. Cada pergunta pode ser obrigatória ou não e ter **imagem**; cada opção também pode ter imagem. Reordene com as setas; as perguntas ficam **minimizáveis** no editor.
 - Escolha se a pesquisa é **anônima** (padrão) ou **identificada**.
 - Defina o **período** (abre e fecha em data e hora) ou deixe sem prazo.
@@ -49,6 +51,7 @@ Só com **consentimento registrado** da pessoa. Sem ranking nem pontuação.
 - O perfil RH **não** recebe essa permissão sozinho: o administrador concede em Configurações › Perfis.
 
 ## 6. Cuidados com dados (LGPD)
+- Pesquisa anônima enviada a um departamento pequeno pode identificar as pessoas: o portal já esconde o resultado abaixo de 5 respostas; não tente contornar isso juntando departamentos só para ver números.
 - Peça só o necessário; os campos de emergência e saúde são opcionais.
 - Não copie dados do portal para outros lugares sem necessidade.
 - Resultados identificados são sensíveis: libere aos colaboradores somente o agregado.

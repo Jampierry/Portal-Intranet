@@ -10,6 +10,12 @@ import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, slugUnico, texto
 const CLASSIFICACOES = ['publico', 'interno', 'restrito'] as const;
 const CAMPOS = 'id, slug, titulo, categoria, resumo, formato, versao, responsavel, classificacao, origem, origem_id, link_oficial, revisado_em, exibir_de, atualizado_em, publicado';
 const TIPOS: Record<string, string> = { '.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.csv': 'text/csv; charset=utf-8' };
+// Só estes abrem direto no navegador; os demais (Word, Excel...) saem como download, mas o visualizador do portal lê o arquivo pela mesma rota.
+const TIPOS_DOWNLOAD: Record<string, string> = {
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.doc': 'application/msword',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xls': 'application/vnd.ms-excel',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', '.odt': 'application/vnd.oasis.opendocument.text', '.rtf': 'application/rtf',
+};
 const CAMINHO_ABSOLUTO = /^(\\\\[^\\/]+[\\/]|[A-Za-z]:[\\/]|\/)/;
 
 /** Endereço do documento: link http(s) ou caminho relativo dentro da pasta de origem (portal ou servidor cadastrado). */
@@ -42,7 +48,7 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
     return lista.map((d) => (!podeAbrir || !d.link_oficial ? { ...d, link_oficial: null } : (d.origem === 'pasta' || d.origem === 'servidor') ? { ...d, link_oficial: `/api/documentos/${d.slug}/arquivo` } : d));
   });
 
-  app.get<{ Params: { slug: string } }>('/api/documentos/:slug/arquivo', { preHandler: exigirPerm('ver.documentos') }, async (req, resp) => {
+  app.get<{ Params: { slug: string }; Querystring: { baixar?: string } }>('/api/documentos/:slug/arquivo', { preHandler: exigirPerm('ver.documentos') }, async (req, resp) => {
     if (!req.usuario?.permissoes.includes('documentos.abrir')) return resp.code(403).send({ erro: 'Sem permissão para abrir documentos.' });
     const d = db.prepare("SELECT classificacao, link_oficial, origem, origem_id FROM documentos WHERE slug = ? AND publicado = 1 AND (exibir_de IS NULL OR exibir_de <= date('now','localtime')) AND origem IN ('pasta', 'servidor')").get(req.params.slug) as { classificacao: string; link_oficial: string | null; origem: string; origem_id: number | null } | undefined;
     if (!d?.link_oficial || (d.classificacao === 'restrito' && !req.usuario.permissoes.includes('documentos.restritos'))) return resp.code(404).send({ erro: 'Arquivo não encontrado.' });
@@ -53,11 +59,13 @@ export async function rotasDocumentos(app: FastifyInstance, { db }: { db: Banco;
       const alvo = realpathSync(resolve(raiz, d.link_oficial));
       const rel = relative(raiz, alvo);
       if (rel.startsWith('..') || isAbsolute(rel) || !statSync(alvo).isFile()) throw new Error('fora da pasta');
-      const tipo = TIPOS[extname(alvo).toLowerCase()];
+      const ext = extname(alvo).toLowerCase();
+      const tipo = TIPOS[ext];
+      const baixar = req.query.baixar === '1' || !tipo; // ?baixar=1 força o download (botão "Baixar" do visualizador)
       return resp
         .header('X-Content-Type-Options', 'nosniff')
-        .header('Content-Type', tipo ?? 'application/octet-stream')
-        .header('Content-Disposition', `${tipo ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(basename(alvo))}`)
+        .header('Content-Type', tipo ?? TIPOS_DOWNLOAD[ext] ?? 'application/octet-stream')
+        .header('Content-Disposition', `${baixar ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(basename(alvo))}`)
         .send(createReadStream(alvo));
     } catch {
       return resp.code(404).send({ erro: 'Arquivo não encontrado na pasta do servidor.' });

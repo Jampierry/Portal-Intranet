@@ -9,6 +9,8 @@ import type { AuthenticationResponseJSON, AuthenticatorTransportFuture, Registra
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
 import { corpoObjeto, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
+import { confereSenha } from '../../acessos/api/senha.ts';
+import { falharTicket, gastarTicket, lerTicket } from '../../acessos/api/tickets.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, horasDaSessao } from '../../acessos/api/guard.ts';
 import { nomeDoPerfil, permissoesEfetivas } from '../../acessos/api/permissoes.ts';
 import { registrarUso } from '../../uso/api/registro.ts';
@@ -62,8 +64,72 @@ export async function rotasBiometria(app: FastifyInstance, { db, producao }: { d
     const id = inteiro(req.params.id, 'Biometria');
     const r = db.prepare('DELETE FROM passkeys WHERE id = ? AND usuario_id = ?').run(id, req.usuario!.id);
     if (Number(r.changes) === 0) return resp.code(404).send({ erro: 'Biometria não encontrada.' });
+    // sem nenhuma biometria o segundo fator não faz sentido (a pessoa ficaria sem como entrar)
+    if (!db.prepare('SELECT 1 FROM passkeys WHERE usuario_id = ?').get(req.usuario!.id)) db.prepare('UPDATE usuarios SET segundo_fator = 0 WHERE id = ?').run(req.usuario!.id);
     auditar(db, req.usuario!.id, 'biometria_removida', { id });
     return { ok: true };
+  });
+
+  // ----- Segundo fator opcional: depois da senha, a pessoa confirma com a biometria -----
+  app.get('/api/biometria/estado', async (req) => ({ segundo_fator: (db.prepare('SELECT segundo_fator FROM usuarios WHERE id = ?').get(req.usuario!.id) as { segundo_fator: number }).segundo_fator === 1 }));
+  app.put('/api/biometria/segundo-fator', { bodyLimit: 2048 }, async (req, resp) => {
+    const c = corpoObjeto(req.body);
+    const u = req.usuario!;
+    if (c.ativo === true) {
+      if (!db.prepare('SELECT 1 FROM passkeys WHERE usuario_id = ?').get(u.id)) throw new ErroValidacao('Cadastre a biometria deste aparelho antes de ligar o segundo fator.');
+      db.prepare('UPDATE usuarios SET segundo_fator = 1 WHERE id = ?').run(u.id);
+      auditar(db, u.id, 'segundo_fator_ligado');
+      return { segundo_fator: true };
+    }
+    // desligar exige a senha (uma sessão esquecida aberta não pode tirar a proteção)
+    const senha = String(texto(c, 'senha', 'Senha', { max: 128 }));
+    const hash = (db.prepare('SELECT senha_hash FROM usuarios WHERE id = ?').get(u.id) as { senha_hash: string }).senha_hash;
+    if (!confereSenha(senha, hash)) return resp.code(400).send({ erro: 'Senha incorreta.' });
+    db.prepare('UPDATE usuarios SET segundo_fator = 0 WHERE id = ?').run(u.id);
+    auditar(db, u.id, 'segundo_fator_desligado');
+    return { segundo_fator: false };
+  });
+
+  // Login em duas etapas (rotas públicas, mas só com o ticket que o login por senha entregou).
+  app.post('/api/biometria/segundo-fator/opcoes', { bodyLimit: 1024 }, async (req) => {
+    const { rpID } = origemDe(req);
+    const t = lerTicket(corpoObjeto(req.body).ticket);
+    if (!t) throw new ErroValidacao('A verificação expirou. Entre de novo com o login e a senha.');
+    const minhas = db.prepare('SELECT credencial_id, transportes FROM passkeys WHERE usuario_id = ?').all(t.usuarioId) as { credencial_id: string; transportes: string | null }[];
+    const opcoes = await generateAuthenticationOptions({ rpID, userVerification: 'required', timeout: 60_000, allowCredentials: minhas.map((m) => ({ id: m.credencial_id, transports: transportesDe(m.transportes) })) });
+    return { opcoes, desafio_id: guardar({ challenge: opcoes.challenge, usuarioId: t.usuarioId }) };
+  });
+  app.post('/api/biometria/segundo-fator', { bodyLimit: 32768 }, async (req, resp) => {
+    const { origem, rpID } = origemDe(req);
+    const c = corpoObjeto(req.body);
+    const ticket = typeof c.ticket === 'string' ? c.ticket : '';
+    const t = lerTicket(ticket);
+    if (!t) throw new ErroValidacao('A verificação expirou. Entre de novo com o login e a senha.');
+    const d = retirar(c.desafio_id, t.usuarioId);
+    const recusar = (): never => { falharTicket(ticket); throw new ErroValidacao('Não foi possível confirmar a biometria. Tente de novo ou entre de novo com a senha.'); };
+    const resposta = c.resposta as AuthenticationResponseJSON | undefined;
+    if (!resposta || typeof resposta !== 'object' || typeof resposta.id !== 'string') return recusar();
+    const linha = db.prepare('SELECT id, usuario_id, credencial_id, chave_publica, contador, transportes FROM passkeys WHERE credencial_id = ? AND usuario_id = ?').get(resposta.id, t.usuarioId) as LinhaPasskey | undefined;
+    if (!linha) return recusar();
+    let v;
+    try {
+      v = await verifyAuthenticationResponse({
+        response: resposta, expectedChallenge: d.challenge, expectedOrigin: origem, expectedRPID: rpID, requireUserVerification: true,
+        credential: { id: linha.credencial_id, publicKey: new Uint8Array(linha.chave_publica), counter: linha.contador, transports: transportesDe(linha.transportes) },
+      });
+    } catch { return recusar(); }
+    if (!v.verified) return recusar();
+    gastarTicket(ticket);
+    const u = db.prepare('SELECT id, login, nome, perfil, trocar_senha, ativo, permissoes FROM usuarios WHERE id = ?').get(t.usuarioId) as
+      | { id: number; login: string; nome: string; perfil: string; trocar_senha: number; ativo: number; permissoes: string | null } | undefined;
+    if (!u || u.ativo !== 1) throw new ErroValidacao('Não foi possível entrar.');
+    const agora = new Date().toISOString();
+    db.prepare('UPDATE passkeys SET contador = ?, ultimo_uso = ? WHERE id = ?').run(v.authenticationInfo.newCounter, agora, linha.id);
+    db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(agora, u.id);
+    resp.setCookie(COOKIE_SESSAO, criarSessao(db, u.id, t.manter), { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: horasDaSessao(t.manter) * 3600 });
+    auditar(db, u.id, 'login', { segundo_fator: true, ...(t.manter ? { manter: true } : {}) });
+    registrarUso(db, u.id, 'login', req.headers['user-agent']);
+    return { id: u.id, login: u.login, nome: u.nome, perfil: u.perfil, perfil_nome: nomeDoPerfil(db, u.perfil), trocar_senha: u.trocar_senha, permissoes: permissoesEfetivas(db, u.perfil, u.permissoes) };
   });
 
   // ----- Cadastrar a biometria deste aparelho (logado) -----

@@ -2,6 +2,7 @@ import { api } from '../api';
 import { Icone } from '../icones';
 import { useEffect, useState } from 'react';
 import { Crud, JanelaForm, PermissoesCtx, Selo } from './Crud';
+import { CampoPublico } from './CampoPublico';
 import { Aplicacoes } from '../aplicacoes/Aplicacoes';
 import { Administracao } from './Administracao';
 import { Institucional } from './Institucional';
@@ -26,7 +27,7 @@ import { UsoPortal } from './Uso';
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
 
-interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null; exige_leitura: number; aprovacao_status?: string | null; aprovacao_motivo?: string | null }
+interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null; exige_leitura: number; departamentos?: number[]; publico_texto?: string; aprovacao_status?: string | null; aprovacao_motivo?: string | null }
 interface Leituras { titulo: string; total: number; lidos: { nome: string; login: string; lido_em: string }[]; pendentes: { nome: string; login: string }[] }
 /** Janela "Leituras": quem já confirmou e quem falta confirmar um comunicado. */
 function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
@@ -78,18 +79,20 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { chave: 'exige_leitura', rotulo: 'Exigir confirmação de leitura', tipo: 'check', dica: 'Cada pessoa vê o botão “Li e estou ciente”, o comunicado aparece em Avisos até ser confirmado e você acompanha quem leu em “Leituras”.' },
         { chave: 'exibir_de', rotulo: 'Exibir a partir de (opcional)', tipo: 'data', metade: true },
         { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
+        { chave: 'departamentos', rotulo: 'Quem recebe', tipo: 'custom', render: (v, m) => <CampoPublico valor={v} mudar={m} /> },
       ]}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Categoria', ver: (r) => r.categoria },
         { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <>{r.aprovacao_status === 'pendente' ? <Selo texto="Aguardando o RH" tom="aviso" /> : <Selo texto={x} tom={t} />}{r.aprovacao_status === 'rejeitado' && r.status === 'rascunho' && <> <Selo texto="Rejeitado" tom="erro" /><small className="motivo-rej">Motivo: {r.aprovacao_motivo}</small></>}{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
+        { titulo: 'Para', ver: (r) => r.publico_texto ?? 'Todos' },
         { titulo: 'Publicado em', ver: (r) => dataCurta(r.publicado_em) || '—' },
       ]}
-      valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exige_leitura: false, exibir_de: '', exibir_ate: '' }}
-      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) })}
+      valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exige_leitura: false, exibir_de: '', exibir_ate: '', departamentos: [] }}
+      paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate), departamentos: r.departamentos ?? [] })}
       podeApagar={() => true}
       acoesExtra={(r, salvar, recarregar) => {
-        const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate) };
+        const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate), departamentos: r.departamentos ?? [] };
         return <>
           {r.exige_leitura ? <button className="btn btn-sec btn-pequeno" onClick={() => setLeituras(r)}>Leituras</button> : null}
           {r.status === 'publicado' && <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}

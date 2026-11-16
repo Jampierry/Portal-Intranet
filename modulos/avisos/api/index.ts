@@ -6,6 +6,7 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { permissoesEfetivas } from '../../acessos/api/permissoes.ts';
 import { chamarZimbra, conexaoZimbra, ErroZimbra } from '../../integracoes/api/zimbra.ts';
+import { noPublico } from '../../publico/api/index.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
 
 export interface ConfigAvisos { ativo: boolean; so_urgentes: boolean; url_portal: string }
@@ -30,8 +31,9 @@ const nomePortal = (db: Banco) => {
 export const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Destinatários: ativos, com e-mail, que não desligaram os avisos e podem ver comunicados. */
-export function destinatarios(db: Banco): string[] {
-  const linhas = db.prepare("SELECT email, perfil, permissoes FROM usuarios WHERE ativo = 1 AND avisos_email = 1 AND email IS NOT NULL AND email <> ''").all() as { email: string; perfil: string; permissoes: string | null }[];
+export function destinatarios(db: Banco, comunicadoId?: number): string[] {
+  const filtro = comunicadoId ? ` AND ${noPublico('comunicado', String(Number(comunicadoId)), 'usuarios.departamento_id')}` : '';
+  const linhas = db.prepare(`SELECT email, perfil, permissoes FROM usuarios WHERE ativo = 1 AND avisos_email = 1 AND email IS NOT NULL AND email <> ''${filtro}`).all() as { email: string; perfil: string; permissoes: string | null }[];
   const vistos = new Set<string>();
   for (const l of linhas) if (permissoesEfetivas(db, l.perfil, l.permissoes).includes('ver.comunicados')) vistos.add(l.email.toLowerCase());
   return [...vistos];
@@ -49,7 +51,7 @@ export async function avisarNovoComunicado(db: Banco, slug: string, quem: number
     db.prepare('UPDATE comunicados SET notificado_em = ? WHERE id = ?').run(new Date().toISOString(), c.id);
     const conexao = conexaoZimbra(db);
     if (!conexao) { auditar(db, quem, 'avisos_email_sem_conexao', { slug }); return; }
-    const para = destinatarios(db);
+    const para = destinatarios(db, c.id);
     let enviados = 0, falhas = 0;
     const urgente = c.prioridade === 'urgente';
     const base = cfg.url_portal.replace(/\/+$/, '');

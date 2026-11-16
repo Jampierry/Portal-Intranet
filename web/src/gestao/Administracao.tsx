@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../api';
+import { confirmar } from '../Confirmar';
 import { Icone } from '../icones';
 import { Avatar } from '../perfil';
 import { dataCurta, useLista } from '../dados';
@@ -8,8 +9,9 @@ import type { PerfilAcesso } from '../sessao';
 import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 import { useOrdenacao } from './Ordenar';
 import { Dica, DicaAba } from '../Dica';
+import { pegarPedidoEdicaoUsuario } from './pedidoEdicaoUsuario';
 
-interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes; departamento_id: number | null; departamento: string | null }
+interface Usr { id: number; login: string; segundo_fator?: number; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes; departamento_id: number | null; departamento: string | null }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -168,6 +170,19 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const [pedidos, setPedidos] = useState<{ id: number; usuario_id: number; criado_em: string; login: string; nome: string }[]>([]);
   const lerPedidos = () => { if (libera('senha')) api<typeof pedidos>('/api/gestao/pedidos-senha').then(setPedidos).catch(() => { /* sem pedidos */ }); };
   useEffect(lerPedidos, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const desligarSegundoFator = async (u: Usr) => {
+    if (!(await confirmar({ titulo: 'Desligar o segundo fator?', mensagem: `${u.nome} passa a entrar só com login e senha, até ligar o segundo fator de novo em Meu perfil. Faça isso só se a pessoa perdeu o aparelho com a biometria.`, confirmar: 'Desligar', perigo: true }))) return;
+    try { await api(`/api/usuarios/${u.id}/segundo-fator/desligar`, {}); setAviso(`Segundo fator de "${u.login}" desligado.`); recarregar(); } catch (e) { setAviso((e as Error).message); }
+  };
+  // Vindo do aviso "sem departamento" do sino: abre a edição da pessoa assim que a lista carregar.
+  const [pedidoTick, setPedidoTick] = useState(0);
+  useEffect(() => { const f = () => setPedidoTick((n) => n + 1); window.addEventListener('editar-usuario', f); return () => window.removeEventListener('editar-usuario', f); }, []);
+  useEffect(() => {
+    if (!dados || !libera('editar')) return;
+    const id = pegarPedidoEdicaoUsuario();
+    const u = id === null ? undefined : dados.find((x) => x.id === id);
+    if (u) setEdit(u);
+  }, [dados, pedidoTick]); // eslint-disable-line react-hooks/exhaustive-deps
   const dispensar = async (id: number) => { try { await api(`/api/gestao/pedidos-senha/${id}/dispensar`, {}); lerPedidos(); } catch (e) { setAviso((e as Error).message); } };
 
   return (
@@ -212,6 +227,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
                     {libera('aplicativos') && <button className="btn btn-sec btn-pequeno" onClick={() => setApps(u)}><Icone nome="apps" tamanho={13} /> Aplicativos</button>}
                     {libera('emergencia') && <button className="btn btn-sec btn-pequeno" onClick={() => setFicha(u)}><Icone nome="telefone" tamanho={13} /> Contato</button>}
                     {libera('senha') && <button className="btn btn-sec btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
+                    {libera('senha') && u.segundo_fator ? <button className="btn btn-sec btn-pequeno" title="A pessoa usa biometria como segundo fator. Desligue se ela perdeu o aparelho." onClick={() => void desligarSegundoFator(u)}><Icone nome="digital" tamanho={13} /> Desligar 2º fator</button> : null}
                   </td>
                 </tr>
               ))}
@@ -240,7 +256,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
       {edit && (
         <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes, departamento_id: edit.departamento_id }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes, departamento_id: edit.departamento_id }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); window.dispatchEvent(new Event('usuarios-alterados')); }}>
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>E-mail (opcional)<input type="email" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" /></label>
           <label>Perfil *
@@ -271,7 +287,7 @@ const ACAO: Record<string, string> = {
   publicacao_aprovada: 'Publicação aprovada', publicacao_rejeitada: 'Publicação rejeitada', rede_criada: 'Publicação para rede social criada', rede_alterada: 'Publicação para rede social alterada', rede_apagada: 'Publicação para rede social apagada', rede_enviada: 'Publicação enviada para aprovação', rede_publicada: 'Publicação marcada como publicada', avisos_lidos: 'Avisos do sino marcados como lidos',
   usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', perfil_ficha_lida: 'Contato de emergência de uma pessoa consultado', perfil_foto: 'Foto de perfil alterada', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
-  login: 'Entrou', login_biometria: 'Entrou com biometria', biometria_cadastrada: 'Biometria cadastrada', biometria_removida: 'Biometria removida', uso_consultado: 'Uso do portal consultado (por pessoa)', departamento_criado: 'Departamento criado', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
+  login: 'Entrou', login_biometria: 'Entrou com biometria', segundo_fator_ligado: 'Ligou o segundo fator (biometria)', segundo_fator_desligado: 'Desligou o segundo fator', segundo_fator_desligado_por_admin: 'Segundo fator desligado pelo admin', login_senha_ok_aguarda_biometria: 'Senha certa, aguardando a biometria', uso_exportado: 'Uso do portal exportado', biometria_cadastrada: 'Biometria cadastrada', biometria_removida: 'Biometria removida', uso_consultado: 'Uso do portal consultado (por pessoa)', departamento_criado: 'Departamento criado', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',
   comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',
   documento_criado: 'Documento criado', documento_alterado: 'Documento alterado', documento_apagado: 'Documento apagado',

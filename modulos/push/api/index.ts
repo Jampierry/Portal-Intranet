@@ -4,6 +4,7 @@
 import * as webpush from 'web-push';
 import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
+import { pessoasDoPublico, publicoDe } from '../../publico/api/index.ts';
 import { permissoesEfetivas } from '../../acessos/api/permissoes.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
 
@@ -64,7 +65,7 @@ export async function avisarPushComunicado(db: Banco, slug: string): Promise<voi
     if (!c || c.status !== 'publicado' || c.push_em) return;
     db.prepare('UPDATE comunicados SET push_em = ? WHERE id = ?').run(new Date().toISOString(), c.id); // marca antes: duas edições seguidas não avisam duas vezes
     const urgente = c.prioridade === 'urgente';
-    await enviarPush(db, 'todos', { titulo: `${urgente ? 'URGENTE: ' : 'Novo comunicado: '}${c.titulo}`, corpo: c.exige_leitura ? `${c.resumo} (confirme a leitura)` : c.resumo, url: `/#comunicados/${encodeURIComponent(slug)}`, tag: `comunicado-${c.id}` }, 'ver.comunicados');
+    await enviarPush(db, publicoDe(db, 'comunicado', c.id).length ? pessoasDoPublico(db, 'comunicado', c.id) : 'todos', { titulo: `${urgente ? 'URGENTE: ' : 'Novo comunicado: '}${c.titulo}`, corpo: c.exige_leitura ? `${c.resumo} (confirme a leitura)` : c.resumo, url: `/#comunicados/${encodeURIComponent(slug)}`, tag: `comunicado-${c.id}` }, 'ver.comunicados');
   } catch { /* ignora */ }
 }
 

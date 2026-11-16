@@ -25,6 +25,7 @@ import { PulsoCard } from './inicio/PulsoCard';
 import { ResultadoPopup } from './pesquisas/ResultadoPopup';
 import { Pesquisas } from './pesquisas/Pesquisas';
 import { useEmpresa } from './empresa';
+import { pedirEdicaoUsuario } from './gestao/pedidoEdicaoUsuario';
 
 interface Saude { ok: boolean; versao: string; modulos: string[] }
 
@@ -81,7 +82,8 @@ interface PedidoEdicao { id: number; rotulo: string; titulo: string | null; cria
 interface CaixaEdicao { pendentes: PedidoEdicao[]; respostas: PedidoEdicao[] }
 interface LinhaAprov { id: number; tipo: 'comunicado' | 'rede_social'; titulo: string; detalhe: string | null; solicitante: string; status: string; motivo: string | null; decisor: string | null; criado_em: string }
 interface CaixaAprov { pendentes: LinhaAprov[]; respostas: LinhaAprov[] }
-function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: caixa, decidir, lidos, marcar, aprov: caixaAprov, irPublicar }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void; edicoes: CaixaEdicao; decidir: (id: number, aprovar: boolean) => void; lidos: Set<string>; marcar: (chaves: string[]) => void; aprov: CaixaAprov; irPublicar: (aba: string) => void }) {
+interface SemDepto { id: number; nome: string; login: string }
+function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: caixa, decidir, lidos, marcar, aprov: caixaAprov, irPublicar, semDepto, irCadastro }: { itens: Comunicado[]; leitura: Comunicado[]; ir: (slug?: string) => void; pedidos: PedidoSenha[]; irPedidos: () => void; edicoes: CaixaEdicao; decidir: (id: number, aprovar: boolean) => void; lidos: Set<string>; marcar: (chaves: string[]) => void; aprov: CaixaAprov; irPublicar: (aba: string) => void; semDepto: SemDepto[]; irCadastro: (id: number) => void }) {
   const [aberto, setAberto] = useState(false);
   // o que a pessoa já abriu ou limpou sai da lista; confirmação de leitura, pedidos para decidir e pedidos de senha só saem quando resolvidos
   const chaveCom = (c: Comunicado) => `urgente:${encodeURIComponent(c.slug)}`;
@@ -91,7 +93,7 @@ function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: cai
   const chaveAp = (p: LinhaAprov) => `aprov:${p.id}`;
   const respAprov = caixaAprov.respostas.filter((p) => !lidos.has(chaveAp(p)));
   const limpaveis = [...itens.map(chaveCom), ...edicoes.respostas.map(chaveEd), ...respAprov.map(chaveAp)];
-  const total = itens.length + leitura.length + pedidos.length + edicoes.pendentes.length + edicoes.respostas.length + caixaAprov.pendentes.length + respAprov.length;
+  const total = itens.length + leitura.length + pedidos.length + edicoes.pendentes.length + edicoes.respostas.length + caixaAprov.pendentes.length + respAprov.length + semDepto.length;
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
@@ -111,6 +113,17 @@ function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: cai
             <h3>Avisos</h3>
             {limpaveis.length > 0 && <button type="button" className="btn btn-sec btn-pequeno" title="Limpa os avisos que não pedem confirmação de leitura" onClick={() => marcar(limpaveis)}>Marcar todas como lidas</button>}
           </div>
+          {semDepto.length > 0 && <small className="aviso-grupo">Cadastros sem departamento</small>}
+          {semDepto.slice(0, 5).map((p) => (
+            <div key={p.id} className="aviso">
+              <b>{p.nome} está sem departamento</b>
+              <small>Login {p.login} · só vê o que é para todos os colaboradores até o cadastro ser atualizado</small>
+              <span style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button className="btn btn-pri btn-pequeno" onClick={() => { setAberto(false); irCadastro(p.id); }}>Atualizar cadastro</button>
+              </span>
+            </div>
+          ))}
+          {semDepto.length > 5 && <small className="suave">e mais {semDepto.length - 5} pessoa(s) sem departamento: veja em Configurações › Usuários.</small>}
           {caixaAprov.pendentes.length > 0 && <small className="aviso-grupo">Publicações aguardando a sua aprovação</small>}
           {caixaAprov.pendentes.length > 0 && <button className="aviso" onClick={() => { setAberto(false); irPublicar('aprovacoes'); }}><b>{caixaAprov.pendentes.length} publicaç{caixaAprov.pendentes.length === 1 ? 'ão' : 'ões'} para aprovar</b><small>{caixaAprov.pendentes.slice(0, 3).map((p) => `${p.titulo} (${p.solicitante})`).join(' · ')}{caixaAprov.pendentes.length > 3 ? '…' : ''} · clique para decidir</small></button>}
           {respAprov.length > 0 && <small className="aviso-grupo">Retorno das suas publicações</small>}
@@ -192,6 +205,18 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
     void ler(); const t = setInterval(() => void ler(), 60_000);
     return () => { vivo = false; clearInterval(t); };
   }, [veSenha, tela]);
+
+  // Quem edita usuários (RH) vê no sino quem está sem departamento, com o botão para completar o cadastro.
+  const veCadastro = pode(usuario, 'cfg.usuarios.editar');
+  const [semDepto, setSemDepto] = useState<SemDepto[]>([]);
+  useEffect(() => {
+    if (!veCadastro) { setSemDepto([]); return; }
+    let vivo = true;
+    const ler = () => api<SemDepto[]>('/api/gestao/sem-departamento').then((r) => { if (vivo) setSemDepto(r); }).catch(() => { /* sem aviso */ });
+    void ler(); const t = setInterval(() => void ler(), 60_000);
+    window.addEventListener('usuarios-alterados', ler);
+    return () => { vivo = false; clearInterval(t); window.removeEventListener('usuarios-alterados', ler); };
+  }, [veCadastro, tela]);
 
   // Pedidos para editar conteúdo de outra pessoa: o dono e o administrador decidem; quem pediu vê a resposta.
   const [edicoes, setEdicoes] = useState<CaixaEdicao>({ pendentes: [], respostas: [] });
@@ -287,7 +312,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />
           <PainelTema config={config} mudar={mudar} />
           <button className="icone-btn lancador-mob" aria-label="Aplicativos" aria-expanded={barraMob || lancador} onClick={alternarAppsMobile}><Icone nome="apps" /></button>
-          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} />
+          <Sino itens={urgentes} leitura={leitura} ir={(slug) => irPara('comunicados', slug)} pedidos={pedidos} irPedidos={() => irPara('configuracoes', 'usuarios')} edicoes={edicoes} decidir={decidirEdicao} lidos={lidos} marcar={marcarLidos} aprov={aprov} irPublicar={(aba) => irPara('publicar', aba)} semDepto={semDepto} irCadastro={(id) => { pedirEdicaoUsuario(id); irPara('configuracoes', 'usuarios'); }} />
           <MenuConta usuario={usuario} avatar={perfil.avatar} foto={perfil.foto} mudarAvatar={mudarAvatar} abrirPerfil={() => irPara('perfil')} sair={() => void sair()} />
         </header>
 

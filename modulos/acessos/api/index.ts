@@ -3,12 +3,13 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
 import { corpoObjeto, inteiro, texto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { confereSenha, hashSenha } from './senha.ts';
+import { criarTicket } from './tickets.ts';
 import { auditar, COOKIE_SESSAO, criarSessao, encerrarSessao, exigirPerm, horasDaSessao, sessaoMantida, usuarioDaSessao } from './guard.ts';
 import { registrarUso } from '../../uso/api/registro.ts';
 import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesDoPerfil, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 import { bytesNoDisco } from '../../imagens/api/armazenamento.ts';
 
-const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha', '/api/biometria/entrar/opcoes', '/api/biometria/entrar']);
+const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha', '/api/biometria/entrar/opcoes', '/api/biometria/entrar', '/api/biometria/segundo-fator/opcoes', '/api/biometria/segundo-fator']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
 const MAX_FALHAS = 5; // por pessoa a partir do mesmo aparelho/IP
 const MAX_FALHAS_IP = 20; // varredura de vários logins a partir de um IP
@@ -20,7 +21,7 @@ const SENHAS_COMUNS = new Set(['12345678', '123456789', '1234567890', '123123123
 // Hash de mentira: login inexistente gasta o mesmo tempo que um existente (não revela quais logins existem).
 const HASH_FALSO = hashSenha('senha-que-nunca-sera-usada');
 
-const DTO = 'id, login, nome, email, avisos_email, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes, departamento_id, (SELECT d.nome FROM departamentos d WHERE d.id = usuarios.departamento_id) AS departamento';
+const DTO = 'id, login, segundo_fator, nome, email, avisos_email, perfil, (SELECT p.nome FROM perfis_permissoes p WHERE p.perfil = usuarios.perfil) AS perfil_nome, ativo, trocar_senha, criado_em, ultimo_acesso, permissoes, departamento_id, (SELECT d.nome FROM departamentos d WHERE d.id = usuarios.departamento_id) AS departamento';
 
 /** Usuário para a tela de administração: ajustes viram objeto e vêm também as permissões que valem de fato. */
 function paraTela(db: Banco, u: Record<string, unknown>) {
@@ -106,8 +107,8 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       auditar(db, null, 'login_bloqueado', { login, ip: req.ip });
       return resp.code(429).send({ erro: `Muitas tentativas. Aguarde ${JANELA_MIN} minutos e tente de novo.` });
     }
-    const u = db.prepare('SELECT id, login, nome, perfil, senha_hash, trocar_senha, ativo, permissoes FROM usuarios WHERE login = ?').get(login) as
-      | { id: number; login: string; nome: string; perfil: string; senha_hash: string; trocar_senha: number; ativo: number; permissoes: string | null } | undefined;
+    const u = db.prepare('SELECT id, login, nome, perfil, senha_hash, trocar_senha, ativo, permissoes, segundo_fator FROM usuarios WHERE login = ?').get(login) as
+      | { id: number; login: string; nome: string; perfil: string; senha_hash: string; trocar_senha: number; ativo: number; permissoes: string | null; segundo_fator: number } | undefined;
     const ok = confereSenha(senha, u?.senha_hash ?? HASH_FALSO) && !!u && u.ativo === 1;
     if (!ok || !u) {
       const agora = new Date().toISOString();
@@ -117,8 +118,13 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
       return resp.code(401).send({ erro: 'Login ou senha inválidos.' });
     }
     db.prepare('DELETE FROM tentativas_login WHERE chave IN (?, ?)').run(chaveLogin, chavePar);
-    db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(new Date().toISOString(), u.id);
     const manter = c.manter === true;
+    // Segundo fator (opcional, escolhido pela pessoa): a senha está certa, mas a sessão só abre depois da biometria.
+    if (u.segundo_fator === 1 && (db.prepare('SELECT 1 FROM passkeys WHERE usuario_id = ?').get(u.id))) {
+      auditar(db, u.id, 'login_senha_ok_aguarda_biometria');
+      return { segundo_fator: true, ticket: criarTicket(u.id, manter) };
+    }
+    db.prepare('UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?').run(new Date().toISOString(), u.id);
     const token = criarSessao(db, u.id, manter);
     resp.setCookie(COOKIE_SESSAO, token, { httpOnly: true, sameSite: 'lax', secure: producao, path: '/', maxAge: horasDaSessao(manter) * 3600 });
     auditar(db, u.id, 'login', manter ? { manter: true } : undefined);
@@ -231,6 +237,17 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     return { ok: true };
   });
 
+  // Quem perdeu o aparelho: o administrador desliga o segundo fator (a pessoa entra só com a senha e liga de novo se quiser).
+  app.post<{ Params: { id: string } }>('/api/usuarios/:id/segundo-fator/desligar', senhaUsuario, async (req, resp) => {
+    const id = inteiro(req.params.id, 'Usuário');
+    const u = db.prepare('SELECT perfil, permissoes FROM usuarios WHERE id = ?').get(id) as { perfil: string; permissoes: string | null } | undefined;
+    if (!u) return resp.code(404).send({ erro: 'Usuário não encontrado.' });
+    if (!ehAdmin(req) && (u.perfil === 'admin' || excede(req, permissoesEfetivas(db, u.perfil, u.permissoes)))) return resp.code(403).send(NEGADO);
+    db.prepare('UPDATE usuarios SET segundo_fator = 0 WHERE id = ?').run(id);
+    auditar(db, req.usuario!.id, 'segundo_fator_desligado_por_admin', { id });
+    return { ok: true };
+  });
+
   // ----- "Esqueci a senha": a pessoa avisa o administrador; quem pode redefinir senhas vê o pedido no sino e em Usuários -----
   const porIp = new Map<string, number[]>();
   app.post('/api/esqueci-senha', { bodyLimit: 4096 }, async (req, resp) => {
@@ -250,6 +267,9 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
   app.get('/api/gestao/pedidos-senha', senhaUsuario, async (req) =>
     db.prepare(`SELECT p.id, p.usuario_id, p.criado_em, u.login, u.nome FROM pedidos_senha p JOIN usuarios u ON u.id = p.usuario_id
                  WHERE p.resolvido_em IS NULL ${ehAdmin(req) ? '' : "AND u.perfil <> 'admin'"} ORDER BY p.criado_em`).all());
+  // Colaboradores ativos sem departamento: só veem o que é para todos, então o RH precisa completar o cadastro (aviso no sino).
+  app.get('/api/gestao/sem-departamento', editarUsuario, async () =>
+    db.prepare("SELECT id, nome, login FROM usuarios WHERE ativo = 1 AND departamento_id IS NULL AND perfil <> 'admin' ORDER BY id DESC").all()); // mais recentes primeiro
   app.post<{ Params: { id: string } }>('/api/gestao/pedidos-senha/:id/dispensar', senhaUsuario, async (req, resp) => {
     const id = inteiro(req.params.id, 'Pedido');
     const p = db.prepare('SELECT p.id, u.perfil FROM pedidos_senha p JOIN usuarios u ON u.id = p.usuario_id WHERE p.id = ? AND p.resolvido_em IS NULL').get(id) as { id: number; perfil: string } | undefined;

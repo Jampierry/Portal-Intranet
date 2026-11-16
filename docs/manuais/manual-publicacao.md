@@ -17,6 +17,10 @@ Para editores, Marketing e quem cuida do conteúdo. O menu **Publicar** mostra s
 ![Formulário de comunicado: título (1), prioridade (2), situação (3), leitura obrigatória (4) e período de exibição (5).](img/publicar-comunicado-form.png)
 Título, resumo (aparece nos cartões), texto completo, imagem de capa (opcional), categoria, **prioridade** (urgente aparece no sino e nos Avisos importantes), situação (rascunho, publicado, arquivado), **exigir confirmação de leitura** e janela de exibição (**exibir a partir de / até**). Depois de publicado, "Leituras" mostra quem confirmou.
 
+**Quem recebe:** por padrão o comunicado vai para **todos**. Para um grupo, marque **Só alguns departamentos** e escolha os departamentos; só quem é desses departamentos vê o comunicado (lista, busca, sino, push e e-mail), e "Leituras" passa a cobrar só essas pessoas. A lista da aba mostra a coluna **Para**. Quem ainda não tem departamento no cadastro só recebe o que é para todos (o departamento de cada pessoa é definido em Configurações › Usuários). É assim que se manda uma **mensagem** dirigida: um comunicado para os departamentos escolhidos.
+
+![Quem recebe: todos os colaboradores ou só os departamentos marcados.](img/publicar-comunicado-publico.png)
+
 ### Redes sociais
 
 ![Redes sociais: planeje, envie para aprovação e marque como publicada.](img/publicar-redes.png)
@@ -40,6 +44,7 @@ Título, resumo, categoria, formato, **versão**, **responsável**, **quem pode 
 - um **link** http(s);
 - um **arquivo na pasta de documentos do portal**; ou
 - um arquivo numa **pasta do servidor** cadastrada pelo administrador (escolha "Servidor: origem" e clique no arquivo; não é preciso digitar caminho de rede).
+Para os dois últimos, quem lê o documento tem o botão **Visualizar**: abre PDF, Word (.docx), texto, CSV e imagem dentro do portal, com maximizar, imprimir e baixar. Outros formatos só baixam.
 
 ### Colaborador Destaque
 Nome, área, mês e ano, foto (opcional), texto de reconhecimento e **referência do consentimento** (obrigatória). É um reconhecimento sem ranking e sem pontuação.

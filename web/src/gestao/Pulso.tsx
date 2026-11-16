@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Crud, JanelaForm, Selo, usePermissoes } from './Crud';
 import { avisar } from '../Confirmar';
+import { CampoPublico } from './CampoPublico';
 import { EditorPerguntas, perguntaNova, type PerguntaForm } from './PulsoPerguntas';
 import { ResultadoCorpo, type Publicacao, type Resultado } from './ResultadoPesquisa';
 
-interface Pulso { id: number; pergunta: string; descricao: string | null; status: string; criado_em: string; aberto_em: string | null; encerrado_em: string | null; respostas: number; anonima: boolean; n_perguntas: number; perguntas: PerguntaForm[]; abre_em: string | null; fecha_em: string | null; situacao: string; rodada: number; total_respostas: number; pendentes: number }
+interface Pulso { id: number; pergunta: string; descricao: string | null; status: string; criado_em: string; aberto_em: string | null; encerrado_em: string | null; respostas: number; anonima: boolean; n_perguntas: number; perguntas: PerguntaForm[]; abre_em: string | null; fecha_em: string | null; situacao: string; rodada: number; total_respostas: number; pendentes: number; departamentos?: number[]; publico_texto?: string }
 const SIT: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { aberto: ['ok', 'Aberta'], rascunho: ['aviso', 'Rascunho'], encerrado: ['neutro', 'Encerrada'], agendada: ['aviso', 'Agendada'], prazo: ['neutro', 'Encerrada (prazo)'] };
 const dataHora = (v: string | null) => (v ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)} ${v.slice(11, 16)}` : '');
 /** Dados inventados só para o RH ver como o resultado fica (nada disso vem do banco). */
@@ -109,18 +110,20 @@ export function PesquisaPulso() {
           { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['aberto', 'Aberta (aparece para as pessoas responderem)'], ['encerrado', 'Encerrada']], metade: true, classe: 'gp-1' },
           { chave: 'abre_em', rotulo: 'Abre em (opcional)', tipo: 'datahora', metade: true, classe: 'gp-1', dica: 'Vale para pesquisa "Aberta".' },
           { chave: 'fecha_em', rotulo: 'Encerra em (opcional)', tipo: 'datahora', metade: true, classe: 'gp-1', dica: 'Sai do ar sozinha.' },
+          { chave: 'departamentos', rotulo: 'Quem recebe', tipo: 'custom', render: (v, m) => <CampoPublico valor={v} mudar={m} />, classe: 'gp-2' },
           { chave: 'perguntas', rotulo: 'Perguntas', tipo: 'custom', render: (v, m, todos) => <EditorPerguntas valor={v as PerguntaForm[]} mudar={m} bloqueado={todos.bloqueado === true} /> },
         ]}
         colunas={[
           { titulo: 'Pesquisa', ver: (r) => r.pergunta },
           { titulo: 'Perguntas', ver: (r) => r.n_perguntas, ordem: (r) => r.n_perguntas },
           { titulo: 'Tipo', ver: (r) => (r.anonima ? 'Anônima' : 'Identificada') },
+          { titulo: 'Para', ver: (r) => r.publico_texto ?? 'Todos' },
           { titulo: 'Situação', ver: (r) => { const [t, x] = SIT[r.situacao ?? r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
           { titulo: 'No ar', ver: (r) => (r.abre_em || r.fecha_em ? `${r.abre_em ? dataHora(r.abre_em) : 'já'} → ${r.fecha_em ? dataHora(r.fecha_em) : 'sem prazo'}` : '—') },
           { titulo: 'Respostas', ver: (r) => `${r.respostas}${r.rodada > 1 ? ` (rodada ${r.rodada})` : ''}`, ordem: (r) => r.respostas },
         ]}
-        valoresNovos={{ pergunta: '', descricao: '', abre_em: '', fecha_em: '', status: 'rascunho', anonima: '1', perguntas: [perguntaNova('nota')], bloqueado: false }}
-        paraForm={(r) => ({ pergunta: r.pergunta, descricao: r.descricao ?? '', abre_em: r.abre_em ?? '', fecha_em: r.fecha_em ?? '', status: r.status, anonima: r.anonima ? '1' : '0', perguntas: r.perguntas.map((q) => ({ ...q })), bloqueado: r.total_respostas > 0 })}
+        valoresNovos={{ pergunta: '', descricao: '', abre_em: '', fecha_em: '', status: 'rascunho', anonima: '1', perguntas: [perguntaNova('nota')], departamentos: [], bloqueado: false }}
+        paraForm={(r) => ({ pergunta: r.pergunta, descricao: r.descricao ?? '', abre_em: r.abre_em ?? '', fecha_em: r.fecha_em ?? '', status: r.status, anonima: r.anonima ? '1' : '0', perguntas: r.perguntas.map((q) => ({ ...q })), departamentos: r.departamentos ?? [], bloqueado: r.total_respostas > 0 })}
         acoesExtra={(r, _salvar, recarregar) => (<>
           {veResultado && <button className="btn btn-sec btn-pequeno" onClick={() => setResultado(r)}>Resultado</button>}
           {podeEditar && <button className="btn btn-sec btn-pequeno" title="Abre a mesma pesquisa de novo, com um novo período" onClick={() => setReenvio({ p: r, recarregar })}>Enviar de novo</button>}

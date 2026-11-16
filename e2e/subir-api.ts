@@ -11,5 +11,6 @@ process.env.PORTA = process.env.PORTA_API_E2E ?? '3200';
 const site = process.env.PORTA_SITE_E2E ?? '5274';
 process.env.ORIGENS_PERMITIDAS = `http://127.0.0.1:${site},http://localhost:${site}`;
 delete process.env.PASTA_MIDIA;
+process.env.DOCUMENTOS_PASTA = resolve(pasta, 'documentos'); // arquivos de teste dos documentos (nunca a pasta de desenvolvimento)
 await import('../servidor/src/cli/seed.ts');
 await import('../servidor/src/main.ts');

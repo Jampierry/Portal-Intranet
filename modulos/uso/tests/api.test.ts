@@ -89,3 +89,30 @@ test('dados com mais de 12 meses são apagados', async () => {
   assert.equal(limparUsoAntigo(db), 1);
   assert.equal((db.prepare('SELECT COUNT(*) n FROM uso_eventos').get() as { n: number }).n, 1);
 });
+
+test('comunicados lidos × publicados e exportação CSV (com auditoria)', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master'), le = await entrar(app, 'le'), ed = await entrar(app, 'edita');
+  const c1 = (await app.inject({ method: 'POST', url: '/api/gestao/comunicados', headers: adm, payload: { titulo: 'Aviso geral', resumo: 'r', categoria: 'RH', status: 'publicado', exige_leitura: true } })).json<{ slug: string }>();
+  await app.inject({ method: 'POST', url: '/api/gestao/comunicados', headers: adm, payload: { titulo: 'Outro aviso', resumo: 'r', categoria: 'RH', status: 'publicado' } });
+  assert.equal((await app.inject({ url: `/api/comunicados/${c1.slug}`, headers: le })).statusCode, 200); // abrir conta como leitura
+  assert.equal((await app.inject({ method: 'POST', url: `/api/comunicados/${c1.slug}/confirmar`, headers: le })).statusCode, 200);
+
+  const r = (await app.inject({ url: '/api/gestao/uso/resumo?dias=7', headers: adm })).json<{ comunicados: { publicados: number; esperadas: number; abriram: number; itens: { titulo: string; abriram: number; esperadas: number; confirmaram: number }[] } }>();
+  assert.equal(r.comunicados.publicados, 2);
+  const geral = r.comunicados.itens.find((i) => i.titulo === 'Aviso geral')!;
+  assert.deepEqual([geral.abriram, geral.confirmaram], [1, 1]);
+  assert.ok(geral.esperadas >= 2);
+  assert.equal(r.comunicados.itens.find((i) => i.titulo === 'Outro aviso')!.abriram, 0);
+
+  assert.equal((await app.inject({ url: '/api/gestao/uso/exportar?dias=7', headers: ed })).statusCode, 403);
+  const csv = await app.inject({ url: '/api/gestao/uso/exportar?dias=7', headers: adm });
+  assert.equal(csv.statusCode, 200);
+  assert.match(String(csv.headers['content-type']), /text\/csv/);
+  assert.match(csv.body, /Comunicados publicados no período/);
+  assert.match(csv.body, /Aviso geral/);
+  assert.match(csv.body, /Por pessoa/);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/gestao/uso/exportar-pdf', headers: adm, payload: { dias: 7 } })).statusCode, 200);
+  const aud = db.prepare("SELECT acao FROM auditoria WHERE acao = 'uso_exportado'").all();
+  assert.equal(aud.length, 2);
+});

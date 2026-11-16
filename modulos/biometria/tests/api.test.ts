@@ -110,3 +110,66 @@ test('no máximo 5 biometrias por pessoa', async () => {
   const op = await app.inject({ method: 'POST', url: '/api/biometria/registro/opcoes', headers: { ...le, ...H }, payload: {} });
   assert.equal(op.statusCode, 400);
 });
+
+test('segundo fator opcional: com ele ligado a senha sozinha não abre a sessão; a biometria conclui; erros derrubam o ticket', async () => {
+  const { app, db } = await criarAppTeste();
+  const le = await entrar(app, 'le');
+  const aut = new AutenticadorFalso('localhost', ORIGEM);
+  const SENHA = 'senha-de-teste-1';
+  // sem biometria cadastrada não dá para ligar
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: true } })).statusCode, 400);
+  await cadastrar(app, le, aut);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: true } })).statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/biometria/estado', headers: le })).json<{ segundo_fator: boolean }>().segundo_fator, true);
+
+  // 1ª etapa: senha certa, mas sem cookie de sessão
+  const etapa1 = await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'le', senha: SENHA } });
+  assert.equal(etapa1.statusCode, 200);
+  const { segundo_fator, ticket } = etapa1.json<{ segundo_fator?: boolean; ticket?: string }>();
+  assert.equal(segundo_fator, true);
+  assert.ok(ticket);
+  assert.equal(etapa1.cookies.find((c) => c.name === 'portal_sessao'), undefined, 'a senha sozinha não abre a sessão');
+
+  // 2ª etapa
+  const opcoes = async (t: string) => (await app.inject({ method: 'POST', url: '/api/biometria/segundo-fator/opcoes', headers: H, payload: { ticket: t } })).json<{ opcoes: { challenge: string }; desafio_id: string }>();
+  const op = await opcoes(ticket!);
+  const ok = await app.inject({ method: 'POST', url: '/api/biometria/segundo-fator', headers: H, payload: { ticket, desafio_id: op.desafio_id, resposta: aut.entrada(op.opcoes.challenge) } });
+  assert.equal(ok.statusCode, 200, ok.body);
+  const cookie = ok.cookies.find((c) => c.name === 'portal_sessao')!;
+  assert.equal((await app.inject({ url: '/api/eu', headers: { cookie: `portal_sessao=${cookie.value}` } })).json<{ login: string }>().login, 'le');
+  // o ticket vale uma vez
+  const de_novo = await app.inject({ method: 'POST', url: '/api/biometria/segundo-fator/opcoes', headers: H, payload: { ticket } });
+  assert.equal(de_novo.statusCode, 400);
+
+  // biometria de outra pessoa (autenticador diferente) é recusada e 5 erros derrubam o ticket
+  const t2 = (await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'le', senha: SENHA } })).json<{ ticket: string }>().ticket;
+  const intruso = new AutenticadorFalso('localhost', ORIGEM);
+  for (let i = 0; i < 5; i++) {
+    const o = await opcoes(t2);
+    const r = await app.inject({ method: 'POST', url: '/api/biometria/segundo-fator', headers: H, payload: { ticket: t2, desafio_id: o.desafio_id, resposta: intruso.entrada(o.opcoes.challenge) } });
+    assert.equal(r.statusCode, 400);
+  }
+  assert.equal((await app.inject({ method: 'POST', url: '/api/biometria/segundo-fator/opcoes', headers: H, payload: { ticket: t2 } })).statusCode, 400, 'ticket derrubado após 5 erros');
+
+  // desligar exige a senha; remover a última biometria também desliga
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: false, senha: 'errada' } })).statusCode, 400);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: false, senha: SENHA } })).statusCode, 200);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'le', senha: SENHA } })).cookies.some((c) => c.name === 'portal_sessao'), true);
+
+  await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: true } });
+  const id = (db.prepare('SELECT id FROM passkeys').get() as { id: number }).id;
+  await app.inject({ method: 'DELETE', url: `/api/biometria/${id}`, headers: le });
+  assert.equal((db.prepare("SELECT segundo_fator FROM usuarios WHERE login = 'le'").get() as { segundo_fator: number }).segundo_fator, 0);
+});
+
+test('o administrador desliga o segundo fator de quem perdeu o aparelho', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master'), le = await entrar(app, 'le'), ed = await entrar(app, 'edita');
+  const aut = new AutenticadorFalso('localhost', ORIGEM);
+  await cadastrar(app, le, aut);
+  await app.inject({ method: 'PUT', url: '/api/biometria/segundo-fator', headers: { ...le, ...H }, payload: { ativo: true } });
+  const id = (db.prepare("SELECT id FROM usuarios WHERE login = 'le'").get() as { id: number }).id;
+  assert.equal((await app.inject({ method: 'POST', url: `/api/usuarios/${id}/segundo-fator/desligar`, headers: ed })).statusCode, 403, 'sem a permissão de senhas não desliga');
+  assert.equal((await app.inject({ method: 'POST', url: `/api/usuarios/${id}/segundo-fator/desligar`, headers: adm })).statusCode, 200);
+  assert.equal((db.prepare('SELECT segundo_fator FROM usuarios WHERE id = ?').get(id) as { segundo_fator: number }).segundo_fator, 0);
+});

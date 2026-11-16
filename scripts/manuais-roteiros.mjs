@@ -169,6 +169,16 @@ export const roteiros = {
         ]);
         await p.keyboard.press('Escape');
       }],
+      ['comunicado-publico', async () => {
+        await botao(p, /^(\+ )?Novo/).first().click();
+        const campo = p.locator('.janela .publico-campo').first();
+        await campo.scrollIntoViewIfNeeded();
+        await campo.getByLabel('Só alguns departamentos').check();
+        await tirar(p, 'publicar-comunicado-publico', [
+          { alvo: campo, rotulo: 'Todos ou só alguns departamentos', lado: 'dir' },
+        ]);
+        await p.keyboard.press('Escape');
+      }],
       ['banners', async () => { await aba(p, /Banners/).click(); await tirar(p, 'publicar-banners', [{ alvo: botao(p, /^(\+ )?Novo/).first(), rotulo: 'Novo banner', lado: 'esq' }]); }],
       ['documentos', async () => { await aba(p, /^Documentos/).click(); await tirar(p, 'publicar-documentos', [{ alvo: botao(p, /^(\+ )?Novo/).first(), rotulo: 'Novo documento', lado: 'esq' }]); }],
       ['aplicativos', async () => { await aba(p, 'Aplicativos').click(); await tirar(p, 'publicar-aplicativos', [{ alvo: aba(p, 'Aplicativos'), rotulo: 'Cadastro dos aplicativos', lado: 'baixo' }]); }],
@@ -211,6 +221,16 @@ export const roteiros = {
     await entrar(p);
     await ir(p, 'Configurações');
     await passos([
+      ['sem-departamento', async () => {
+        await p.locator('button.sino').click();
+        await p.locator('.painel-avisos .aviso', { hasText: 'sem departamento' }).first().waitFor();
+        await tirar(p, 'admin-sem-departamento', [
+          { alvo: p.locator('.painel-avisos .aviso', { hasText: 'sem departamento' }).first(), rotulo: 'Pessoa sem departamento', lado: 'esq' },
+          { alvo: p.locator('.painel-avisos').getByRole('button', { name: 'Atualizar cadastro' }).first(), rotulo: 'Abre o cadastro', lado: 'esq' },
+        ], { clip: { x: 700, y: 0, width: 666, height: 420 } });
+        await p.keyboard.press('Escape');
+        await p.locator('button.sino').click();
+      }],
       ['usuarios', () => tirar(p, 'admin-usuarios', [
         { alvo: botao(p, /^(\+ )?Novo/).first(), rotulo: 'Novo usuário', lado: 'esq' },
         { alvo: p.locator('.abas-gestao').first(), rotulo: 'Abas de Configurações', lado: 'baixo' },
@@ -220,6 +240,15 @@ export const roteiros = {
       ['entrada', async () => { await aba(p, /Tela de entrada/).click(); await tirar(p, 'admin-entrada', [{ alvo: p.locator('#conteudo-principal').first(), rotulo: 'Fundo e textos do login', lado: 'dir', contorno: false }]); }],
       ['integracoes', async () => { await aba(p, /Integra/).click(); await tirar(p, 'admin-integracoes', [{ alvo: p.locator('#conteudo-principal').first(), rotulo: 'Serviço de e-mail e agenda', lado: 'dir', contorno: false }]); }],
       ['pastas', async () => { await aba(p, /Pastas/).click(); await tirar(p, 'admin-pastas', [{ alvo: botao(p, /^(\+ )?Nov[ao]/).first(), rotulo: 'Nova pasta', lado: 'esq' }]); }],
+      ['uso', async () => {
+        await aba(p, /Uso do portal/).click();
+        await p.getByRole('heading', { name: 'Telas mais usadas' }).waitFor();
+        await tirar(p, 'admin-uso', [
+          { alvo: p.locator('.uso-kpis').first(), rotulo: 'Adoção e comunicados lidos', lado: 'cima' },
+          { alvo: p.locator('.uso-coms').first(), rotulo: 'Lidos × publicados', lado: 'cima' },
+          { alvo: p.locator('.uso-exportar').first(), rotulo: 'Exportar CSV ou PDF', lado: 'esq' },
+        ]);
+      }],
       ['auditoria', async () => { await aba(p, /Auditoria/).click(); await tirar(p, 'admin-auditoria', [{ alvo: p.locator('#conteudo-principal table').first(), rotulo: 'Quem fez o quê', lado: 'dir', contorno: false }]); }],
     ]);
     await p.context().close();

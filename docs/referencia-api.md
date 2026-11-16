@@ -12,10 +12,16 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/biometria/registro/opcoes` · `/api/biometria/registro` | — (cadastra a digital/rosto deste aparelho; até 5 por pessoa) |
 | DELETE | `/api/biometria/:id` | — (só a própria) |
 | POST | `/api/biometria/entrar/opcoes` · `/api/biometria/entrar` | pública (entrar com biometria; corpo aceita `manter`) |
+| GET | `/api/biometria/estado` | — (se o segundo fator está ligado) |
+| PUT | `/api/biometria/segundo-fator` | — (`{ativo:true}` liga, exige biometria cadastrada; `{ativo:false, senha}` desliga) |
+| POST | `/api/biometria/segundo-fator/opcoes` · `/api/biometria/segundo-fator` | pública, só com o `ticket` que o `POST /api/login` devolve quando o segundo fator está ligado (`{segundo_fator:true, ticket}`, sem cookie); o ticket vale 5 min, uma vez, e 5 erros o derrubam |
+| POST | `/api/usuarios/:id/segundo-fator/desligar` | cfg.usuarios.senha (quem perdeu o aparelho) |
 | POST | `/api/uso/tela` | — (o site informa a tela aberta; só o nome da tela) |
 | GET | `/api/departamentos` | — |
 | POST | `/api/departamentos` | cfg.usuarios.criar ou editar |
 | GET | `/api/gestao/uso/resumo?dias=7\|30\|90\|365` | cfg.uso.ver |
+| GET | `/api/gestao/uso/exportar?dias=…` | cfg.uso.ver (CSV com resumo, dias, telas, departamentos, comunicados lidos × publicados e pessoas; auditoria `uso_exportado`) |
+| POST | `/api/gestao/uso/exportar-pdf` | cfg.uso.ver (só registra na auditoria que o relatório em PDF foi gerado; o PDF sai do navegador) |
 | GET | `/api/gestao/uso/pessoas?dias=…` | cfg.uso.ver (identifica pessoas; cada consulta vai para a auditoria: `uso_consultado`) |
 | POST | `/api/sair` | — |
 | GET | `/api/eu` | — |
@@ -27,6 +33,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/esqueci-senha` | — |
 | GET | `/api/gestao/pedidos-senha` | cfg.usuarios.senha |
 | POST | `/api/gestao/pedidos-senha/:id/dispensar` | cfg.usuarios.senha |
+| GET | `/api/gestao/sem-departamento` | cfg.usuarios.editar |
 | GET | `/api/perfis` | cfg.usuarios.ver, cfg.usuarios.criar, cfg.usuarios.editar, cfg.perfis.ver |
 | POST | `/api/perfis` | cfg.perfis.criar |
 | PUT | `/api/perfis/:codigo` | cfg.perfis.editar |
@@ -98,7 +105,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 ## comunicados
 | Método | Rota | Permissão |
 |---|---|---|
-| GET | `/api/comunicados` | ver.comunicados |
+| GET | `/api/comunicados` | ver.comunicados (só os do departamento da pessoa e os para todos) |
 | GET | `/api/comunicados/:slug` | ver.comunicados |
 | POST | `/api/comunicados/:slug/confirmar` | ver.comunicados |
 | GET | `/api/gestao/comunicados` | pub.comunicados.ver |
@@ -118,7 +125,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | Método | Rota | Permissão |
 |---|---|---|
 | GET | `/api/documentos` | ver.documentos |
-| GET | `/api/documentos/:slug/arquivo` | ver.documentos |
+| GET | `/api/documentos/:slug/arquivo` (`?baixar=1` força o download) | ver.documentos + documentos.abrir |
 | GET | `/api/gestao/documentos/pasta` | pub.documentos.criar, pub.documentos.editar |
 | GET | `/api/gestao/documentos/origens` | pub.documentos.ver, pub.documentos.criar, pub.documentos.editar |
 | GET | `/api/gestao/documentos/origens/navegar` | perfil admin |

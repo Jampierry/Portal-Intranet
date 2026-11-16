@@ -60,6 +60,18 @@ export async function entrarComBiometria(manter: boolean): Promise<Usuario> {
   }
 }
 
+/** Segunda etapa do login (a senha já foi aceita): confirma com a biometria cadastrada. */
+export async function confirmarSegundoFator(ticket: string): Promise<Usuario> {
+  try {
+    const { opcoes, desafio_id } = await api<{ opcoes: PublicKeyCredentialRequestOptionsJSON; desafio_id: string }>('/api/biometria/segundo-fator/opcoes', { ticket });
+    const resposta = await startAuthentication({ optionsJSON: opcoes });
+    return await api<Usuario>('/api/biometria/segundo-fator', { ticket, desafio_id, resposta });
+  } catch (e) {
+    if (ehNaoPermitido(e)) throw new Error('A confirmação por biometria foi cancelada ou este aparelho não tem a sua biometria. Entre de novo; se perdeu o aparelho, peça ao administrador para desligar o segundo fator.');
+    throw new Error((e as Error)?.message || 'Não foi possível confirmar a biometria.');
+  }
+}
+
 export async function cadastrarBiometria(nome: string): Promise<void> {
   try {
     const { opcoes, desafio_id } = await api<{ opcoes: PublicKeyCredentialCreationOptionsJSON; desafio_id: string }>('/api/biometria/registro/opcoes', {});
@@ -75,8 +87,19 @@ export function BiometriaPessoal() {
   const disponivel = useBiometriaDisponivel();
   const [lista, setLista] = useState<Passkey[] | null>(null);
   const [msg, setMsg] = useState(''); const [erro, setErro] = useState(''); const [ocupado, setOcupado] = useState(false);
-  const carregar = () => api<Passkey[]>('/api/biometria').then(setLista).catch((e: Error) => setErro(e.message));
+  const [segundo, setSegundo] = useState(false);
+  const [desligando, setDesligando] = useState(false);
+  const [senha, setSenha] = useState('');
+  const carregar = () => Promise.all([api<Passkey[]>('/api/biometria'), api<{ segundo_fator: boolean }>('/api/biometria/estado')]).then(([l, e]) => { setLista(l); setSegundo(e.segundo_fator); }).catch((e: Error) => setErro(e.message));
   useEffect(() => { void carregar(); }, []);
+  const ligar = async () => {
+    setErro(''); setMsg('');
+    try { await api('/api/biometria/segundo-fator', { ativo: true }, 'PUT'); setSegundo(true); setMsg('Segundo fator ligado: ao entrar com a senha, o portal pede também a sua biometria.'); } catch (x) { setErro((x as Error).message); }
+  };
+  const desligar = async () => {
+    setErro(''); setMsg('');
+    try { await api('/api/biometria/segundo-fator', { ativo: false, senha }, 'PUT'); setSegundo(false); setDesligando(false); setSenha(''); setMsg('Segundo fator desligado.'); } catch (x) { setErro((x as Error).message); }
+  };
 
   const adicionar = async () => {
     setErro(''); setMsg(''); setOcupado(true);
@@ -106,6 +129,21 @@ export function BiometriaPessoal() {
             </li>
           ))}
         </ul>
+      )}
+      {(lista ?? []).length > 0 && (
+        <div className="segundo-fator">
+          <label className="linha">
+            <input type="checkbox" checked={segundo} onChange={() => { if (segundo) setDesligando(true); else void ligar(); }} />
+            <span><b>Pedir minha biometria também ao entrar com a senha</b><small className="suave"> (segundo fator, opcional). Mais segurança: só a senha deixa de bastar.</small></span>
+          </label>
+          {desligando && (
+            <form className="segundo-fator-desligar" onSubmit={(e) => { e.preventDefault(); void desligar(); }}>
+              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Digite sua senha para desligar" aria-label="Sua senha" autoComplete="current-password" />
+              <button className="btn btn-pequeno" disabled={!senha}>Desligar</button>
+              <button type="button" className="btn btn-sec btn-pequeno" onClick={() => { setDesligando(false); setSenha(''); }}>Cancelar</button>
+            </form>
+          )}
+        </div>
       )}
       {disponivel
         ? <button type="button" className="btn btn-sec btn-pequeno" disabled={ocupado} onClick={() => void adicionar()}>{ocupado ? 'Aguardando o aparelho…' : (lista ?? []).length ? 'Cadastrar outro aparelho' : 'Cadastrar a biometria deste aparelho'}</button>

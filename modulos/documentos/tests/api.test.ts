@@ -71,6 +71,8 @@ test('documento na pasta do portal: serve o arquivo e bloqueia saída da pasta',
   const r = await app.inject({ url: ferias.link_oficial, headers: le });
   assert.equal(r.statusCode, 200);
   assert.equal(r.body, 'conteudo ok');
+  assert.match(String(r.headers['content-disposition']), /^inline; filename\*=UTF-8''ferias\.txt/, 'texto abre direto');
+  assert.match(String((await app.inject({ url: `${ferias.link_oficial}?baixar=1`, headers: le })).headers['content-disposition']), /^attachment/, '?baixar=1 força o download');
   assert.equal((await app.inject({ url: `/api/documentos/${lista.find((d) => d.titulo === 'Sumiu')!.slug}/arquivo`, headers: le })).statusCode, 404);
   assert.equal((await app.inject({ url: ferias.link_oficial })).statusCode, 401);
   const raizLista = (await app.inject({ url: '/api/gestao/documentos/pasta', headers: ed })).json<{ sub: string; itens: { nome: string; pasta: boolean }[] }>();

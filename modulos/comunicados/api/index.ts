@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { permissoesEfetivas } from '../../acessos/api/permissoes.ts';
+import { gravarPublico, lerPublico, paraUsuario, pessoasDoPublico, publicoDe, resumoPublico } from '../../publico/api/index.ts';
 import { corpoObjeto, dataIso, ErroValidacao, escolha, inteiro, slugUnico, texto } from '../../../servidor/src/validar.ts';
 
 const STATUS = ['rascunho', 'publicado', 'arquivado'] as const;
@@ -21,18 +22,20 @@ function imagemInterna(v: string | null): string | null {
 export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco; producao: boolean }) {
   const LIDO = 'EXISTS (SELECT 1 FROM comunicado_leituras l WHERE l.comunicado_id = comunicados.id AND l.usuario_id = ?) AS lido';
   app.get('/api/comunicados', { preHandler: exigirPerm('ver.comunicados') }, async (req) =>
-    db.prepare(`SELECT slug, titulo, resumo, categoria, prioridade, imagem, publicado_em, exige_leitura, ${LIDO} FROM comunicados WHERE ${VISIVEL} ORDER BY publicado_em DESC, id DESC`).all(req.usuario!.id),
+    db.prepare(`SELECT slug, titulo, resumo, categoria, prioridade, imagem, publicado_em, exige_leitura, ${LIDO} FROM comunicados WHERE ${VISIVEL} AND ${paraUsuario('comunicado', 'comunicados.id', req.usuario!.id)} ORDER BY publicado_em DESC, id DESC`).all(req.usuario!.id),
   );
 
   // Detalhe: só comunicados visíveis (rascunho, arquivado e fora da janela não aparecem).
   app.get<{ Params: { slug: string } }>('/api/comunicados/:slug', { preHandler: exigirPerm('ver.comunicados') }, async (req, resp) => {
-    const c = db.prepare(`SELECT slug, titulo, resumo, corpo, categoria, prioridade, imagem, publicado_em, exige_leitura, ${LIDO}, (SELECT l.lido_em FROM comunicado_leituras l WHERE l.comunicado_id = comunicados.id AND l.usuario_id = ?) AS lido_em FROM comunicados WHERE slug = ? AND ${VISIVEL}`).get(req.usuario!.id, req.usuario!.id, req.params.slug);
+    const c = db.prepare(`SELECT slug, titulo, resumo, corpo, categoria, prioridade, imagem, publicado_em, exige_leitura, ${LIDO}, (SELECT l.lido_em FROM comunicado_leituras l WHERE l.comunicado_id = comunicados.id AND l.usuario_id = ?) AS lido_em FROM comunicados WHERE slug = ? AND ${VISIVEL} AND ${paraUsuario('comunicado', 'comunicados.id', req.usuario!.id)}`).get(req.usuario!.id, req.usuario!.id, req.params.slug);
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
+    // primeira abertura de cada pessoa (alimenta "lidos × publicados" no painel de uso)
+    db.prepare('INSERT OR IGNORE INTO comunicado_aberturas (comunicado_id, usuario_id, aberto_em) SELECT id, ?, ? FROM comunicados WHERE slug = ?').run(req.usuario!.id, new Date().toISOString(), req.params.slug);
     return c;
   });
   // "Li e estou ciente": só em comunicado visível que exige confirmação; confirmar de novo não muda a data.
   app.post<{ Params: { slug: string } }>('/api/comunicados/:slug/confirmar', { preHandler: exigirPerm('ver.comunicados') }, async (req, resp) => {
-    const c = db.prepare(`SELECT id, exige_leitura FROM comunicados WHERE slug = ? AND ${VISIVEL}`).get(req.params.slug) as { id: number; exige_leitura: number } | undefined;
+    const c = db.prepare(`SELECT id, exige_leitura FROM comunicados WHERE slug = ? AND ${VISIVEL} AND ${paraUsuario('comunicado', 'comunicados.id', req.usuario!.id)}`).get(req.params.slug) as { id: number; exige_leitura: number } | undefined;
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     if (!c.exige_leitura) return resp.code(400).send({ erro: 'Este comunicado não pede confirmação de leitura.' });
     db.prepare('INSERT OR IGNORE INTO comunicado_leituras (comunicado_id, usuario_id, lido_em) VALUES (?, ?, ?)').run(c.id, req.usuario!.id, new Date().toISOString());
@@ -56,11 +59,13 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
       prioridade: escolha(c, 'prioridade', 'Prioridade', PRIORIDADES, 'normal'),
       status: escolha(c, 'status', 'Situação', STATUS, 'rascunho'),
       exibir_de, exibir_ate, exige_leitura: c.exige_leitura ? 1 : 0,
+      departamentos: lerPublico(db, c.departamentos),
     };
   }
 
   const APROV = "(SELECT a.status FROM aprovacoes a WHERE a.tipo = 'comunicado' AND a.registro_id = comunicados.id AND a.status <> 'cancelado' ORDER BY a.id DESC LIMIT 1) AS aprovacao_status, (SELECT a.motivo FROM aprovacoes a WHERE a.tipo = 'comunicado' AND a.registro_id = comunicados.id AND a.status <> 'cancelado' ORDER BY a.id DESC LIMIT 1) AS aprovacao_motivo";
-  app.get('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.ver') }, async () => db.prepare(`SELECT ${CAMPOS}, ${APROV} FROM comunicados ORDER BY id DESC`).all());
+  const comPublico = <T extends { id: number }>(r: T) => ({ ...r, departamentos: publicoDe(db, 'comunicado', r.id), publico_texto: resumoPublico(db, 'comunicado', r.id) });
+  app.get('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.ver') }, async () => (db.prepare(`SELECT ${CAMPOS}, ${APROV} FROM comunicados ORDER BY id DESC`).all() as { id: number }[]).map(comPublico));
 
   app.post('/api/gestao/comunicados', { preHandler: exigirPerm('pub.comunicados.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
@@ -74,10 +79,11 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(slug, d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, req.usuario!.id, d.exibir_de, d.exibir_ate, d.exige_leitura, d.status === 'publicado' ? hoje() : null, agora, agora);
     const id = Number(r.lastInsertRowid);
-    auditar(db, req.usuario!.id, 'comunicado_criado', { id, titulo: d.titulo, status: d.status });
+    gravarPublico(db, 'comunicado', id, d.departamentos);
+    auditar(db, req.usuario!.id, 'comunicado_criado', { id, titulo: d.titulo, status: d.status, departamentos: d.departamentos.length });
     if (paraAprovar) solicitarAprovacao(db, { tipo: 'comunicado', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
     if (d.status === 'publicado') { void avisarNovoComunicado(db, slug, req.usuario!.id); void avisarPushComunicado(db, slug); } // e-mail (se ligado em Integrações) e push
-    return resp.code(201).send(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id));
+    return resp.code(201).send(comPublico(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id) as { id: number }));
   });
 
   // Mudar só a data de publicação (exibir a partir de): quem precisa de aprovação volta para a fila do RH (o comunicado sai do ar até lá).
@@ -107,11 +113,12 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     db.prepare(
       `UPDATE comunicados SET titulo = ?, resumo = ?, corpo = ?, imagem = ?, categoria = ?, prioridade = ?, status = ?, exibir_de = ?, exibir_ate = ?, exige_leitura = ?, publicado_em = ?, atualizado_em = ? WHERE id = ?`,
     ).run(d.titulo, d.resumo, d.corpo, d.imagem, d.categoria, d.prioridade, d.status, d.exibir_de, d.exibir_ate, d.exige_leitura, publicado_em, new Date().toISOString(), id);
-    auditar(db, req.usuario!.id, 'comunicado_alterado', { id, titulo: d.titulo, de: atual.status, para: d.status });
+    gravarPublico(db, 'comunicado', id, d.departamentos);
+    auditar(db, req.usuario!.id, 'comunicado_alterado', { id, titulo: d.titulo, de: atual.status, para: d.status, departamentos: d.departamentos.length });
     if (paraAprovar) solicitarAprovacao(db, { tipo: 'comunicado', registroId: id, titulo: d.titulo, solicitanteId: req.usuario!.id });
     else cancelarPendentes(db, 'comunicado', id);
     if (d.status === 'publicado') { const s = (db.prepare('SELECT slug FROM comunicados WHERE id = ?').get(id) as { slug: string }).slug; void avisarNovoComunicado(db, s, req.usuario!.id); void avisarPushComunicado(db, s); }
-    return db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id);
+    return comPublico(db.prepare(`SELECT ${CAMPOS} FROM comunicados WHERE id = ?`).get(id) as { id: number });
   });
 
   // Editor só apaga rascunho; admin apaga qualquer um (o ideal é arquivar).
@@ -121,8 +128,9 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     const c = db.prepare('SELECT titulo, exige_leitura FROM comunicados WHERE id = ?').get(id) as { titulo: string; exige_leitura: number } | undefined;
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     const lidas = new Map((db.prepare('SELECT usuario_id, lido_em FROM comunicado_leituras WHERE comunicado_id = ?').all(id) as { usuario_id: number; lido_em: string }[]).map((l) => [l.usuario_id, l.lido_em]));
+    const doPublico = new Set(pessoasDoPublico(db, 'comunicado', id));
     const alvo = (db.prepare('SELECT id, login, nome, perfil, permissoes FROM usuarios WHERE ativo = 1 ORDER BY nome').all() as { id: number; login: string; nome: string; perfil: string; permissoes: string | null }[])
-      .filter((u) => permissoesEfetivas(db, u.perfil, u.permissoes).includes('ver.comunicados'));
+      .filter((u) => doPublico.has(u.id) && permissoesEfetivas(db, u.perfil, u.permissoes).includes('ver.comunicados'));
     const lidos = alvo.filter((u) => lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login, lido_em: lidas.get(u.id)! })).sort((a, b) => a.lido_em.localeCompare(b.lido_em));
     const pendentes = alvo.filter((u) => !lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login }));
     return { titulo: c.titulo, exige_leitura: !!c.exige_leitura, total: alvo.length, lidos, pendentes };
@@ -135,6 +143,7 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     if (req.usuario!.perfil !== 'admin' && c.status !== 'rascunho') return resp.code(403).send({ erro: 'Só o administrador apaga comunicado já publicado. Use "Arquivar".' });
     cancelarPendentes(db, 'comunicado', id); // pedido de aprovação não fica órfão na fila do RH
     db.prepare('DELETE FROM comunicados WHERE id = ?').run(id);
+    gravarPublico(db, 'comunicado', id, []);
     auditar(db, req.usuario!.id, 'comunicado_apagado', { id, titulo: c.titulo });
     return { ok: true };
   });

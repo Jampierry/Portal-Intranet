@@ -78,3 +78,31 @@ test('"Responder depois" fecha o pop-up sem gravar resposta', async ({ page, bas
   await ctx.dispose();
   await admin.dispose();
 });
+
+test('pesquisa para um departamento: o pop-up aparece só para quem é dele', async ({ page, browser, baseURL }) => {
+  const id = unico();
+  const titulo = `Clima do Financeiro ${id}`;
+  const admin = await apiComo(baseURL!, ADMIN);
+  const perfil = await criarPerfil(admin, `Leitor depto ${id}`, ['ver.comunicados']);
+  const dep = async (nome: string) => (await (await admin.post('/api/departamentos', { data: { nome: `${nome} ${id}` } })).json() as { id: number }).id;
+  const fin = await dep('Financeiro'), mkt = await dep('Marketing');
+  const gente = async (login: string, depto: number) => {
+    const p = await criarPessoa(admin, baseURL!, { login: `${login}.${id}`, nome: `${login} ${id}`, perfil });
+    const uid = ((await (await admin.get('/api/usuarios')).json()) as { id: number; login: string }[]).find((u) => u.login === p.login)!.id;
+    expect((await admin.put(`/api/usuarios/${uid}`, { data: { departamento_id: depto } })).ok()).toBeTruthy();
+    return p;
+  };
+  const doFin = await gente('fin', fin), doMkt = await gente('mkt', mkt);
+  const criada = await admin.post('/api/gestao/pulso', { data: { pergunta: titulo, status: 'aberto', anonima: true, departamentos: [fin], perguntas: [{ texto: 'Como você está?', tipo: 'nota', obrigatoria: true }] } });
+  expect(criada.status(), await criada.text()).toBe(201);
+
+  await entrar(page, doFin, false);
+  await expect(page.getByRole('dialog', { name: titulo })).toBeVisible();
+
+  const contexto2 = await browser.newContext({ baseURL, viewport: { width: 1366, height: 768 } });
+  const outra = await contexto2.newPage();
+  await entrar(outra, doMkt, false);
+  await expect(outra.getByRole('dialog', { name: titulo })).toHaveCount(0);
+  await contexto2.close();
+  await admin.dispose();
+});

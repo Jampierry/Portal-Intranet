@@ -7,6 +7,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { aoInscrever, enviarPush } from '../../push/api/index.ts';
+import { gravarPublico, lerPublico, noPublico, paraUsuario, pessoasDoPublico, publicoDe, resumoPublico } from '../../publico/api/index.ts';
 import { corpoObjeto, ErroValidacao, escolha, inteiro, texto } from '../../../servidor/src/validar.ts';
 
 export const MINIMO_RESPOSTAS = 5;
@@ -80,7 +81,7 @@ const PENDENTE_DE = "NOT EXISTS (SELECT 1 FROM pulso_participacao x WHERE x.puls
 async function avisarPendentesDe(db: Banco, usuarioId: number): Promise<void> {
   try {
     const agora = agoraLocal();
-    const lista = db.prepare(`SELECT id, pergunta AS titulo FROM pulsos WHERE ${NO_AR} AND push_abertura_em IS NOT NULL AND ${PENDENTE_DE}`).all(agora, agora, usuarioId) as { id: number; titulo: string }[];
+    const lista = db.prepare(`SELECT id, pergunta AS titulo FROM pulsos WHERE ${NO_AR} AND push_abertura_em IS NOT NULL AND ${PENDENTE_DE} AND ${paraUsuario('pulso', 'pulsos.id', usuarioId)}`).all(agora, agora, usuarioId) as { id: number; titulo: string }[];
     for (const p of lista) await enviarPush(db, [usuarioId], { titulo: 'Pesquisa aguardando sua resposta', corpo: `${p.titulo}. Abra o portal para responder.`, url: '/', tag: `pesquisa-${p.id}` });
   } catch { /* ignora */ }
 }
@@ -94,9 +95,10 @@ export async function avisarAberturas(db: Banco): Promise<void> {
     for (const p of abertas) {
       db.prepare('UPDATE pulsos SET push_abertura_em = ? WHERE id = ?').run(new Date().toISOString(), p.id); // marca antes de enviar
       // reenvio "só para quem não respondeu": avisa apenas os pendentes; senão, todos
+      const doPublico = pessoasDoPublico(db, 'pulso', p.id);
       const destino = p.so_pendentes
-        ? (db.prepare('SELECT u.id FROM usuarios u WHERE u.ativo = 1 AND NOT EXISTS (SELECT 1 FROM pulso_participacao x WHERE x.pulso_id = ? AND x.usuario_id = u.id AND x.rodada = ?)').all(p.id, p.rodada) as { id: number }[]).map((u) => u.id)
-        : 'todos' as const;
+        ? (db.prepare('SELECT u.id FROM usuarios u WHERE u.ativo = 1 AND NOT EXISTS (SELECT 1 FROM pulso_participacao x WHERE x.pulso_id = ? AND x.usuario_id = u.id AND x.rodada = ?)').all(p.id, p.rodada) as { id: number }[]).map((u) => u.id).filter((i) => doPublico.includes(i))
+        : publicoDe(db, 'pulso', p.id).length ? doPublico : 'todos' as const;
       const titulo = p.so_pendentes ? 'Pesquisa aguardando sua resposta' : p.rodada > 1 ? 'Pesquisa de novo' : 'Nova pesquisa';
       await enviarPush(db, destino, { titulo, corpo: `${p.titulo}. Sua opinião é importante, leva poucos minutos.`, url: '/', tag: `pesquisa-${p.id}` });
     }
@@ -109,7 +111,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
 
   // ----- Quem responde: a pesquisa aberta mais recente que a pessoa ainda não respondeu -----
   app.get('/api/pulso', async (req) => {
-    const p = db.prepare(`SELECT id, pergunta AS titulo, descricao, anonima FROM pulsos WHERE ${NO_AR} AND ${PENDENTE_DE} ORDER BY id DESC LIMIT 1`)
+    const p = db.prepare(`SELECT id, pergunta AS titulo, descricao, anonima FROM pulsos WHERE ${NO_AR} AND ${PENDENTE_DE} AND ${paraUsuario('pulso', 'pulsos.id', req.usuario!.id)} ORDER BY id DESC LIMIT 1`)
       .get(agoraLocal(), agoraLocal(), req.usuario!.id) as { id: number; titulo: string; descricao: string | null; anonima: number } | undefined;
     if (!p) return { aberto: false };
     return { aberto: true, id: p.id, titulo: p.titulo, descricao: p.descricao, anonima: !!p.anonima, respondeu: false, perguntas: perguntasDe(p.id) };
@@ -117,7 +119,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
 
   app.post<{ Params: { id: string } }>('/api/pulso/:id/responder', async (req, resp) => {
     const id = inteiro(req.params.id, 'Pesquisa');
-    const cab = db.prepare(`SELECT anonima, rodada FROM pulsos WHERE id = ? AND ${NO_AR}`).get(id, agoraLocal(), agoraLocal()) as { anonima: number; rodada: number } | undefined;
+    const cab = db.prepare(`SELECT anonima, rodada FROM pulsos WHERE id = ? AND ${NO_AR} AND ${paraUsuario('pulso', 'pulsos.id', req.usuario!.id)}`).get(id, agoraLocal(), agoraLocal()) as { anonima: number; rodada: number } | undefined;
     if (!cab) return resp.code(404).send({ erro: 'Esta pesquisa não está aberta.' });
     const perguntas = perguntasDe(id);
     const c = corpoObjeto(req.body);
@@ -168,9 +170,10 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
   });
 
   // ----- Gestão (aba Pesquisas em Publicar) -----
-  const CAMPOS = 'p.id, p.pergunta, p.descricao, p.anonima, p.status, p.abre_em, p.fecha_em, p.criado_em, p.aberto_em, p.encerrado_em, p.rodada, (SELECT COUNT(*) FROM pulso_participacao x WHERE x.pulso_id = p.id AND x.rodada = p.rodada) AS respostas, (SELECT COUNT(*) FROM pulso_participacao x WHERE x.pulso_id = p.id) AS total_respostas, (SELECT COUNT(*) FROM usuarios u WHERE u.ativo = 1 AND NOT EXISTS (SELECT 1 FROM pulso_participacao x WHERE x.pulso_id = p.id AND x.usuario_id = u.id AND x.rodada = p.rodada)) AS pendentes, (SELECT COUNT(*) FROM pulso_perguntas q WHERE q.pulso_id = p.id) AS n_perguntas';
+  const CAMPOS = `p.id, p.pergunta, p.descricao, p.anonima, p.status, p.abre_em, p.fecha_em, p.criado_em, p.aberto_em, p.encerrado_em, p.rodada, (SELECT COUNT(*) FROM pulso_participacao x WHERE x.pulso_id = p.id AND x.rodada = p.rodada) AS respostas, (SELECT COUNT(*) FROM pulso_participacao x WHERE x.pulso_id = p.id) AS total_respostas, (SELECT COUNT(*) FROM usuarios u WHERE u.ativo = 1 AND ${noPublico('pulso', 'p.id', 'u.departamento_id')} AND NOT EXISTS (SELECT 1 FROM pulso_participacao x WHERE x.pulso_id = p.id AND x.usuario_id = u.id AND x.rodada = p.rodada)) AS pendentes, (SELECT COUNT(*) FROM pulso_perguntas q WHERE q.pulso_id = p.id) AS n_perguntas`;
   const comSituacao = <T extends { status: string; abre_em: string | null; fecha_em: string | null }>(p: T) => ({ ...p, situacao: situacaoDe(p) });
-  const buscar = (id: number) => ({ ...comSituacao(db.prepare(`SELECT ${CAMPOS} FROM pulsos p WHERE p.id = ?`).get(id) as { status: string; abre_em: string | null; fecha_em: string | null }), perguntas: perguntasDe(id) });
+  const comPublico = <T extends { id: number }>(p: T) => ({ ...p, departamentos: publicoDe(db, 'pulso', p.id), publico_texto: resumoPublico(db, 'pulso', p.id) });
+  const buscar = (id: number) => comPublico({ ...comSituacao(db.prepare(`SELECT ${CAMPOS} FROM pulsos p WHERE p.id = ?`).get(id) as { status: string; abre_em: string | null; fecha_em: string | null }), perguntas: perguntasDe(id), id });
   function periodo(v: unknown, rotulo: string): string | null {
     if (v === undefined || v === null || v === '') return null;
     if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) throw new ErroValidacao(`${rotulo}: informe data e hora válidas.`);
@@ -190,6 +193,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
       abre_em: periodo(c.abre_em, 'Abre em'), fecha_em: periodo(c.fecha_em, 'Encerra em'),
       // sem lista de perguntas (formato antigo): uma pergunta de nota com o próprio título
       perguntas: c.perguntas === undefined ? null : lerPerguntas(c.perguntas),
+      departamentos: lerPublico(db, c.departamentos),
     };
   }
   function gravarPerguntas(id: number, ps: Pergunta[]) {
@@ -203,7 +207,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     if (novo === 'encerrado' && antigo !== 'encerrado') db.prepare('UPDATE pulsos SET encerrado_em = ? WHERE id = ?').run(agora, id);
   }
   app.get('/api/gestao/pulso', { preHandler: exigirPerm('pub.pulso.ver') }, async () =>
-    (db.prepare(`SELECT ${CAMPOS} FROM pulsos p ORDER BY p.id DESC`).all() as { id: number; status: string; abre_em: string | null; fecha_em: string | null }[]).map((p) => ({ ...comSituacao(p), perguntas: perguntasDe(p.id) })));
+    (db.prepare(`SELECT ${CAMPOS} FROM pulsos p ORDER BY p.id DESC`).all() as { id: number; status: string; abre_em: string | null; fecha_em: string | null }[]).map((p) => comPublico({ ...comSituacao(p), perguntas: perguntasDe(p.id) })));
   app.post('/api/gestao/pulso', { preHandler: exigirPerm('pub.pulso.criar') }, async (req, resp) => {
     const d = ler(corpoObjeto(req.body));
     const ps = d.perguntas ?? [{ texto: d.titulo.length >= 3 ? d.titulo : 'Pergunta', tipo: 'nota' as Tipo, obrigatoria: true, imagem: null, opcoes: [], comentario: true }];
@@ -212,6 +216,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     try {
       id = Number(db.prepare('INSERT INTO pulsos (pergunta, descricao, anonima, status, abre_em, fecha_em, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)').run(d.titulo, d.descricao, d.anonima ? 1 : 0, d.status, d.abre_em, d.fecha_em, new Date().toISOString()).lastInsertRowid);
       gravarPerguntas(id, ps);
+      gravarPublico(db, 'pulso', id, d.departamentos);
       db.prepare("INSERT INTO pulso_rodadas (pulso_id, rodada, abre_em, fecha_em, publico, criado_em) VALUES (?, 1, ?, ?, 'todos', ?)").run(id, d.abre_em, d.fecha_em, new Date().toISOString());
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
@@ -233,6 +238,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     try {
       db.prepare('UPDATE pulsos SET pergunta = ?, descricao = ?, anonima = ?, status = ?, abre_em = ?, fecha_em = ? WHERE id = ?').run(d.titulo, d.descricao, d.anonima ? 1 : 0, d.status, d.abre_em, d.fecha_em, id);
       if (mudouPerguntas) gravarPerguntas(id, d.perguntas!);
+      gravarPublico(db, 'pulso', id, d.departamentos);
       db.prepare('UPDATE pulso_rodadas SET abre_em = ?, fecha_em = ? WHERE pulso_id = ? AND rodada = (SELECT rodada FROM pulsos WHERE id = ?)').run(d.abre_em, d.fecha_em, id, id);
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
@@ -270,6 +276,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     const id = inteiro(req.params.id, 'Pesquisa');
     if (!db.prepare('SELECT 1 FROM pulsos WHERE id = ?').get(id)) return resp.code(404).send({ erro: 'Pesquisa não encontrada.' });
     db.prepare('DELETE FROM pulsos WHERE id = ?').run(id);
+    gravarPublico(db, 'pulso', id, []);
     auditar(db, req.usuario!.id, 'pulso_apagado', { id });
     return { ok: true };
   });
@@ -285,7 +292,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     let rodada = rodadaPedida !== undefined && rodadas.some((r) => r.rodada === rodadaPedida) ? rodadaPedida : atual;
     if (publico) rodada = rodadas.filter((r) => r.respostas >= MINIMO_RESPOSTAS).at(-1)?.rodada ?? atual;
     const total = rodadas.find((r) => r.rodada === rodada)?.respostas ?? 0;
-    const alvo = (db.prepare('SELECT COUNT(*) n FROM usuarios WHERE ativo = 1').get() as { n: number }).n;
+    const alvo = pessoasDoPublico(db, 'pulso', id).length;
     const anonima = !!p.anonima;
     const base = { titulo: p.titulo, status: p.status, anonima, respostas: total, alvo, minimo: MINIMO_RESPOSTAS, resultado_liberado: !!p.resultado_liberado, rodada, rodadas: publico ? [] : rodadas };
     // a divulgação aos colaboradores é sempre anônima: exige o mínimo de respostas mesmo nas pesquisas identificadas
@@ -381,7 +388,7 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     const t = db.prepare('SELECT pergunta AS titulo, push_resultado_em, (SELECT COALESCE(MAX(n), 0) FROM (SELECT COUNT(*) AS n FROM pulso_participacao x WHERE x.pulso_id = pulsos.id GROUP BY x.rodada)) AS respostas FROM pulsos WHERE id = ?').get(id) as { titulo: string; push_resultado_em: string | null; respostas: number };
     if (liberado && !t.push_resultado_em && t.respostas >= MINIMO_RESPOSTAS) {
       db.prepare('UPDATE pulsos SET push_resultado_em = ? WHERE id = ?').run(new Date().toISOString(), id);
-      void enviarPush(db, 'todos', { titulo: 'Resultado da pesquisa', corpo: `Veja o resultado de «${t.titulo}».`, url: '/', tag: `resultado-${id}` });
+      void enviarPush(db, publicoDe(db, 'pulso', id).length ? pessoasDoPublico(db, 'pulso', id) : 'todos', { titulo: 'Resultado da pesquisa', corpo: `Veja o resultado de «${t.titulo}».`, url: '/', tag: `resultado-${id}` });
     }
     return { ok: true };
   });
@@ -395,10 +402,14 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
     const todas = qs.flatMap((q) => [q.imagem, ...(q.opcoes ? (JSON.parse(q.opcoes) as Opcao[]).map((o) => o.imagem) : [])]);
     return todas.filter((x): x is string => !!x).slice(0, 3);
   };
+  /** O resultado só é visto por quem é do público da pesquisa. */
+  const noDoPublico = (id: number, dept: number | null) => { const ds = publicoDe(db, 'pulso', id); return ds.length === 0 || (dept !== null && ds.includes(dept)); };
+  const deptDe = (uid: number) => (db.prepare('SELECT departamento_id FROM usuarios WHERE id = ?').get(uid) as { departamento_id: number | null } | undefined)?.departamento_id ?? null;
   app.get('/api/pulso/resultados', async (req) => {
     const lista = db.prepare('SELECT p.id, p.pergunta AS titulo, p.liberado_em FROM pulsos p WHERE p.resultado_liberado = 1 ORDER BY p.liberado_em DESC, p.id DESC').all() as { id: number; titulo: string; liberado_em: string | null }[];
     const visto = db.prepare('SELECT 1 FROM pulso_resultados_vistos WHERE usuario_id = ? AND pulso_id = ? AND rodada = ?');
-    return lista.flatMap((p) => {
+    const meu = deptDe(req.usuario!.id);
+    return lista.filter((p) => noDoPublico(p.id, meu)).flatMap((p) => {
       const r = rodadaPublica(p.id);
       return r ? [{ id: p.id, titulo: p.titulo, liberado_em: p.liberado_em, imagens: imagensDaPesquisa(p.id), respostas: r.respostas, rodada: r.rodada, visto: !!visto.get(req.usuario!.id, p.id, r.rodada) }] : [];
     });
@@ -406,13 +417,14 @@ export async function rotasPulso(app: FastifyInstance, { db }: { db: Banco; prod
   app.post<{ Params: { id: string } }>('/api/pulso/resultados/:id/visto', async (req, resp) => {
     const id = inteiro(req.params.id, 'Pesquisa');
     const lib = db.prepare('SELECT resultado_liberado FROM pulsos WHERE id = ?').get(id) as { resultado_liberado: number } | undefined;
-    const r = lib?.resultado_liberado ? rodadaPublica(id) : null;
+    const r = lib?.resultado_liberado && noDoPublico(id, deptDe(req.usuario!.id)) ? rodadaPublica(id) : null;
     if (!r) return resp.code(404).send({ erro: 'Este resultado não está disponível.' });
     db.prepare('INSERT OR IGNORE INTO pulso_resultados_vistos (usuario_id, pulso_id, rodada, em) VALUES (?, ?, ?, ?)').run(req.usuario!.id, id, r.rodada, new Date().toISOString());
     return { ok: true };
   });
   app.get<{ Params: { id: string } }>('/api/pulso/resultados/:id', async (req, resp) => {
-    const r = apurar(inteiro(req.params.id, 'Pesquisa'), true);
+    const pid = inteiro(req.params.id, 'Pesquisa');
+    const r = noDoPublico(pid, deptDe(req.usuario!.id)) ? apurar(pid, true) : null;
     if (!r || !r.resultado_liberado || !r.liberado) return resp.code(404).send({ erro: 'Este resultado não está disponível.' });
     return r;
   });

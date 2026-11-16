@@ -4,6 +4,7 @@ Para o administrador do portal e a TI. Detalhes técnicos de instalação em [im
 
 ## 1. Primeiro acesso e administrador
 - `npm run admin:criar -- <login> "<Nome>"` cria o primeiro administrador (com senha provisória). O `npm run banco:seed` cria `admin/admin123` **só para desenvolvimento**.
+- O administrador tem **todas as permissões**: vê e faz tudo o que o RH vê e faz (aprovações, pesquisas, aniversariantes, avisos do sino etc.), além das configurações.
 - Em produção defina `NODE_ENV=production` e `ORIGENS_PERMITIDAS` (endereço público do portal, com https).
 
 ## 2. Configurações (abas)
@@ -15,6 +16,10 @@ Cada aba aparece só para quem recebeu a permissão.
 - **Novo usuário:** login (3 a 32 caracteres), nome, e-mail (opcional, usado nos avisos), **perfil** e **senha provisória** (o sistema sugere uma). A pessoa troca no primeiro acesso.
 - **Editar:** nome, e-mail, perfil, ativo/desativado e **ajustes por pessoa** (permitir ou negar itens por cima do perfil).
 - **Aplicativos:** libera aplicativos restritos só para aquela pessoa.
+- **Desligar 2º fator:** para quem perdeu o aparelho com a biometria (veja "Biometria e manter conectado").
+- **Pessoas sem departamento:** quem pode editar usuários recebe no sino um aviso com o nome de cada pessoa ativa sem departamento (o administrador não entra). O botão **Atualizar cadastro** abre a edição dela; ao escolher o departamento e salvar, o aviso some. Sem departamento, a pessoa só vê o que é para todos os colaboradores.
+
+![Sino de avisos com uma pessoa sem departamento e o botão Atualizar cadastro.](img/admin-sem-departamento.png)
 - **Redefinir senha:** gera nova senha provisória e desconecta a pessoa. Pedidos de "esqueci a senha" aparecem no topo da aba (e no sino): redefina ou dispense.
 - **Contato:** abre a ficha de contato e emergência (permissão própria; fica na auditoria).
 - Quem não é administrador não cria nem promove administradores.
@@ -55,13 +60,19 @@ Liga e desliga a empresa fictícia **Aurora Esportes** (`npm run demo` faz o mes
 
 ### Uso do portal (permissão `cfg.uso.ver`)
 
-Mostra se o portal é relevante, **por pessoa e por departamento**: pessoas ativas × cadastradas, quem não acessou, entradas e telas por período (7 dias, 30 dias, 90 dias ou 12 meses), pessoas ativas por dia, telas mais usadas, horário de uso, celular × computador, adoção por departamento e uma lista por pessoa (departamento, perfil, último acesso, dias ativos, entradas, telas, aparelho e tela preferida), com busca, filtro por departamento e "só quem não acessou". A tela foi pensada para caber na janela sem rolar a página; só a lista por pessoa rola por dentro. O departamento de cada pessoa é escolhido em **Usuários › Editar** (dá para criar um departamento ali mesmo).
+Mostra se o portal é relevante, **por pessoa e por departamento**: pessoas ativas × cadastradas, quem não acessou, entradas e telas por período (7 dias, 30 dias, 90 dias ou 12 meses), pessoas ativas por dia, telas mais usadas, horário de uso, celular × computador, adoção por departamento, **comunicados lidos × publicados** (para cada comunicado do período, quantas pessoas do público abriram; confirmação de leitura também conta) e uma lista por pessoa (departamento, perfil, último acesso, dias ativos, entradas, telas, aparelho e tela preferida), com busca, filtro por departamento e "só quem não acessou". A tela foi pensada para caber na janela sem rolar a página; só a lista por pessoa rola por dentro. O departamento de cada pessoa é escolhido em **Usuários › Editar** (dá para criar um departamento ali mesmo).
+
+**Exportar:** os botões **Exportar CSV** (planilha do Excel com resumo, dia a dia, telas, departamentos, comunicados e pessoas) e **Exportar PDF** (abre um relatório A4 e o navegador imprime: escolha "Salvar como PDF"; se nada abrir, permita pop-ups do portal). Cada exportação fica na Auditoria.
+
+![Uso do portal: adoção e comunicados lidos (1), lidos × publicados por comunicado (2) e exportação (3).](img/admin-uso.png)
 
 **Cuidados:** os dados identificam pessoas; use para entender a adoção, não para vigiar. Cada consulta da lista por pessoa fica na **Auditoria**. O portal guarda só data, tela e tipo de aparelho, por 12 meses. Informe os colaboradores (a linha de aviso está em Meu perfil e no manual do colaborador).
 
 ### Biometria e "manter conectado"
 
 Cada pessoa cadastra a digital ou o rosto do aparelho em Meu perfil (o portal guarda só a chave pública). Exige HTTPS e o nome definitivo do portal (ver [pendências da TI](../pendencias-ti.md)); em `http://IP:porta` o botão não aparece. "Manter conectado" vale 30 dias. Se uma pessoa perder o aparelho, desative o usuário (derruba as sessões) ou redefina a senha; as biometrias podem ser removidas por ela em Meu perfil.
+
+**Segundo fator (opcional):** quem tem biometria cadastrada pode ligar, em Meu perfil, "Pedir minha biometria também ao entrar com a senha". Com ele ligado, a senha sozinha não abre o portal: depois dela o aparelho pede a digital ou o rosto. Desligar exige a senha da pessoa. Se ela **perdeu o aparelho**, em **Usuários** use **Desligar 2º fator** (aparece só para quem tem o segundo fator ligado; exige a permissão de redefinir senha e fica na Auditoria); depois a pessoa cadastra o aparelho novo e liga de novo se quiser.
 
 ### Auditoria
 
