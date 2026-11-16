@@ -9,7 +9,7 @@ import { registrarUso } from '../../uso/api/registro.ts';
 import { CATALOGO, codigoDoPerfil, lerAjustes, listarPerfis, nomeDoPerfil, perfilExiste, permissoesDoPerfil, permissoesEfetivas, TODAS, validarAjustes, validarLista } from './permissoes.ts';
 import { bytesNoDisco } from '../../imagens/api/armazenamento.ts';
 
-const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha', '/api/biometria/entrar/opcoes', '/api/biometria/entrar', '/api/biometria/segundo-fator/opcoes', '/api/biometria/segundo-fator']);
+const ROTAS_PUBLICAS = new Set(['/api/saude', '/api/login', '/api/esqueci-senha', '/api/biometria/entrar/opcoes', '/api/biometria/entrar', '/api/biometria/segundo-fator/opcoes', '/api/biometria/segundo-fator', '/api/auth/keycloak/ativo', '/api/auth/keycloak/entrar', '/api/v1/admin/auth/callback', '/api/v1/auth/callback']);
 const ROTAS_COM_SENHA_PENDENTE = new Set(['/api/eu', '/api/sair', '/api/eu/senha']);
 const MAX_FALHAS = 5; // por pessoa a partir do mesmo aparelho/IP
 const MAX_FALHAS_IP = 20; // varredura de vários logins a partir de um IP

@@ -29,6 +29,12 @@ services:
       ADMIN_NOME: ${ADMIN_NOME:-}
       # 1 = redefine a senha do ADMIN_LOGIN mesmo com o banco em uso (recuperação sem terminal). Remova depois de entrar.
       ADMIN_REDEFINIR: ${ADMIN_REDEFINIR:-}
+      # Login pelo Keycloak (SSO). Só liga se as quatro primeiras estiverem preenchidas no .env do ambiente.
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
+      KEYCLOAK_REDIRECT_URI: ${KEYCLOAK_REDIRECT_URI:-}
       # Modo debug: 1 mostra o detalhe dos erros 500 (use só em homologação; ignorado em prod).
       MODO_DEBUG: ${MODO_DEBUG:-0}
       APP_ENV: ${APP_ENV}

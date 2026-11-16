@@ -4,6 +4,7 @@ import type { Banco } from './db.ts';
 import { config } from './config.ts';
 import { hashesDeScriptsInline, servirSite } from './estatico.ts';
 import { rotasAcessos } from '../../modulos/acessos/api/index.ts';
+import { rotasKeycloak } from '../../modulos/keycloak/api/index.ts';
 import { rotasAplicacoes } from '../../modulos/aplicacoes/api/index.ts';
 import { rotasComunicados } from '../../modulos/comunicados/api/index.ts';
 import { rotasIntegracoes } from '../../modulos/integracoes/api/index.ts';
@@ -31,6 +32,7 @@ import { rotasDemonstracao } from '../../modulos/demonstracao/api/index.ts';
 /** Cada módulo exporta uma função de rotas e entra aqui. */
 export const MODULOS = [
   { nome: 'acessos', rotas: rotasAcessos }, // primeiro: registra a proteção global de /api
+  { nome: 'keycloak', rotas: rotasKeycloak }, // login único (SSO); as rotas públicas estão liberadas em acessos
   { nome: 'propriedade', rotas: rotasPropriedade }, // logo após acessos: os ganchos precisam do usuário da sessão
   { nome: 'aplicacoes', rotas: rotasAplicacoes },
   { nome: 'banners', rotas: rotasBanners },

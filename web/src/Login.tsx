@@ -1,9 +1,16 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Icone } from './icones';
 import { MarcaEntrada, useEntrada } from './MarcaEntrada';
 import { useEmpresa } from './empresa';
 import { FormTrocarSenha } from './Conta';
 import { ErroBiometria, useBiometriaDisponivel } from './biometria';
+
+const MENSAGENS_SSO: Record<string, string> = {
+  sem_conta: 'Seu e-mail corporativo não está cadastrado no portal. Peça ao administrador para cadastrar o seu e-mail.',
+  inativo: 'Seu acesso ao portal está desativado. Fale com o administrador.',
+  erro: 'Não foi possível entrar pelo login corporativo. Tente de novo.',
+  desligado: 'O login corporativo não está ligado neste ambiente.',
+};
 
 function Moldura({ titulo, sub, children }: { titulo: string; sub: string; children: ReactNode }) {
   const entrada = useEntrada();
@@ -30,7 +37,9 @@ export function Login({ entrar, entrarBiometria }: { entrar: (login: string, sen
   const [ver, setVer] = useState(false);
   const [manter, setManter] = useState(() => { try { return localStorage.getItem('portal.manter') === '1'; } catch { return false; } });
   const biometria = useBiometriaDisponivel();
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState(() => MENSAGENS_SSO[new URLSearchParams(window.location.search).get('sso') ?? ''] ?? '');
+  const [sso, setSso] = useState(false);
+  useEffect(() => { void fetch('/api/auth/keycloak/ativo', { credentials: 'same-origin' }).then((r) => r.json()).then((j: { ativo?: boolean }) => setSso(j.ativo === true)).catch(() => setSso(false)); }, []);
   const [semBio, setSemBio] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [pedido, setPedido] = useState<'' | 'enviando' | 'enviado'>('');
@@ -91,6 +100,7 @@ export function Login({ entrar, entrarBiometria }: { entrar: (login: string, sen
           <button className="btn btn-pri entrar-botao" disabled={enviando || !login || !senha}>{enviando ? 'Entrando…' : 'Entrar'}</button>
           {biometria && <button type="button" className="entrar-bio" disabled={enviando} onClick={() => void porBiometria()} aria-label="Entrar com biometria (digital ou rosto)" title="Entrar com biometria"><Icone nome="digital" tamanho={22} /></button>}
         </div>
+        {sso && <a className="btn btn-sec entrar-botao" href="/api/auth/keycloak/entrar" style={{ textAlign: 'center' }}>Entrar com o login corporativo (Keycloak)</a>}
         <div className="entrar-esqueci">
           {pedido === 'enviado'
             ? <p className="ok" role="status">Pedido enviado. O administrador foi avisado e vai passar uma senha provisória para você.</p>

@@ -87,3 +87,10 @@ Com `MODO_DEBUG=1` no `.env` do ambiente (secret `HML_ENV` ou `.env` local), uma
 
 ### Recuperar o administrador sem terminal
 No `.env` do ambiente (secret), `ADMIN_REDEFINIR=1` junto com `ADMIN_LOGIN` e `ADMIN_SENHA` (8+) faz o próximo deploy **redefinir** a senha desse administrador (perfil admin, conta ativa, troca obrigatória no primeiro acesso, sessões dele encerradas; auditado como `admin_redefinido_env`). Se o login não existir, ele é criado. **Depois de entrar, remova `ADMIN_REDEFINIR` e `ADMIN_SENHA` do secret**, senão toda subida repete a redefinição.
+
+### Login pelo Keycloak (SSO)
+Botão "Entrar com o login corporativo (Keycloak)" na tela de entrada (OpenID Connect, código + PKCE; módulo `modulos/keycloak`). O login local continua valendo (reserva do administrador).
+- **Variáveis no secret** (`HML_ENV` / `PROD_ENV`): `KEYCLOAK_URL` (endereço do servidor; em Keycloak antigo inclua `/auth`), `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` (ex.: `portal-intranet-hml`), `KEYCLOAK_CLIENT_SECRET`. Opcional `KEYCLOAK_REDIRECT_URI`. Sem as quatro, o botão não aparece. **Nunca** coloque o secret do cliente no Git nem em conversa.
+- **Retorno:** `https://<portal>/api/v1/admin/auth/callback` (o endereço que a TI cadastrou; `/api/v1/auth/callback` também responde, para o campo "Admin URL").
+- **Quem entra:** a pessoa precisa ter, no cadastro do portal (Configurações › Usuários), o **mesmo e-mail** do Keycloak e estar ativa. Nada é criado sozinho; e-mail sem cadastro, repetido ou não verificado é recusado. Tudo é auditado (`login_sso`, `sso_recusado`, `sso_falhou`).
+- **Limite:** "Sair" encerra só a sessão do portal (não a do Keycloak).
