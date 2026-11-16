@@ -1,0 +1,9 @@
+# Contrato do app com a plataforma (srv-007). Só este arquivo + o compose + o workflow.
+name: portal               # vira portal.apps.dipaula.com.br (prod) e portal-hml.apps.dipaula.com.br (hml)
+service: web               # serviço do compose que atende HTTP
+container_port: 3100       # porta HTTP do Fastify dentro do container
+healthcheck: /api/saude    # responde 200 sem login quando o portal está de pé
+
+memory:
+  default: 768m            # SQLite nativo + Fastify; sobe se os vídeos/anexos pedirem mais
+# public: false            # prod só sai da rede interna se a infra autorizar

@@ -69,3 +69,15 @@ Para testar uma atualização com dados parecidos com os de produção, copie um
 
 ## Fora do escopo deste documento (depende da TI)
 **Checklist completo, com responsável e data: [pendências da TI](pendencias-ti.md).** Resumo: Servidor, nome interno, certificado HTTPS, quem opera o backup, conta de serviço que roda o Node, e o serviço Zimbra/OAuth (`zimbra-mcp`) em produção, com o endereço de retorno real cadastrado no Google e na Microsoft.
+
+## Publicação automática pela plataforma (srv-007, template `app-template`)
+O repositório segue o template da infra: `app.yml`, `Dockerfile`, `docker-compose.yml` e `.github/workflows/deploy.yml`. Publica-se por **push**: `develop` → homologação (`https://portal-hml.apps.dipaula.com.br`); tag `vX.Y.Z` → produção (`https://portal.apps.dipaula.com.br`), só com a homologação rodando o mesmo commit.
+
+- **Imagem:** compila o site e serve tudo pelo Fastify na porta 3100 (healthcheck `/api/saude`). Dados persistentes no volume `portal_dados` (`/dados`: banco, mídia, documentos, backups).
+- **Secrets do repositório** (Settings › Secrets and variables › Actions): `HML_ENV` e `PROD_ENV`, com o conteúdo do `.env` de cada ambiente (senhas diferentes). Variáveis lidas pelo compose:
+  - obrigatória: `ORIGENS_PERMITIDAS` (endereço público com https, ex.: `https://portal-hml.apps.dipaula.com.br`);
+  - primeiro acesso (sem terminal): `ADMIN_LOGIN`, `ADMIN_SENHA` (8+ caracteres) e `ADMIN_NOME` criam o administrador **só se o banco estiver sem usuários**; ele troca a senha no primeiro acesso, e depois as variáveis devem ser removidas do secret;
+  - opcionais: `WEBAUTHN_RP_ID` (biometria), `PERMITIR_DADOS_EXEMPLO=1` (só homologação), `ZIMBRA_API_URL`/`ZIMBRA_API_TOKEN` (o serviço Zimbra roda fora desta stack).
+- **Pedir à infra:** liberar o deploy automático (runner) e quem pode publicar em produção.
+- Depois: `npm run marca:logo` não roda no contêiner; a logo oficial deve ser instalada pelo painel (Configurações › Empresa) ou pelo terminal quando houver acesso.
+- Não validado: a imagem **não foi construída aqui** (sem Docker nesta máquina); o primeiro push em `develop` é o teste.

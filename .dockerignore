@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+.github
+.claude
+dados-privados
+MCP
+e2e
+docs/origem-manus
+docs/memoria
+web/dist
+web/imagens
+.env*
+*.db
+*.db-wal
+*.db-shm

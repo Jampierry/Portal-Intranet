@@ -4,6 +4,7 @@ import { config } from './config.ts';
 import { abrirBanco, migrar } from './db.ts';
 import { criarApp } from './app.ts';
 import { avisarAberturas } from '../../modulos/pulso/api/index.ts';
+import { criarAdminInicial } from './admin-inicial.ts';
 
 if (config.producao) {
   // Trava de segurança: sem a origem pública, as alterações vindas do navegador seriam recusadas ou mal protegidas.
@@ -20,6 +21,10 @@ if (config.producao) {
 const db = abrirBanco(config.caminhoBanco);
 const novas = migrar(db, config.pastaMigracoes);
 if (novas.length) console.log('Migrações aplicadas:', novas.join(', '));
+
+// Plataforma sem acesso ao terminal: se o banco está sem usuários e ADMIN_LOGIN/ADMIN_SENHA foram definidos, cria o primeiro administrador.
+const inicial = criarAdminInicial(db);
+if (inicial) console.log(`Administrador inicial criado: ${inicial} (troca de senha no primeiro acesso). Remova ADMIN_SENHA do ambiente.`);
 
 const app = await criarApp(db, config.producao);
 await app.listen({ port: config.porta, host: config.host });

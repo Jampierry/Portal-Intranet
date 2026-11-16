@@ -1,0 +1,48 @@
+name: deploy
+
+# develop  -> homologação          (https://<app>-hml.apps.dipaula.com.br)
+# tag vX.Y.Z -> produção           (https://<app>.apps.dipaula.com.br) — o mesmo commit tem de estar em hml
+# pull request -> só valida o compose (lint), sem tocar no servidor
+on:
+  pull_request:
+  push:
+    branches: [develop]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Ambiente
+        type: choice
+        options: [hml, prod]
+        default: hml
+
+concurrency:
+  group: deploy-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, apps]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # precisa das tags para a trava de produção
+
+      - name: Deploy
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_ENV: ${{ inputs.env }}
+          APPS_REPO: ${{ github.repository }}
+          HML_ENV: ${{ secrets.HML_ENV }}
+          PROD_ENV: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.PROD_ENV || '' }}
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if   [ "$EVENT" = pull_request ];        then ENVN=hml; EXTRA=(--check)
+          elif [ "$EVENT" = workflow_dispatch ];   then ENVN="$INPUT_ENV"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then ENVN=prod
+          else ENVN=hml; fi
+          /opt/platform/bin/apps-deploy "$ENVN" "$GITHUB_WORKSPACE" "$GITHUB_SHA" "$GITHUB_ACTOR" "${EXTRA[@]}"

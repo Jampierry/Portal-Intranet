@@ -1,0 +1,36 @@
+# Um único compose serve hml e prod: a diferença vem do .env do ambiente (secrets HML_ENV / PROD_ENV).
+# Sem `ports:` nem `container_name:`; a plataforma publica o serviço `web` do app.yml.
+# Variáveis da plataforma: APP_NAME, APP_ENV (hml|prod), APP_SHA, APP_HOST, APP_DATA.
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORTA: "3100"
+      TRUST_PROXY: "1"
+      # Endereço público com https (ex.: https://portal-hml.apps.dipaula.com.br). Defina no .env do ambiente.
+      ORIGENS_PERMITIDAS: ${ORIGENS_PERMITIDAS:?defina ORIGENS_PERMITIDAS no .env do ambiente}
+      BANCO: /dados/portal.db
+      PASTA_MIDIA: /dados/midia
+      DOCUMENTOS_PASTA: /dados/documentos
+      PASTA_BACKUP: /dados/backups
+      # Só em homologação, se quiser os dados fictícios de exemplo: PERMITIR_DADOS_EXEMPLO=1
+      PERMITIR_DADOS_EXEMPLO: ${PERMITIR_DADOS_EXEMPLO:-0}
+      # Biometria (WebAuthn): domínio do portal sem https (ex.: portal-hml.apps.dipaula.com.br).
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
+      # Zimbra (opcional; hoje o serviço roda fora desta stack).
+      ZIMBRA_API_URL: ${ZIMBRA_API_URL:-}
+      ZIMBRA_API_TOKEN: ${ZIMBRA_API_TOKEN:-}
+      # Primeiro acesso (sem terminal): cria o administrador se o banco estiver vazio. Depois remova ADMIN_SENHA do .env.
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-}
+      ADMIN_SENHA: ${ADMIN_SENHA:-}
+      ADMIN_NOME: ${ADMIN_NOME:-}
+      APP_ENV: ${APP_ENV}
+      APP_SHA: ${APP_SHA}
+    volumes:
+      - portal_dados:/dados
+
+volumes:
+  portal_dados:
