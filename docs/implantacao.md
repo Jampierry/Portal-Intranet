@@ -81,3 +81,6 @@ O repositório segue o template da infra: `app.yml`, `Dockerfile`, `docker-compo
 - **Pedir à infra:** liberar o deploy automático (runner) e quem pode publicar em produção.
 - Depois: `npm run marca:logo` não roda no contêiner; a logo oficial deve ser instalada pelo painel (Configurações › Empresa) ou pelo terminal quando houver acesso.
 - Não validado: a imagem **não foi construída aqui** (sem Docker nesta máquina); o primeiro push em `develop` é o teste.
+
+### Modo debug (ver o erro na tela)
+Com `MODO_DEBUG=1` no `.env` do ambiente (secret `HML_ENV` ou `.env` local), uma falha 500 passa a mostrar na tela a mensagem, a rota e as primeiras linhas da pilha (e no console do navegador, prefixo `[debug]`); o servidor também registra o erro no log do contêiner. É **ignorado quando `APP_ENV=prod`**, então não vaza detalhes em produção. Use só em homologação/testes e desligue depois. Erros fora de requisições (`unhandledRejection`/`uncaughtException`) sempre vão para o log.

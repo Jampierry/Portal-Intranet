@@ -27,6 +27,8 @@ services:
       ADMIN_LOGIN: ${ADMIN_LOGIN:-}
       ADMIN_SENHA: ${ADMIN_SENHA:-}
       ADMIN_NOME: ${ADMIN_NOME:-}
+      # Modo debug: 1 mostra o detalhe dos erros 500 (use só em homologação; ignorado em prod).
+      MODO_DEBUG: ${MODO_DEBUG:-0}
       APP_ENV: ${APP_ENV}
       APP_SHA: ${APP_SHA}
     volumes:

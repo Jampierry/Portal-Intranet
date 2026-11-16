@@ -28,10 +28,15 @@ if (inicial) console.log(`Administrador inicial criado: ${inicial} (troca de sen
 
 const app = await criarApp(db, config.producao);
 await app.listen({ port: config.porta, host: config.host });
+if (config.modoDebug) console.warn('MODO DEBUG LIGADO: os erros 500 mostram detalhes. Não use em produção.');
 console.log(`Portal em http://${config.host}:${config.porta}  |  ${config.producao ? 'PRODUÇÃO' : 'desenvolvimento (API)'}  |  banco: ${config.caminhoBanco}`);
 
 // Pesquisas agendadas: quando chega a hora de abrir, avisa por push (uma vez cada).
 setInterval(() => { void avisarAberturas(db); }, 60_000).unref();
+
+// Erros fora de uma requisição ficam registrados em vez de sumir.
+process.on('unhandledRejection', (e) => console.error('Promessa rejeitada sem tratamento:', e));
+process.on('uncaughtException', (e) => { console.error('Exceção não tratada:', e); process.exit(1); });
 
 // Desligamento limpo (serviço parado ou reiniciado): termina as requisições em andamento e fecha o banco.
 for (const sinal of ['SIGINT', 'SIGTERM'] as const) {

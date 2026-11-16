@@ -72,6 +72,12 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const status = (erro as { statusCode?: number }).statusCode;
     if (status && status < 500) return resp.code(status).send({ erro: 'Requisição inválida.' });
     app.log.error(erro);
+    if (config.modoDebug) {
+      const e = erro as Error;
+      const pilha = (e.stack ?? '').split('\n').slice(1, 8).join('\n');
+      const detalhe = `${e.name ?? 'Error'}: ${e.message}\n${pilha}`.slice(0, 2000);
+      return resp.code(500).send({ erro: 'Erro interno. Tente novamente.', detalhe, rota: `${_req.method} ${_req.url.split('?')[0]}` });
+    }
     return resp.code(500).send({ erro: 'Erro interno. Tente novamente.' });
   });
 

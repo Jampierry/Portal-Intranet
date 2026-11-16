@@ -14,6 +14,9 @@ export const config = {
   // para a pasta do servidor (ou compartilhamento montado) onde ficam os arquivos.
   pastaDocumentos: () => resolve(process.env.DOCUMENTOS_PASTA ?? resolve(raiz, 'dados-privados', 'documentos')),
   producao: process.env.NODE_ENV === 'production',
+  // Modo debug (MODO_DEBUG=1): respostas de erro 500 trazem a mensagem e o início da pilha, e o site mostra o detalhe.
+  // Para homologação e testes; é ignorado quando APP_ENV=prod (produção da plataforma).
+  modoDebug: process.env.MODO_DEBUG === '1' && process.env.APP_ENV !== 'prod',
   // Endereço de escuta. Padrão: só esta máquina (atrás de um proxy reverso com HTTPS). Use HOST=0.0.0.0 para escutar na rede.
   host: process.env.HOST ?? '127.0.0.1',
   // Site já compilado (npm run build) que o servidor entrega em produção.

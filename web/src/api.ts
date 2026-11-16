@@ -20,7 +20,12 @@ export async function api<T>(url: string, corpo?: unknown, metodo?: 'POST' | 'PU
   const json = await r.json().catch(() => ({}));
   if (r.status === 401 && url !== '/api/login' && url !== '/api/eu') window.dispatchEvent(new Event('sessao-expirada'));
   if (!r.ok) {
-    const j = json as { erro?: string; codigo?: string; recurso?: string; registro?: string };
+    const j = json as { erro?: string; codigo?: string; recurso?: string; registro?: string; detalhe?: string; rota?: string };
+    // Modo debug do servidor (MODO_DEBUG=1): mostra o detalhe do erro 500 na tela e no console.
+    if (j.detalhe) {
+      console.error('[debug]', j.rota, j.detalhe);
+      throw new ErroApi(`${j.erro ?? 'Erro 500'}\n[debug] ${j.rota ?? ''}\n${j.detalhe}`, r.status, j.codigo);
+    }
     // Editar o que outra pessoa criou: oferece pedir autorização ao dono (o administrador também recebe o pedido).
     if (r.status === 403 && j.codigo === 'precisa_autorizacao' && j.recurso && j.registro) {
       if (await confirmar({ titulo: 'Pedir autorização', mensagem: `${j.erro}\n\nEnviar o pedido ao autor e ao administrador agora?`, confirmar: 'Enviar pedido' })) {
