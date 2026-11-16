@@ -21,6 +21,7 @@ Regra de ouro: **a mesma versão (etiqueta do Git) passa pelo teste antes da pro
 Modelo em `.env.example` (raiz). Principais variáveis:
 - `NODE_ENV=production` — ativa o modo produção (cookie seguro, cabeçalhos de segurança, site compilado servido pelo servidor, logs).
 - `ORIGENS_PERMITIDAS` — endereço público com https. **Obrigatória:** o servidor se recusa a subir sem ela.
+- `WEBAUTHN_RP_ID` (opcional) — nome do portal usado pela biometria (ex.: `portal.suaempresa.com.br`); sem ele vale o nome do endereço aberto. A biometria (digital/rosto) só funciona em HTTPS e com endereço com nome (não IP); trocar o nome do portal depois invalida as biometrias cadastradas. `WEBAUTHN_RP_NOME` (opcional) é o nome exibido pelo aparelho.
 - `PORTA`, `HOST` (padrão `127.0.0.1`, atrás do proxy) e `TRUST_PROXY=1`.
 - `BANCO` — caminho do banco SQLite do ambiente.
 - `PASTA_MIDIA` — pasta das imagens, vídeos e anexos enviados (padrão: `midia/` ao lado do arquivo do banco). O usuário do serviço precisa gravar nela. **Entra no backup**: `npm run backup` copia a pasta para `<PASTA_BACKUP>/midia` (só o que ainda não está lá). Ao subir pela primeira vez depois da atualização, o portal move para o disco o que ainda estava dentro do banco (faça `npm run backup` antes).

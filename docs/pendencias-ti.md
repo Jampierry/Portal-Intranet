@@ -9,7 +9,7 @@ Marque cada item ao concluir e anote data e responsável.
 |---|---|---|---|
 | 1 | **Servidor** | Máquina (Windows ou Linux) com Node 24+ e Git, em rede interna. | ☐ |
 | 2 | **Nome interno** | Endereço fixo, por exemplo `portal.suaempresa.com.br`, apontando para o servidor. | ☐ |
-| 3 | **HTTPS** | Certificado válido e proxy reverso (IIS, nginx ou Caddy) repassando para o portal em `127.0.0.1` com `X-Forwarded-Proto`. **Sem HTTPS o login não funciona em produção** (cookie `Secure`) e o **push** de notificações também não. O portal só envia o cabeçalho HSTS quando a requisição chega por HTTPS. | ☐ |
+| 3 | **HTTPS** | Certificado válido e proxy reverso (IIS, nginx ou Caddy) repassando para o portal em `127.0.0.1` com `X-Forwarded-Proto`. **Sem HTTPS o login não funciona em produção** (cookie `Secure`) e o **push** de notificações e a **biometria** (digital/rosto) também não. O nome do portal precisa ser definitivo: a biometria cadastrada fica presa a ele. O portal só envia o cabeçalho HSTS quando a requisição chega por HTTPS. | ☐ |
 | 4 | **Serviço que sobe sozinho** | Conta de serviço dedicada (sem privilégios de administrador) rodando `npm start` na raiz do projeto, com reinício automático (NSSM no Windows; systemd ou PM2 no Linux). | ☐ |
 | 5 | **Variáveis de ambiente** | Arquivo `.env` a partir de `.env.example`: `NODE_ENV=production`, `ORIGENS_PERMITIDAS=https://<nome interno>`, `TRUST_PROXY=1`, `HOST=127.0.0.1`, `BANCO`, `DOCUMENTOS_PASTA`, `PASTA_BACKUP`, `BACKUP_MANTER_DIAS`. Sem `ORIGENS_PERMITIDAS` o servidor se recusa a subir. | ☐ |
 | 6 | **Primeiro administrador** | Rodar `npm run admin:criar -- <login> "<Nome>"` e entregar a senha provisória ao responsável. **Não rodar o seed** (`banco:seed` é só de desenvolvimento). | ☐ |

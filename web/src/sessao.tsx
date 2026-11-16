@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ErroApi } from './api';
+import { entrarComBiometria } from './biometria';
 
 /** Código do perfil: 'admin', 'editor', 'consulta' ou o de um perfil personalizado (ex.: 'p-recursos-humanos'). */
 export type PerfilAcesso = string;
@@ -26,7 +27,8 @@ export function useSessao() {
   useEffect(() => { void recarregar(); }, [recarregar]);
   useEffect(() => { const f = () => setUsuario(null); addEventListener('sessao-expirada', f); return () => removeEventListener('sessao-expirada', f); }, []);
 
-  const entrar = async (login: string, senha: string) => { setUsuario(await api<Usuario>('/api/login', { login, senha })); };
+  const entrar = async (login: string, senha: string, manter = false) => { setUsuario(await api<Usuario>('/api/login', { login, senha, manter })); };
+  const entrarBiometria = async (manter = false) => { setUsuario(await entrarComBiometria(manter)); };
   const sair = async () => { try { await api('/api/sair', {}); } finally { setUsuario(null); } };
-  return { usuario, offline, entrar, sair, recarregar };
+  return { usuario, offline, entrar, entrarBiometria, sair, recarregar };
 }

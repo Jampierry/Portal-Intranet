@@ -5,7 +5,7 @@ SQLite (`node:sqlite`), arquivo `dados-privados/portal.db` (fora do Git; muda co
 ## Tabelas por assunto
 | Assunto | Tabelas |
 |---|---|
-| Acesso | `usuarios`, `sessoes`, `tentativas_login`, `perfis_permissoes`, `usuarios_aplicativos`, `perfis_aplicativos`, `pedidos_senha`, `auditoria` |
+| Acesso | `usuarios`, `sessoes`, `tentativas_login`, `perfis_permissoes`, `usuarios_aplicativos`, `perfis_aplicativos`, `pedidos_senha`, `auditoria`, `passkeys` (biometria), `uso_eventos` (uso do portal) |
 | Perfil pessoal | `usuarios_perfil` (apelido, celular, e-mail alternativo, 2 contatos de emergência, observação de saúde, foto) |
 | Conteúdo | `comunicados`, `comunicado_leituras`, `banners`, `institucional`, `documentos`, `documento_origens`, `destaques`, `periodos_destaque`, `contatos`, `departamentos`, `aplicacoes`, `favoritos`, `publicacoes_externas`, `publicacoes_anexos` |
 | Pessoas do mês | `aniversariantes`, `novos_colaboradores` |
@@ -47,3 +47,4 @@ Observações de projeto: **imagens e vídeos ficam no disco** (`modulos/imagens
 | 042–044 | aprovações de publicações, aprovação por aba, anexos das redes sociais |
 | 046–047 | Meu perfil (contato e emergência) e foto |
 | 048 | Vídeos curtos (`videos_arquivo`) para banners e tela de entrada |
+| 049 | Biometria e uso: `usuarios.departamento_id`, `sessoes.manter` ("manter conectado"), `passkeys` (só a chave pública) e `uso_eventos` (entrada/tela, dia e hora locais, aparelho; guardado 12 meses) |

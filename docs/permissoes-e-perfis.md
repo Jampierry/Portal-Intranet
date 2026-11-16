@@ -25,7 +25,7 @@
 - `pub.<aba>.aprovacao` em comunicados, redes, banners e documentos: **a publicação da pessoa precisa da aprovação do RH**.
 - `pub.pulso.resultado`: ver o resultado completo (com nomes, em pesquisa identificada) e liberar aos colaboradores.
 
-**Configurações (abas):** `cfg.usuarios.ver | criar | editar | senha | aplicativos | emergencia`, `cfg.perfis.ver | criar | editar | excluir`, `cfg.integracoes.ver | editar`, `cfg.empresa.ver | editar`, `cfg.entrada.ver | editar`, `cfg.auditoria.ver`. As abas "Pastas de documentos" e "Dados de exemplo" são só do administrador.
+**Configurações (abas):** `cfg.usuarios.ver | criar | editar | senha | aplicativos | emergencia`, `cfg.perfis.ver | criar | editar | excluir`, `cfg.integracoes.ver | editar`, `cfg.empresa.ver | editar`, `cfg.entrada.ver | editar`, `cfg.auditoria.ver`, `cfg.uso.ver` (Uso do portal: identifica pessoas; a consulta fica na auditoria). As abas "Pastas de documentos" e "Dados de exemplo" são só do administrador.
 
 ## Propriedade do conteúdo (vale por cima das permissões de editar/excluir)
 - Quem criou é o **dono** (`criado_por`).

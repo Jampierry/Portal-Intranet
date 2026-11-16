@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { Icone } from './icones';
 
 /** Aviso próprio do portal (pop-up em tela) no lugar do confirm/alert do navegador. */
-export type OpcoesConfirmar = { titulo?: string; mensagem: string; confirmar?: string; cancelar?: string; perigo?: boolean };
+export type OpcoesConfirmar = { titulo?: string; mensagem: string; confirmar?: string; cancelar?: string; perigo?: boolean; /** nome de um ícone (icones.tsx) mostrado ao lado esquerdo da mensagem */ icone?: string };
 type Pedido = OpcoesConfirmar & { info?: boolean; resolver: (ok: boolean) => void };
 
 let abrir: ((p: Pedido) => void) | null = null;
@@ -34,7 +35,10 @@ export function ConfirmarHost() {
       onCancel={(e) => { e.preventDefault(); fechar(false); }}>
       <div className="janela-form">
         <header><h2>{atual.titulo ?? (atual.info ? 'Aviso' : atual.perigo === false ? 'Confirmar' : 'Confirmar ação')}</h2></header>
-        <div className="janela-corpo"><p className="aviso-texto">{atual.mensagem}</p></div>
+        <div className={`janela-corpo${atual.icone ? ' com-icone' : ''}`}>
+          {atual.icone && <span className="aviso-icone" aria-hidden="true"><Icone nome={atual.icone} tamanho={26} /></span>}
+          <p className="aviso-texto">{atual.mensagem}</p>
+        </div>
         <footer>
           {!atual.info && <button type="button" className="btn btn-sec" onClick={() => fechar(false)}>{atual.cancelar ?? 'Cancelar'}</button>}
           <button type="button" className={`btn${atual.perigo ? ' btn-perigo' : ''}`} autoFocus={!atual.perigo} onClick={() => fechar(true)}>{atual.confirmar ?? (atual.info ? 'Entendi' : 'Confirmar')}</button>

@@ -1,0 +1,65 @@
+/* Configurações › Uso do portal (adoção por dia, tela, horário, aparelho, departamento e pessoa) e biometria. Cores só pelos tokens do tema.
+   No computador tudo cabe na janela sem rolar a página: indicadores numa faixa, três gráficos lado a lado e, embaixo, departamentos e a lista por pessoa
+   (que usa o espaço que sobra e rola só por dentro). No celular os blocos empilham. */
+.uso-secao { display: flex; flex-direction: column; gap: var(--gap); }
+.uso-barra-topo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-bloco); justify-content: space-between; }
+.uso-aviso { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+.uso-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+.uso-kpi { background: var(--card); border: 1px solid var(--linha-suave); border-radius: var(--raio); padding: 6px 12px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+.uso-kpi > small:first-child { flex: 1 0 100%; font-size: 11.5px; color: var(--suave); }
+.uso-kpi b { font-size: 20px; line-height: 1.2; color: var(--vinho-texto); }
+.uso-kpi b span { font-size: 12px; font-weight: 600; color: var(--suave); }
+.uso-kpi small { color: var(--suave); font-size: 11.5px; }
+.uso-linha-1 { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: var(--gap); height: 168px; }
+.uso-linha-2 { display: grid; grid-template-columns: minmax(230px, .85fr) 2.6fr; gap: var(--gap); flex: 1 1 0; min-height: 190px; }
+.uso-cartao { padding: 8px 12px; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.uso-cartao h3 { margin: 0 0 4px; font-size: 13px; }
+.uso-cartao h3 small { font-weight: 500; }
+.uso-sub { margin: 6px 0 3px !important; }
+.uso-colunas { display: flex; align-items: flex-end; gap: 2px; flex: 1 1 0; min-height: 30px; border-bottom: 1px solid var(--linha); }
+.uso-colunas i { flex: 1 1 0; min-width: 2px; background: var(--vinho); border-radius: 2px 2px 0 0; opacity: .85; }
+.uso-colunas i:hover { opacity: 1; }
+.uso-horas { flex: 0 0 46px; }
+.uso-eixo { display: flex; justify-content: space-between; font-size: 11px; color: var(--suave); margin-top: 2px; }
+.uso-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; overflow: auto; min-height: 0; scrollbar-width: thin; }
+.uso-lista li { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(50px, 1.6fr) auto auto; align-items: center; gap: 6px; font-size: 12px; }
+.uso-barra { display: block; height: 7px; background: var(--afundado); border-radius: 99px; overflow: hidden; }
+.uso-barra i { display: block; height: 100%; background: var(--vinho); border-radius: 99px; }
+.uso-adocao { display: flex; align-items: center; gap: 6px; }
+.uso-adocao .uso-barra { flex: 1 1 30px; min-width: 28px; max-width: 120px; }
+.uso-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap); margin: 0 0 6px; }
+.uso-filtros input[type=search] { min-width: 150px; flex: 1 1 150px; }
+.uso-cartao .rolagem { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-width: thin; border: 0; box-shadow: none; background: none; }
+.uso-cartao .dados th, .uso-cartao .dados td { padding: 4px 8px; font-size: 12px; }
+.uso-cartao .dados td, .uso-cartao .dados th { white-space: nowrap; }
+.uso-cartao .dados td[data-rotulo=Pessoa], .uso-cartao .dados td[data-rotulo=Departamento] { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+.uso-cartao .dados th { position: sticky; top: 0; z-index: 1; background: var(--card); }
+@media (max-width: 1280px) { .uso-linha-2 { grid-template-columns: minmax(220px, 1fr) 2fr; } }
+@media (max-width: 860px) {
+  .uso-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .uso-linha-1, .uso-linha-2 { display: flex; flex-direction: column; height: auto; flex: none; }
+  .uso-colunas { flex: none; height: 90px; }
+  .uso-horas { flex: none; height: 50px; }
+  .uso-cartao { overflow: visible; }
+  .uso-cartao .rolagem { flex: none; max-height: none; overflow: visible; }
+}
+
+/* Entrar com biometria e "manter conectado" */
+.entrar-card .entrar-campos label.entrar-manter { display: grid; grid-template-columns: auto 1fr; align-items: start; column-gap: 10px; row-gap: 0; cursor: pointer; }
+.entrar-manter input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--vinho); }
+.entrar-manter span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.entrar-manter small { font-weight: 400; font-size: 12px; color: var(--suave); }
+.entrar-dica { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--vinho-claro); border: 1px solid var(--linha); color: var(--texto); font-size: 13px; }
+.entrar-dica svg { flex: none; margin-top: 1px; color: var(--vinho-texto); }
+.entrar-dica p { margin: 0; line-height: 1.4; }
+.entrar-acoes { display: flex; align-items: stretch; gap: 8px; }
+.entrar-acoes .entrar-botao { flex: 1 1 auto; }
+.entrar-card .entrar-bio { flex: none; width: 48px; min-height: 48px; margin-top: 6px; border-radius: 12px; display: grid; place-items: center; cursor: pointer; background: transparent; color: var(--vinho-texto); border: 1px solid var(--linha); }
+.entrar-card .entrar-bio:hover:not(:disabled) { background: var(--vinho-claro); border-color: var(--vinho); }
+.entrar-card .entrar-bio:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }
+.entrar-card .entrar-bio:disabled { opacity: .45; cursor: not-allowed; }
+.janela-aviso .janela-corpo.com-icone { display: flex; align-items: flex-start; gap: 14px; }
+.aviso-icone { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: var(--vinho-claro); color: var(--vinho-texto); }
+.biometria-lista { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.biometria-lista li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.biometria-lista li > span { flex: 1 1 160px; }

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { api } from './api';
+import { OfertaBiometria } from './biometria';
 import { PainelTema, useTema } from './tema';
 import { Menu, type Tela } from './Menu';
 import { Icone } from './icones';
@@ -158,6 +159,8 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
   const [saude, setSaude] = useState<Saude | null>(null);
   const [rota, setRota] = useState<Rota>(rotaDoEndereco);
   const tela = rota.tela;
+  // Mede o uso do portal (só o nome da tela aberta); falha em silêncio.
+  useEffect(() => { api('/api/uso/tela', { tela }).catch(() => { /* medir o uso nunca atrapalha */ }); }, [tela]);
   const [gaveta, setGaveta] = useState(false);
   const [lancador, setLancador] = useState(false);
   /** Celular: a barra de aplicativos abre primeiro "recolhida" (só os ícones dos favoritos); o botão da barra a expande (`lancador`). */
@@ -271,6 +274,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         mostrarCalendario={pode(usuario, 'ver.calendario')} podeCriarData={pode(usuario, 'calendario.criar')} />
       {gaveta && <div className="cortina" onClick={() => setGaveta(false)} />}
 
+      <OfertaBiometria usuarioId={usuario.id} />
       <div className="corpo">
         <PulsoCard />
         <ResultadoPopup />
@@ -324,7 +328,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
 
 /** Porta de entrada: carrega a sessão e mostra login, troca obrigatória de senha ou o portal. */
 export function App() {
-  const { usuario, offline, entrar, sair, recarregar } = useSessao();
+  const { usuario, offline, entrar, entrarBiometria, sair, recarregar } = useSessao();
   const empresa = useEmpresa();
   useEffect(() => { document.title = `${empresa.nome_portal} | ${empresa.nome}`; }, [empresa.nome_portal, empresa.nome]);
   if (offline) {
@@ -336,7 +340,7 @@ export function App() {
     );
   }
   if (usuario === undefined) return <p className="carregando" role="status">Carregando…</p>;
-  if (usuario === null) return <Login entrar={entrar} />;
+  if (usuario === null) return <Login entrar={entrar} entrarBiometria={entrarBiometria} />;
   if (usuario.trocar_senha) return <TrocaObrigatoria nome={usuario.nome} aoConcluir={() => void recarregar()} sair={() => void sair()} />;
   return <Portal usuario={usuario} sair={sair} />;
 }

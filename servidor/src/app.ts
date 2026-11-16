@@ -24,6 +24,8 @@ import { rotasInicio } from '../../modulos/inicio/api/index.ts';
 import { rotasPropriedade } from '../../modulos/propriedade/api/index.ts';
 import { rotasMarca } from '../../modulos/marca/api/index.ts';
 import { rotasAjuda } from '../../modulos/ajuda/api/index.ts';
+import { rotasBiometria } from '../../modulos/biometria/api/index.ts';
+import { rotasUso } from '../../modulos/uso/api/index.ts';
 import { rotasDemonstracao } from '../../modulos/demonstracao/api/index.ts';
 
 /** Cada módulo exporta uma função de rotas e entra aqui. */
@@ -49,6 +51,8 @@ export const MODULOS = [
   { nome: 'aprovacoes', rotas: rotasAprovacoes },
   { nome: 'redes', rotas: rotasRedes },
   { nome: 'ajuda', rotas: rotasAjuda },
+  { nome: 'biometria', rotas: rotasBiometria },
+  { nome: 'uso', rotas: rotasUso },
   { nome: 'demonstracao', rotas: rotasDemonstracao },
 ];
 

@@ -53,6 +53,16 @@ Cadastre as **origens**: pastas do servidor ou da rede (ex.: RH = `\\servidor\rh
 ### Dados de exemplo (só administrador)
 Liga e desliga a empresa fictícia **Aurora Esportes** (`npm run demo` faz o mesmo). **Em produção é bloqueado** (a aba some) a menos que `PERMITIR_DADOS_EXEMPLO=1`.
 
+### Uso do portal (permissão `cfg.uso.ver`)
+
+Mostra se o portal é relevante, **por pessoa e por departamento**: pessoas ativas × cadastradas, quem não acessou, entradas e telas por período (7 dias, 30 dias, 90 dias ou 12 meses), pessoas ativas por dia, telas mais usadas, horário de uso, celular × computador, adoção por departamento e uma lista por pessoa (departamento, perfil, último acesso, dias ativos, entradas, telas, aparelho e tela preferida), com busca, filtro por departamento e "só quem não acessou". A tela foi pensada para caber na janela sem rolar a página; só a lista por pessoa rola por dentro. O departamento de cada pessoa é escolhido em **Usuários › Editar** (dá para criar um departamento ali mesmo).
+
+**Cuidados:** os dados identificam pessoas; use para entender a adoção, não para vigiar. Cada consulta da lista por pessoa fica na **Auditoria**. O portal guarda só data, tela e tipo de aparelho, por 12 meses. Informe os colaboradores (a linha de aviso está em Meu perfil e no manual do colaborador).
+
+### Biometria e "manter conectado"
+
+Cada pessoa cadastra a digital ou o rosto do aparelho em Meu perfil (o portal guarda só a chave pública). Exige HTTPS e o nome definitivo do portal (ver [pendências da TI](../pendencias-ti.md)); em `http://IP:porta` o botão não aparece. "Manter conectado" vale 30 dias. Se uma pessoa perder o aparelho, desative o usuário (derruba as sessões) ou redefina a senha; as biometrias podem ser removidas por ela em Meu perfil.
+
 ### Auditoria
 
 ![Auditoria: quem fez o quê e quando.](img/admin-auditoria.png)

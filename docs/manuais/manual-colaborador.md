@@ -9,7 +9,8 @@ Para todas as pessoas que usam o portal, no computador ou no celular.
 2. No primeiro acesso a senha é provisória: o portal pede que você crie uma senha só sua (mínimo de 8 caracteres, com número ou símbolo; senhas comuns como "senha123" são recusadas).
 3. Depois de **5 tentativas erradas** neste aparelho o login fica bloqueado por **15 minutos** (o bloqueio vale para o seu login naquele endereço, não trava você em outro lugar).
 4. **Esqueci a senha:** na tela de entrada use "Esqueci minha senha". O administrador recebe o aviso, redefine e passa uma senha provisória.
-5. A sessão dura 12 horas; depois disso é preciso entrar de novo.
+5. A sessão dura 12 horas; depois disso é preciso entrar de novo. Marque **Manter conectado neste aparelho** para ficar conectado por 30 dias (use só em aparelho seu; em computador compartilhado, não marque e use Sair).
+6. **Entrar com digital ou rosto:** depois de cadastrar a biometria em Meu perfil, a tela de entrada mostra **Entrar com biometria** (só em aparelho com biometria ou PIN configurados e quando o portal é aberto em endereço seguro, https). A biometria fica no seu aparelho; o portal não a guarda. Se o aparelho ainda não tiver sua biometria, depois do login com a senha o portal sugere cadastrá-la ("Entrar com digital ou rosto?"); na tela de entrada ela aparece como o ícone de digital ao lado de Entrar. A senha continua valendo.
 
 ## 2. Conhecer a tela
 
@@ -90,7 +91,8 @@ Abra pelo avatar › **Meu perfil**.
 - **Contato:** como prefere ser chamado(a), celular e e-mail alternativo.
 - **Contato de emergência** (dois contatos e observação de saúde): preenchimento opcional. Você vê os seus dados; o **RH e o administrador só os consultam quando necessário e cada consulta fica registrada**.
 - **Foto e avatar:** envie uma foto (PNG, JPG, WebP ou GIF, até 5 MB) ou escolha um avatar. A foto vale em qualquer aparelho; o avatar escolhido fica neste navegador.
-- **Acesso e segurança:** trocar o e-mail do portal (pede a senha atual) e trocar a senha.
+- **Acesso e segurança:** trocar o e-mail do portal (pede a senha atual), trocar a senha e **cadastrar a biometria** (digital ou rosto) de cada aparelho seu; dá para remover quando quiser.
+- **Uso do portal:** o portal registra data, tela aberta e tipo de aparelho (celular ou computador) para medir se está sendo útil. Nada do que você digita é guardado, e os registros ficam por 12 meses.
 - **Avisos:** e-mail e push.
 - Nome, login e perfil de acesso só o administrador altera.
 

@@ -19,7 +19,9 @@ export function coletarErros(page: Page): string[] {
   return erros;
 }
 
-export async function entrar(page: Page, { login, senha } = ADMIN, dispensarPesquisa = true) {
+export async function entrar(page: Page, { login, senha } = ADMIN, dispensarPesquisa = true, ofertaBiometria = false) {
+  // A sugestão de cadastrar a biometria abriria um pop-up em todos os testes; só os testes de biometria a querem.
+  if (!ofertaBiometria) await page.addInitScript(() => localStorage.setItem('portal.bio-oferta.nunca', '1'));
   await page.goto('/');
   await page.getByLabel('Login').fill(login);
   await page.getByLabel('Senha', { exact: true }).fill(senha);

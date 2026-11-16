@@ -214,7 +214,10 @@ body::after { width: 58vmin; height: 58vmin; bottom: 0; right: 6%; background: r
 /* Celular: ao tocar em Aplicativos, a barra abre recolhida (faixa estreita com os ícones dos favoritos, como no computador);
    o botão do topo da faixa expande a lista completa e a seta a recolhe de novo. Tocar fora fecha. */
 @media (max-width: 860px) {
-  .lancador.barra-mob:not(.aberto) { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: 0; width: 68px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); box-shadow: -10px 0 28px rgba(0, 0, 0, .3); }
+  .lancador.barra-mob:not(.aberto) { display: flex; position: fixed; z-index: 31; top: 0; right: 0; bottom: 0; left: auto; width: 64px; max-width: 100vw; box-sizing: border-box; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom)); box-shadow: -10px 0 28px rgba(0, 0, 0, .3); }
+  /* Ícones centralizados na faixa e o botão de expandir sempre no topo, visível. */
+  .lancador.barra-mob:not(.aberto) .lancador-topo { justify-content: center; width: 100%; flex: none; }
+  .lancador.barra-mob:not(.aberto) .lancador-mini { align-items: center; width: 100%; }
   /* Sobreposta às abas de baixo: ocupa a tela até o fim (antes parava 66 px acima). */
 }
 

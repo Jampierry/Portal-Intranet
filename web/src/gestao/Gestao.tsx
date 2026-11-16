@@ -21,6 +21,7 @@ import { Aniversariantes, NovosColaboradores } from './PessoasMes';
 import { PesquisaPulso } from './Pulso';
 import { RedesSociais } from './Redes';
 import { Aprovacoes } from './Aprovacoes';
+import { UsoPortal } from './Uso';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -333,8 +334,8 @@ export function Publicar({ permissoes, perfil, aba: pedida, aoMudarAba, busca, l
   );
 }
 
-type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'calendario' | 'integracoes' | 'exemplo' | 'origens' | 'auditoria';
-const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['origens', 'Pastas de documentos'], ['exemplo', 'Dados de exemplo'], ['auditoria', 'Auditoria']];
+type AbaCfg = 'usuarios' | 'perfis' | 'empresa' | 'entrada' | 'comunicados' | 'calendario' | 'integracoes' | 'exemplo' | 'origens' | 'auditoria' | 'uso';
+const ABAS_CONFIG: [AbaCfg, string][] = [['usuarios', 'Usuários'], ['perfis', 'Perfis'], ['empresa', 'Empresa'], ['entrada', 'Tela de entrada'], ['comunicados', 'Comunicados'], ['calendario', 'Calendário'], ['integracoes', 'Integrações'], ['origens', 'Pastas de documentos'], ['exemplo', 'Dados de exemplo'], ['uso', 'Uso do portal'], ['auditoria', 'Auditoria']];
 /** Configurações: usuários, perfis e auditoria. Cada aba aparece só para quem recebeu a permissão (administrador vê todas). */
 export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }: { permissoes: string[]; souAdmin: boolean; aba?: string; aoMudarAba: (a: string) => void }) {
   useAbaVisivel(pedida);
@@ -346,7 +347,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
   const aba: AbaCfg = abas.find(([id]) => id === pedida)?.[0] ?? abas[0][0];
   return (
     <>
-      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, tela de entrada, comunicados, calendário, integrações e auditoria do portal." />
+      <Cabecalho titulo="Configurações" sub="Usuários, perfis de acesso, empresa, tela de entrada, comunicados, calendário, integrações, uso do portal e auditoria." />
       <div className="abas abas-gestao" role="tablist" aria-label="Configurações">
         {abas.map(([id, nome]) => <button key={id} role="tab" aria-selected={aba === id} onClick={() => aoMudarAba(id)}>{nome}</button>)}
         <span id="slot-dica-aba" className="slot-dica" />
@@ -355,6 +356,7 @@ export function Configuracoes({ permissoes, souAdmin, aba: pedida, aoMudarAba }:
         : aba === 'integracoes' ? <Integracoes permissoes={permissoes} />
         : aba === 'exemplo' ? <DadosExemplo />
         : aba === 'origens' ? <OrigensDocumentos />
+        : aba === 'uso' ? <UsoPortal />
         : aba === 'calendario' ? <CalendarioConfig permissoes={permissoes} />
         : aba === 'entrada' ? <EntradaConfig permissoes={permissoes} />
         : aba === 'empresa' ? <EmpresaConfig permissoes={permissoes} />

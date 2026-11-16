@@ -39,7 +39,9 @@ function aplicar(c: Config) {
   // menu claro (só em alguns estilos, no modo claro): decide a logo exibida sobre o menu e sobre a lateral do login
   raiz.dataset.menu = !escuro && ESTILOS.find((e) => e.id === c.estilo)?.menuClaro ? 'claro' : 'escuro';
   const auto = fatorAuto(window.innerWidth, window.innerHeight);
-  const z = Math.round((c.escala / 100) * auto * 1000) / 1000;
+  // Celular: sem `zoom` (o Safari do iPhone desloca barras fixas, como a de aplicativos, quando há zoom); a escala do usuário vale só no computador.
+  const celular = window.innerWidth <= 860;
+  const z = celular ? 1 : Math.round((c.escala / 100) * auto * 1000) / 1000;
   raiz.style.setProperty('zoom', String(z));
   raiz.style.setProperty('--zoom', String(z));
   raiz.dataset.escalaAuto = auto < 1 ? 'sim' : 'nao';

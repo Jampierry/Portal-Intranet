@@ -3,6 +3,7 @@ import { Icone } from './icones';
 import { MarcaEntrada, useEntrada } from './MarcaEntrada';
 import { useEmpresa } from './empresa';
 import { FormTrocarSenha } from './Conta';
+import { ErroBiometria, useBiometriaDisponivel } from './biometria';
 
 function Moldura({ titulo, sub, children }: { titulo: string; sub: string; children: ReactNode }) {
   const entrada = useEntrada();
@@ -23,11 +24,14 @@ function Moldura({ titulo, sub, children }: { titulo: string; sub: string; child
   );
 }
 
-export function Login({ entrar }: { entrar: (login: string, senha: string) => Promise<void> }) {
+export function Login({ entrar, entrarBiometria }: { entrar: (login: string, senha: string, manter: boolean) => Promise<void>; entrarBiometria: (manter: boolean) => Promise<void> }) {
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [ver, setVer] = useState(false);
+  const [manter, setManter] = useState(() => { try { return localStorage.getItem('portal.manter') === '1'; } catch { return false; } });
+  const biometria = useBiometriaDisponivel();
   const [erro, setErro] = useState('');
+  const [semBio, setSemBio] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [pedido, setPedido] = useState<'' | 'enviando' | 'enviado'>('');
   const [erroPedido, setErroPedido] = useState('');
@@ -35,8 +39,15 @@ export function Login({ entrar }: { entrar: (login: string, senha: string) => Pr
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
     setErro(''); setEnviando(true);
-    try { await entrar(login.trim(), senha); }
+    try { lembrar(); await entrar(login.trim(), senha, manter); }
     catch (x) { setErro((x as Error).message); setSenha(''); }
+    finally { setEnviando(false); }
+  };
+  const lembrar = () => { try { localStorage.setItem('portal.manter', manter ? '1' : '0'); } catch { /* sem armazenamento: só não lembra */ } };
+  const porBiometria = async () => {
+    setErro(''); setSemBio(false); setEnviando(true);
+    try { lembrar(); await entrarBiometria(manter); }
+    catch (x) { if (x instanceof ErroBiometria && x.semCadastro) setSemBio(true); else setErro((x as Error).message); }
     finally { setEnviando(false); }
   };
 
@@ -68,8 +79,18 @@ export function Login({ entrar }: { entrar: (login: string, senha: string) => Pr
             <button type="button" className="icone-btn" aria-label={ver ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={ver} onClick={() => setVer(!ver)}><Icone nome={ver ? 'olho-off' : 'olho'} tamanho={16} /></button>
           </span>
         </label>
+        <label className="entrar-manter"><input type="checkbox" checked={manter} onChange={(e) => setManter(e.target.checked)} /><span><b>Manter conectado neste aparelho</b><small>30 dias · use só em aparelho seu</small></span></label>
         {erro && <p className="erro" role="alert">{erro}</p>}
-        <button className="btn btn-pri entrar-botao" disabled={enviando || !login || !senha}>{enviando ? 'Entrando…' : 'Entrar'}</button>
+        {semBio && (
+          <div className="entrar-dica" role="status">
+            <Icone nome="digital" tamanho={20} />
+            <p><b>Este aparelho ainda não tem sua biometria.</b> Entre agora com login e senha: em seguida vamos sugerir cadastrá-la, e nos próximos acessos você entra só com a digital ou o rosto.</p>
+          </div>
+        )}
+        <div className="entrar-acoes">
+          <button className="btn btn-pri entrar-botao" disabled={enviando || !login || !senha}>{enviando ? 'Entrando…' : 'Entrar'}</button>
+          {biometria && <button type="button" className="entrar-bio" disabled={enviando} onClick={() => void porBiometria()} aria-label="Entrar com biometria (digital ou rosto)" title="Entrar com biometria"><Icone nome="digital" tamanho={22} /></button>}
+        </div>
         <div className="entrar-esqueci">
           {pedido === 'enviado'
             ? <p className="ok" role="status">Pedido enviado. O administrador foi avisado e vai passar uma senha provisória para você.</p>

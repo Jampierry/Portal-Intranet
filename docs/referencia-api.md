@@ -1,13 +1,22 @@
 # Referência da API
 
-Gerada a partir do código em 12/11/2026. Toda rota exige login, exceto `/api/saude`, `/api/login`, `/api/esqueci-senha`, `/api/empresa`, `/api/entrada` e `/api/publico/imagens/*`. A coluna **Permissão** mostra o que a rota exige além do login (administrador sempre passa). `—` = qualquer pessoa logada (o conteúdo é filtrado pelo que ela pode ver). Alterações de dados são auditadas e toda entrada é validada.
+Gerada a partir do código em 12/11/2026. Toda rota exige login, exceto `/api/saude`, `/api/login`, `/api/biometria/entrar` (e `/entrar/opcoes`), `/api/esqueci-senha`, `/api/empresa`, `/api/entrada` e `/api/publico/imagens/*`. A coluna **Permissão** mostra o que a rota exige além do login (administrador sempre passa). `—` = qualquer pessoa logada (o conteúdo é filtrado pelo que ela pode ver). Alterações de dados são auditadas e toda entrada é validada.
 
 Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `precisa_autorizacao` ao editar conteúdo de outra pessoa) · `404` não encontrado.
 
 ## acessos
 | Método | Rota | Permissão |
 |---|---|---|
-| POST | `/api/login` | — |
+| POST | `/api/login` | — (corpo aceita `manter: true`: sessão de 30 dias em vez de 12 h) |
+| GET | `/api/biometria` | — (biometrias da própria pessoa) |
+| POST | `/api/biometria/registro/opcoes` · `/api/biometria/registro` | — (cadastra a digital/rosto deste aparelho; até 5 por pessoa) |
+| DELETE | `/api/biometria/:id` | — (só a própria) |
+| POST | `/api/biometria/entrar/opcoes` · `/api/biometria/entrar` | pública (entrar com biometria; corpo aceita `manter`) |
+| POST | `/api/uso/tela` | — (o site informa a tela aberta; só o nome da tela) |
+| GET | `/api/departamentos` | — |
+| POST | `/api/departamentos` | cfg.usuarios.criar ou editar |
+| GET | `/api/gestao/uso/resumo?dias=7\|30\|90\|365` | cfg.uso.ver |
+| GET | `/api/gestao/uso/pessoas?dias=…` | cfg.uso.ver (identifica pessoas; cada consulta vai para a auditoria: `uso_consultado`) |
 | POST | `/api/sair` | — |
 | GET | `/api/eu` | — |
 | POST | `/api/eu/senha` | — |

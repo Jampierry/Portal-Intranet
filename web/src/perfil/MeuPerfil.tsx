@@ -6,6 +6,7 @@ import type { Usuario } from '../sessao';
 import { AvisosEmailPessoa, AvisosPush, FormTrocarSenha } from '../Conta';
 import { mascaraTelefone } from '../gestao/Crud';
 import { dataCurta } from '../dados';
+import { BiometriaPessoal } from '../biometria';
 
 interface Dados {
   apelido: string | null; celular: string | null; email_alternativo: string | null;
@@ -146,6 +147,9 @@ export function MeuPerfil({ usuario, avatar, foto, mudarAvatar }: { usuario: Usu
             {!senhaAberta
               ? <button type="button" className="btn btn-sec btn-pequeno" onClick={() => { setSenhaAberta(true); setSenhaFeita(false); }}>Trocar senha</button>
               : <FormTrocarSenha aoConcluir={() => { setSenhaAberta(false); setSenhaFeita(true); }} />}
+            <hr className="perfil-sep" />
+            <BiometriaPessoal />
+            <p className="suave perfil-dica"><Icone nome="escudo" tamanho={13} /> Para medir se o portal é útil, ele registra data, tela aberta e tipo de aparelho (nada do que você digita), por 12 meses.</p>
           </Bloco>
 
           <Bloco titulo="Avisos" icone="sino" dica="Escolha como quer ser avisado(a).">

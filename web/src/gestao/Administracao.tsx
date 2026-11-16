@@ -9,7 +9,7 @@ import { AjustesUsuario, useCatalogo, type Ajustes } from './Permissoes';
 import { useOrdenacao } from './Ordenar';
 import { Dica, DicaAba } from '../Dica';
 
-interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes }
+interface Usr { id: number; login: string; nome: string; email: string | null; perfil: PerfilAcesso; perfil_nome: string; ativo: number; trocar_senha: number; ultimo_acesso: string | null; permissoes: Ajustes; departamento_id: number | null; departamento: string | null }
 
 /** Senha provisória legível (sem caracteres que se confundem). */
 function gerarSenha(): string {
@@ -116,6 +116,39 @@ function AplicativosUsuario({ u, aoFechar }: { u: Usr; aoFechar: (msg?: string) 
   );
 }
 
+/** Departamento da pessoa (mesma lista dos contatos); dá para criar um novo na hora. */
+function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id: number | null) => void }) {
+  const [lista, setLista] = useState<{ id: number; nome: string }[]>([]);
+  const [novo, setNovo] = useState<string | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => { api<{ id: number; nome: string }[]>('/api/departamentos').then(setLista).catch(() => { /* sem lista: só "sem departamento" */ }); }, []);
+  const criar = async () => {
+    setErro('');
+    try {
+      const d = await api<{ id: number; nome: string }>('/api/departamentos', { nome: novo ?? '' });
+      setLista((l) => (l.some((x) => x.id === d.id) ? l : [...l, d].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))));
+      mudar(d.id); setNovo(null);
+    } catch (e) { setErro((e as Error).message); }
+  };
+  return (
+    <label>Departamento
+      <select value={valor ?? ''} onChange={(e) => { if (e.target.value === '+') setNovo(''); else mudar(e.target.value ? Number(e.target.value) : null); }}>
+        <option value="">Sem departamento</option>
+        {lista.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+        <option value="+">＋ Novo departamento…</option>
+      </select>
+      {novo !== null && (
+        <span className="linha">
+          <input value={novo} onChange={(e) => setNovo(e.target.value)} maxLength={60} placeholder="Nome do departamento" aria-label="Nome do novo departamento" autoFocus />
+          <button type="button" className="btn btn-pequeno" disabled={novo.trim().length < 2} onClick={() => void criar()}>Adicionar</button>
+        </span>
+      )}
+      {erro && <small className="erro" role="alert">{erro}</small>}
+      <small className="suave">Usado no painel de Uso do portal e para agrupar as pessoas.</small>
+    </label>
+  );
+}
+
 function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: string[] }) {
   const libera = (acao: string) => permissoes.includes(`cfg.usuarios.${acao}`);
   // Quem não é administrador não cria nem promove administradores (o servidor também recusa).
@@ -123,11 +156,11 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const perfisEscolha = (catalogo?.perfis ?? []).filter((p) => souAdmin || p.codigo !== 'admin');
   const { dados, erro, recarregar } = useLista<Usr>('/api/usuarios');
   const ord = useOrdenacao(dados, {
-    nome: (u) => u.nome, login: (u) => u.login, perfil: (u) => u.perfil_nome,
+    nome: (u) => u.nome, login: (u) => u.login, perfil: (u) => u.perfil_nome, depto: (u) => u.departamento,
     situacao: (u) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado'), acesso: (u) => u.ultimo_acesso,
   });
   const [aviso, setAviso] = useState('');
-  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes } | null>(null);
+  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes; departamento_id: number | null } | null>(null);
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
   const [apps, setApps] = useState<Usr | null>(null);
@@ -143,7 +176,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
         <Dica lado="dir">
           O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
         </Dica>
-        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {} })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {}, departamento_id: null })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
       </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -167,11 +200,11 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       {dados && (
         <div className="rolagem">
           <table className="dados">
-            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login')}{ord.cab('perfil', 'Perfil')}{ord.cab('situacao', 'Situação')}{ord.cab('acesso', 'Último acesso')}<th className="col-acoes">Ações</th></tr></thead>
+            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login')}{ord.cab('perfil', 'Perfil')}{ord.cab('depto', 'Departamento')}{ord.cab('situacao', 'Situação')}{ord.cab('acesso', 'Último acesso')}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
               {(ord.linhas ?? []).map((u) => (
                 <tr key={u.id}>
-                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td>
+                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td><td data-rotulo="Departamento">{u.departamento ?? '—'}</td>
                   <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
                   <td data-rotulo="Último acesso">{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
                   <td className="col-acoes">
@@ -199,6 +232,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
             <select value={novo.perfil} onChange={(e) => setNovo({ ...novo, perfil: e.target.value as PerfilAcesso })}>
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
+          <CampoDepartamento valor={novo.departamento_id} mudar={(departamento_id) => setNovo({ ...novo, departamento_id })} />
           <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
           <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
         </JanelaForm>
@@ -206,13 +240,14 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
       {edit && (
         <JanelaForm titulo={`Editar ${edit.login}`} aoFechar={() => setEdit(null)}
-          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
+          aoEnviar={async () => { await api(`/api/usuarios/${edit.id}`, { nome: edit.nome, email: edit.email ?? '', perfil: edit.perfil, ativo: !!edit.ativo, permissoes: edit.permissoes, departamento_id: edit.departamento_id }, 'PUT'); setAviso('Usuário atualizado.'); setEdit(null); recarregar(); }}>
           <label>Nome completo *<input value={edit.nome} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} maxLength={80} required /></label>
           <label>E-mail (opcional)<input type="email" value={edit.email ?? ''} onChange={(e) => setEdit({ ...edit, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" /></label>
           <label>Perfil *
             <select value={edit.perfil} onChange={(e) => setEdit({ ...edit, perfil: e.target.value as PerfilAcesso })}>
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
+          <CampoDepartamento valor={edit.departamento_id} mudar={(departamento_id) => setEdit({ ...edit, departamento_id })} />
           <label className="linha"><input type="checkbox" checked={!!edit.ativo} onChange={(e) => setEdit({ ...edit, ativo: e.target.checked ? 1 : 0 })} />Usuário ativo (desativar derruba o acesso na hora)</label>
           <AjustesUsuario perfil={edit.perfil} ajustes={edit.permissoes} mudar={(permissoes) => setEdit({ ...edit, permissoes })} />
         </JanelaForm>
@@ -236,7 +271,7 @@ const ACAO: Record<string, string> = {
   publicacao_aprovada: 'Publicação aprovada', publicacao_rejeitada: 'Publicação rejeitada', rede_criada: 'Publicação para rede social criada', rede_alterada: 'Publicação para rede social alterada', rede_apagada: 'Publicação para rede social apagada', rede_enviada: 'Publicação enviada para aprovação', rede_publicada: 'Publicação marcada como publicada', avisos_lidos: 'Avisos do sino marcados como lidos',
   usuario_aplicativos_alterados: 'Aplicativos da pessoa alterados', perfil_ficha_lida: 'Contato de emergência de uma pessoa consultado', perfil_foto: 'Foto de perfil alterada', avisos_email_enviados: 'Aviso de comunicado enviado por e-mail', avisos_email_configurados: 'Avisos por e-mail configurados', perfil_aplicativos_alterados: 'Aplicativos do perfil alterados', calendario_data_criada: 'Data do calendário criada', calendario_data_alterada: 'Data do calendário alterada', calendario_data_apagada: 'Data do calendário apagada',
   calendario_feriados_gerados: 'Feriados do ano gerados', calendario_agendas_alteradas: 'Agendas exibidas no calendário alteradas',
-  login: 'Entrou', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
+  login: 'Entrou', login_biometria: 'Entrou com biometria', biometria_cadastrada: 'Biometria cadastrada', biometria_removida: 'Biometria removida', uso_consultado: 'Uso do portal consultado (por pessoa)', departamento_criado: 'Departamento criado', sair: 'Saiu', login_falhou: 'Login recusado', login_bloqueado: 'Login bloqueado (muitas tentativas)', senha_trocada: 'Trocou a própria senha',
   senha_redefinida: 'Senha redefinida pelo admin', usuario_criado: 'Usuário criado', usuario_alterado: 'Usuário alterado', integracao_zimbra_alterada: 'Conexão com o Zimbra alterada', integracao_zimbra_desconectada: 'Zimbra desconectado', integracao_zimbra_testada: 'Conexão com o Zimbra testada', integracao_zimbra_config: 'Configuração do Zimbra alterada', data_importante_criada: 'Data importante criada', data_importante_excluida: 'Data importante excluída', perfil_criado: 'Perfil criado', perfil_apagado: 'Perfil apagado', perfil_alterado: 'Permissões do perfil alteradas',
   comunicado_criado: 'Comunicado criado', comunicado_alterado: 'Comunicado alterado', comunicado_apagado: 'Comunicado apagado',
   documento_criado: 'Documento criado', documento_alterado: 'Documento alterado', documento_apagado: 'Documento apagado',

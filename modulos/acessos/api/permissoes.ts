@@ -60,6 +60,7 @@ export const CATALOGO: GrupoPermissao[] = [
     { id: 'empresa', rotulo: 'Empresa (nome, textos e ícone)', acoes: [{ chave: 'cfg.empresa.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.empresa.editar', rotulo: 'Editar' }] },
     { id: 'entrada', rotulo: 'Tela de entrada (login)', acoes: [{ chave: 'cfg.entrada.ver', rotulo: 'Ver a aba' }, { chave: 'cfg.entrada.editar', rotulo: 'Editar e enviar imagens' }] },
     { id: 'auditoria', rotulo: 'Auditoria', acoes: [{ chave: 'cfg.auditoria.ver', rotulo: 'Ver a aba' }] },
+    { id: 'uso', rotulo: 'Uso do portal', acoes: [{ chave: 'cfg.uso.ver', rotulo: 'Ver quem usa o portal, por pessoa e departamento (a consulta fica na auditoria)' }] },
   ] },
 ];
 

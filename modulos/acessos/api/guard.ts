@@ -14,16 +14,19 @@ declare module 'fastify' {
 
 export const COOKIE_SESSAO = 'portal_sessao';
 export const HORAS_SESSAO = 12;
+/** "Manter conectado": a sessão dura mais neste aparelho. */
+export const DIAS_MANTER = 30;
+export const horasDaSessao = (manter: boolean) => (manter ? DIAS_MANTER * 24 : HORAS_SESSAO);
 
 const hashToken = (t: string) => createHash('sha256').update(t).digest('hex');
 
 /** Cria a sessão e devolve o token (só o hash vai para o banco). */
-export function criarSessao(db: Banco, usuarioId: number): string {
+export function criarSessao(db: Banco, usuarioId: number, manter = false): string {
   const token = randomBytes(32).toString('base64url');
   const agora = new Date();
   db.prepare('DELETE FROM sessoes WHERE expira_em < ?').run(agora.toISOString());
-  db.prepare('INSERT INTO sessoes (token_hash, usuario_id, criada_em, expira_em) VALUES (?, ?, ?, ?)').run(
-    hashToken(token), usuarioId, agora.toISOString(), new Date(agora.getTime() + HORAS_SESSAO * 3600_000).toISOString(),
+  db.prepare('INSERT INTO sessoes (token_hash, usuario_id, criada_em, expira_em, manter) VALUES (?, ?, ?, ?, ?)').run(
+    hashToken(token), usuarioId, agora.toISOString(), new Date(agora.getTime() + horasDaSessao(manter) * 3600_000).toISOString(), manter ? 1 : 0,
   );
   return token;
 }
@@ -39,6 +42,13 @@ export function usuarioDaSessao(db: Banco, token: string | undefined): UsuarioSe
   if (!u) return null;
   const { ajustes, ...resto } = u as Omit<UsuarioSessao, 'permissoes' | 'perfil_nome'> & { perfil_nome: string | null; ajustes: string | null };
   return { ...resto, perfil_nome: resto.perfil_nome ?? resto.perfil, permissoes: permissoesEfetivas(db, resto.perfil, ajustes) };
+}
+
+/** A sessão deste token foi aberta com "manter conectado"? */
+export function sessaoMantida(db: Banco, token: string | undefined): boolean {
+  if (!token) return false;
+  const s = db.prepare('SELECT manter FROM sessoes WHERE token_hash = ?').get(hashToken(token)) as { manter: number } | undefined;
+  return !!s?.manter;
 }
 
 export function encerrarSessao(db: Banco, token: string | undefined) {

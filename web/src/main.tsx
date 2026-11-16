@@ -13,6 +13,7 @@ import './css/parte-08.css';
 import './css/parte-09.css';
 import './css/parte-10.css';
 import './css/parte-11.css';
+import './css/parte-12.css';
 
 createRoot(document.getElementById('raiz')!).render(<><App /><ConfirmarHost /></>);
 
