@@ -27,6 +27,8 @@ services:
       ADMIN_LOGIN: ${ADMIN_LOGIN:-}
       ADMIN_SENHA: ${ADMIN_SENHA:-}
       ADMIN_NOME: ${ADMIN_NOME:-}
+      # 1 = redefine a senha do ADMIN_LOGIN mesmo com o banco em uso (recuperação sem terminal). Remova depois de entrar.
+      ADMIN_REDEFINIR: ${ADMIN_REDEFINIR:-}
       # Modo debug: 1 mostra o detalhe dos erros 500 (use só em homologação; ignorado em prod).
       MODO_DEBUG: ${MODO_DEBUG:-0}
       APP_ENV: ${APP_ENV}

@@ -84,3 +84,6 @@ O repositório segue o template da infra: `app.yml`, `Dockerfile`, `docker-compo
 
 ### Modo debug (ver o erro na tela)
 Com `MODO_DEBUG=1` no `.env` do ambiente (secret `HML_ENV` ou `.env` local), uma falha 500 passa a mostrar na tela a mensagem, a rota e as primeiras linhas da pilha (e no console do navegador, prefixo `[debug]`); o servidor também registra o erro no log do contêiner. É **ignorado quando `APP_ENV=prod`**, então não vaza detalhes em produção. Use só em homologação/testes e desligue depois. Erros fora de requisições (`unhandledRejection`/`uncaughtException`) sempre vão para o log.
+
+### Recuperar o administrador sem terminal
+No `.env` do ambiente (secret), `ADMIN_REDEFINIR=1` junto com `ADMIN_LOGIN` e `ADMIN_SENHA` (8+) faz o próximo deploy **redefinir** a senha desse administrador (perfil admin, conta ativa, troca obrigatória no primeiro acesso, sessões dele encerradas; auditado como `admin_redefinido_env`). Se o login não existir, ele é criado. **Depois de entrar, remova `ADMIN_REDEFINIR` e `ADMIN_SENHA` do secret**, senão toda subida repete a redefinição.
