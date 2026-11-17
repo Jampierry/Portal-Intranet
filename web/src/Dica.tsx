@@ -22,6 +22,11 @@ export function Dica({ children, lado = 'esq' }: { children: ReactNode; lado?: '
   );
 }
 
+/** Rótulo de campo de formulário com a explicação num "!" redondo pequeno ao lado (no lugar do texto miúdo embaixo do campo). */
+export function RotuloDica({ texto, dica }: { texto: string; dica?: string }) {
+  return <span className="rot-dica">{texto}{dica && <Dica>{dica}</Dica>}</span>;
+}
+
 export const SLOT_DICA = 'slot-dica-aba';
 
 /** A explicação de uma aba: aparece como "!" no canto direito da barra de abas (ou ali mesmo, se a tela não tiver abas). */

@@ -27,7 +27,7 @@ const OFFICE_ANTIGO = (b: Buffer) => b.subarray(0, 8).equals(OLE);
 const SEM_NUL = (b: Buffer) => !b.subarray(0, 8000).includes(0);
 const JPG = (b: Buffer) => comeca(b, 0xff, 0xd8, 0xff);
 /** Tipos aceitos como anexo: extensão → tipo do arquivo e conferência do conteúdo (não confia no nome nem no tipo informado). */
-const ANEXOS: Record<string, { mime: string; ok: (b: Buffer) => boolean; inline?: boolean }> = {
+export const ANEXOS: Record<string, { mime: string; ok: (b: Buffer) => boolean; inline?: boolean }> = {
   pdf: { mime: 'application/pdf', ok: (b) => b.toString('latin1', 0, 5) === '%PDF-', inline: true },
   docx: { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ok: ZIP },
   xlsx: { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ok: ZIP },

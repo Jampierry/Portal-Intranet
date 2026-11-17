@@ -7,7 +7,7 @@ import { Icone } from '../icones';
 import { useLista } from '../dados';
 import { useOrdenacao, valorOrdenavel } from './Ordenar';
 import { CampoLink } from './CampoLink';
-import { Dica, DicaAba } from '../Dica';
+import { Dica, DicaAba, RotuloDica } from '../Dica';
 
 /** Permissões do usuário logado dentro de Publicar. Sem provedor (null) = tudo liberado; o servidor confere de qualquer forma. */
 export const PermissoesCtx = createContext<string[] | null>(null);
@@ -79,19 +79,18 @@ export function mascaraTelefone(v: string): string {
 function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean | object; mudar: (v: string | boolean | object) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
   if (c.tipo === 'custom') return <div>{c.render!(valor, mudar as (v: unknown) => void, todos)}</div>;
-  if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} />{c.rotulo}</label>;
+  if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} /><RotuloDica texto={c.rotulo} dica={c.dica} /></label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
   if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} metade={c.metade} />;
   if (c.tipo === 'documento') return <CampoDocumento rotulo={c.rotulo} todos={todos} mudarVarios={mudarVarios} />;
   if (c.tipo === 'imagem') return <CampoImagem c={c} id={id} valor={String(valor ?? '')} mudar={mudar} todos={todos} />;
   if (c.sugestoes) return <SeletorComNova c={c} id={id} valor={String(valor ?? '')} mudar={mudar} />;
   return (
-    <label htmlFor={id} className={c.metade ? 'meia' : undefined}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
+    <label htmlFor={id} className={c.metade ? 'meia' : undefined}><RotuloDica texto={`${c.rotulo}${c.obrigatorio ? ' *' : ''}`} dica={c.dica} />
       {c.tipo === 'area' ? <textarea rows={c.linhas ?? 5} {...comum} onChange={(e) => mudar(e.target.value)} />
         : c.tipo === 'select' ? <select {...comum} onChange={(e) => mudar(e.target.value)}>{c.opcoes!.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
         : c.tipo === 'telefone' ? <input type="tel" inputMode="numeric" autoComplete="off" placeholder="(__) _____-____" {...comum} maxLength={15} onChange={(e) => mudar(mascaraTelefone(e.target.value))} />
         : <input type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} {...comum} onChange={(e) => mudar(e.target.value)} />}
-      {c.dica && <small className="suave">{c.dica}</small>}
     </label>
   );
 }
@@ -135,7 +134,7 @@ function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; val
   };
   return (
     <div className="campo-imagem">
-      <span className="rotulo-campo" id={`${id}-rot`}>{c.rotulo}</span>
+      <span className="rotulo-campo" id={`${id}-rot`}><RotuloDica texto={c.rotulo} dica={c.dica ?? 'PNG, JPG, WebP ou GIF, até 5 MB. Escolha no seu computador ou numa pasta da rede. Sem imagem = capa em cor do tema.'} /></span>
       <div className="campo-imagem-linha">
         {valor ? (ehVideo(valor) ? <video className="campo-imagem-previa" src={valor} muted loop playsInline autoPlay aria-label="Prévia do vídeo escolhido" /> : <img className="campo-imagem-previa" src={valor} alt="Prévia da imagem escolhida" />) : <span className="campo-imagem-vazia">{c.video ? 'Sem imagem ou vídeo' : 'Sem imagem'}</span>}
         <div className="campo-imagem-acoes">
@@ -147,7 +146,6 @@ function CampoImagem({ c, id, valor, mudar, todos }: { c: Campo; id: string; val
         </div>
       </div>
       {erro && <p className="erro" role="alert">{erro}</p>}
-      <small className="suave">{c.dica ?? 'PNG, JPG, WebP ou GIF, até 5 MB. Escolha no seu computador ou numa pasta da rede. Sem imagem = capa em cor do tema.'}</small>
     </div>
   );
 }
@@ -160,7 +158,7 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
   const opcoes = valor && !lista.includes(valor) && !nova ? [...lista, valor] : lista;
   return (
     <div className={c.metade ? 'meia' : undefined}>
-      <label htmlFor={id}>{c.rotulo}{c.obrigatorio ? ' *' : ''}
+      <label htmlFor={id}><RotuloDica texto={`${c.rotulo}${c.obrigatorio ? ' *' : ''}`} dica={c.dica} />
         <select id={id} required={c.obrigatorio} value={nova ? NOVA : valor}
           onChange={(e) => { if (e.target.value === NOVA) { setNova(true); mudar(''); } else { setNova(false); mudar(e.target.value); } }}>
           <option value="" disabled>Selecione…</option>
@@ -171,7 +169,6 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
       {nova && <label htmlFor={`${id}-nova`}>Nome da nova categoria
         <input id={`${id}-nova`} type="text" autoFocus required={c.obrigatorio} maxLength={c.max} value={valor} onChange={(e) => mudar(e.target.value)} />
       </label>}
-      {c.dica && <small className="suave">{c.dica}</small>}
     </div>
   );
 }

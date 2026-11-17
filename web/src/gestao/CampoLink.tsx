@@ -1,3 +1,4 @@
+import { RotuloDica } from '../Dica';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FocusEvent } from 'react';
 import { api } from '../api';
 
@@ -79,7 +80,7 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
   return (
     <div ref={raiz} className={metade ? 'meia' : undefined} onBlur={fecharSeFora}
       onKeyDown={(e) => { if (e.key === 'Escape' && aberto) { e.stopPropagation(); e.preventDefault(); setAberto(false); botao.current?.focus(); } }}>
-      <label htmlFor={id}>{rotulo}{obrigatorio ? ' *' : ''}
+      <label htmlFor={id}><RotuloDica texto={`${rotulo}${obrigatorio ? ' *' : ''}`} dica={dica} />
         <button id={id} ref={botao} type="button" className="campo-link-botao" aria-haspopup="listbox" aria-expanded={aberto} onClick={(e) => { e.preventDefault(); setAberto(!aberto); }}>
           <span className={atual || externo ? '' : 'suave'}>{texto}</span>
         </button>
@@ -112,7 +113,6 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
       {externo && (
         <input type="text" aria-label="Endereço externo" placeholder="https://…" maxLength={300} value={valor.startsWith('#') ? '' : valor} onChange={(e) => mudar(e.target.value)} />
       )}
-      {dica && <small className="suave">{dica}</small>}
     </div>
   );
 }

@@ -55,6 +55,35 @@ function EscolherNaPasta({ origem, valor, escolher }: { origem: string; valor: s
   );
 }
 
+const LIMITE_MB = 50;
+/** Escolhe um arquivo do computador de quem publica e o envia para a pasta de documentos do portal; devolve o caminho dentro da pasta. */
+function EnviarDoComputador({ aoEnviar, rotulo }: { aoEnviar: (caminho: string, nome: string) => void; rotulo: string }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const escolher = async (arq: File | undefined) => {
+    if (!arq) return;
+    setErro('');
+    if (arq.size > LIMITE_MB * 1024 * 1024) return setErro(`O arquivo passa de ${LIMITE_MB} MB. Escolha um menor.`);
+    setEnviando(true);
+    try {
+      const r = await fetch(`/api/gestao/documentos/arquivo?nome=${encodeURIComponent(arq.name)}`, { method: 'POST', headers: { 'Content-Type': 'application/x-documento' }, body: arq, credentials: 'same-origin' });
+      const j = await r.json().catch(() => ({})) as { caminho?: string; nome?: string; erro?: string };
+      if (!r.ok || !j.caminho) throw new Error(j.erro ?? `Erro ${r.status}`);
+      aoEnviar(j.caminho, j.nome ?? arq.name);
+    } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
+  };
+  return (
+    <div className="doc-envio">
+      <label className="btn btn-sec btn-pequeno" style={{ margin: 0 }}>
+        {enviando ? 'Enviando…' : rotulo}
+        <input type="file" className="so-leitor" disabled={enviando} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp" aria-label="Escolher arquivo do computador"
+          onChange={(e) => { void escolher(e.target.files?.[0]); e.target.value = ''; }} />
+      </label>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+    </div>
+  );
+}
+
 /** Endereço do documento: muda conforme "Onde está o documento" (link, pasta do portal ou caminho de rede). */
 export function CampoDocumento({ rotulo, todos, mudarVarios }: { rotulo: string; todos: Valores; mudarVarios: (p: Valores) => void }) {
   const origem = String(todos.origem ?? 'link');
@@ -71,9 +100,17 @@ export function CampoDocumento({ rotulo, todos, mudarVarios }: { rotulo: string;
       {origem === 'link' && (
         <input type="text" maxLength={500} value={valor} placeholder="https://…" aria-label={rotulo} onChange={(e) => definir(e.target.value)} />
       )}
-      {origem !== 'link' && (
+      {origem === 'envio' && (
+        <>
+          <input type="text" readOnly value={valor} placeholder="Nenhum arquivo escolhido" aria-label={rotulo} />
+          <EnviarDoComputador rotulo={valor ? 'Trocar arquivo…' : 'Escolher arquivo do computador…'} aoEnviar={(c, n) => definir(c, n)} />
+          <small className="suave">O arquivo é enviado para a pasta de documentos do portal assim que você o escolhe. PDF, Word, Excel, PowerPoint, imagem, TXT ou CSV, até {LIMITE_MB} MB.</small>
+        </>
+      )}
+      {origem !== 'link' && origem !== 'envio' && (
         <>
           <input type="text" readOnly value={valor} placeholder="Nenhum arquivo escolhido — clique em um arquivo abaixo" aria-label={rotulo} />
+          {origem === 'pasta' && <EnviarDoComputador rotulo="Enviar arquivo do computador…" aoEnviar={(c, n) => definir(c, n)} />}
           <EscolherNaPasta origem={origem} valor={valor} escolher={(c) => definir(c, c)} />
         </>
       )}

@@ -24,6 +24,8 @@ import { RedesSociais } from './Redes';
 import { Aprovacoes } from './Aprovacoes';
 import { UsoPortal } from './Uso';
 import { PreviaBanner } from './PreviaBanner';
+import { RotuloDica } from '../Dica';
+import { mesAno, PreviaAplicativo, PreviaComunicado, PreviaDocumento, PreviaPessoa } from './PreviasCadastro';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -82,6 +84,7 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
         { chave: 'departamentos', rotulo: 'Quem recebe', tipo: 'custom', render: (v, m) => <CampoPublico valor={v} mudar={m} /> },
       ]}
+      previa={(v) => <PreviaComunicado v={v} />}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Categoria', ver: (r) => r.categoria },
@@ -165,14 +168,14 @@ function Documentos({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { chave: 'resumo', rotulo: 'Resumo', obrigatorio: true, max: 300 },
         { chave: 'categoria', rotulo: 'Categoria', obrigatorio: true, max: 40, sugestoes: categorias, metade: true },
         { chave: 'formato', rotulo: 'Formato', obrigatorio: true, max: 40, dica: 'Ex.: PDF, Planilha', metade: true },
-        { chave: 'versao', rotulo: 'Versão', max: 20, metade: true },
-        { chave: 'responsavel', rotulo: 'Responsável', max: 80, metade: true },
+        { chave: 'auto', rotulo: 'Versão e responsável', tipo: 'custom', render: (_v, _m, todos) => <p className="suave" style={{ margin: 0 }}><RotuloDica texto={`Versão ${String(todos.versao || '1.0')} · Responsável: ${String(todos.responsavel || 'você')}`} dica="Automáticos. A versão começa em 1.0 e sobe quando o arquivo ou o link é trocado. O responsável é quem publicou o documento." /></p> },
         { chave: 'classificacao', rotulo: 'Quem pode ver', tipo: 'select', opcoes: [['interno', 'Todos os logados'], ['publico', 'Público (interno, sem restrição)'], ['restrito', 'Restrito (editores e admin)']], metade: true },
         { chave: 'revisado_em', rotulo: 'Revisado em', tipo: 'data', metade: true },
         { chave: 'exibir_de', rotulo: 'Publicar a partir de (opcional)', tipo: 'data', metade: true, dica: 'Vazio = aparece assim que for publicado.' },
-        { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ...(origens ?? []).map((o): [string, string] => [`s${o.id}`, `Servidor: ${o.nome}`])] },
+        { chave: 'origem', rotulo: 'Onde está o documento', tipo: 'select', opcoes: [['envio', 'Enviar arquivo do meu computador'], ['link', 'Link na internet / sistema (http ou https)'], ['pasta', 'Arquivo na pasta de documentos do portal'], ...(origens ?? []).map((o): [string, string] => [`s${o.id}`, `Servidor: ${o.nome}`])] },
         { chave: 'link_oficial', rotulo: 'Endereço do documento', tipo: 'documento' },
       ]}
+      previa={(v) => <PreviaDocumento v={v} />}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Categoria', ver: (r) => r.categoria },
@@ -182,7 +185,7 @@ function Documentos({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
       ]}
       acoesExtra={(r, _salvar, recarregar) => <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
-      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', exibir_de: '', origem: 'link', link_oficial: '' }}
+      valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', exibir_de: '', origem: 'envio', link_oficial: '' }}
       paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, categoria: r.categoria, formato: r.formato, versao: s(r.versao), responsavel: s(r.responsavel), classificacao: r.classificacao, revisado_em: s(r.revisado_em), exibir_de: s(r.exibir_de), origem: r.origem === 'servidor' ? `s${r.origem_id}` : r.origem, link_oficial: s(r.link_oficial) })}
     />
     {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.exibir_de} url={`/api/gestao/documentos/${mudandoData.r.id}/data`} campo="exibir_de" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}
@@ -207,6 +210,7 @@ function Destaques() {
         { chave: 'consentimento_ref', rotulo: 'Referência do consentimento', max: 200, dica: 'Ex.: termo assinado em 02/10/2026 (obrigatório para aprovar)' },
         { chave: 'status', rotulo: 'Situação', tipo: 'select', opcoes: [['rascunho', 'Rascunho'], ['aprovado', 'Aprovado'], ['retirado', 'Retirado']], metade: true },
       ]}
+      previa={(v) => <PreviaPessoa v={v} periodo={mesAno(v)} extra={String(v.apresentacao ?? '').trim() || 'O texto de reconhecimento aparece aqui.'} dica="Assim a pessoa aparece no bloco Colaborador Destaque do Início (a faixa com o mês e ano aparece na aba Ano)." avisos={v.status === 'aprovado' ? [] : ['Só aparece no portal quando estiver Aprovado.']} />}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
         { titulo: 'Área', ver: (r) => r.area },
@@ -265,6 +269,7 @@ function CadastroAplicacoes() {
         { chave: 'ativo', rotulo: 'Ativa (aparece no portal)', tipo: 'check' },
         { chave: 'restrita', rotulo: 'Restrita: só aparece para quem for liberado', tipo: 'check', dica: 'Marque para apps que não são para todos. Depois libere cada pessoa em Configurações › Usuários › Aplicativos. O administrador sempre vê.' },
       ]}
+      previa={(v) => <PreviaAplicativo v={v} />}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
         { titulo: 'Categoria', ver: (r) => r.categoria },

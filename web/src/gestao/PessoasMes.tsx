@@ -1,3 +1,4 @@
+import { PreviaPessoa } from './PreviasCadastro';
 import { useContext, useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -121,6 +122,7 @@ export function Aniversariantes() {
           { chave: 'admissao', rotulo: 'Data de admissão (opcional)', tipo: 'data', dica: 'Com a data, o Início mostra “N anos de casa” no mês do aniversário de admissão (a partir de 1 ano).' },
           { chave: 'autorizado', rotulo: 'Autorizou divulgar', tipo: 'check', dica: AVISO_LGPD },
         ]}
+        previa={(v) => <PreviaPessoa v={v} extra={`Aniversário em ${String(v.dia).padStart(2, '0')}/${String(v.mes).padStart(2, '0')}`} dica="Assim a pessoa aparece no cartão Pessoas do mês, no Início (só dia e mês, sem a idade)." avisos={v.autorizado ? [] : ['Sem “Autorizou divulgar”, a pessoa não aparece no portal.']} />}
         colunas={[
           { titulo: 'Nome', ver: (r) => r.nome },
           { titulo: 'Área', ver: (r) => r.area },
@@ -150,6 +152,7 @@ export function NovosColaboradores() {
         { chave: 'mensagem', rotulo: 'Mensagem de boas-vindas (opcional)', tipo: 'area', max: 200 },
         { chave: 'autorizado', rotulo: 'Autorizou divulgar', tipo: 'check', dica: AVISO_LGPD },
       ]}
+      previa={(v) => <PreviaPessoa v={v} extra={[String(v.funcao ?? '').trim(), String(v.mensagem ?? '').trim()].filter(Boolean).join(' · ') || 'A função e a mensagem de boas-vindas aparecem aqui.'} dica="Assim a pessoa aparece no cartão Pessoas do mês, no Início, por 30 dias a partir da entrada." avisos={v.autorizado ? [] : ['Sem “Autorizou divulgar”, a pessoa não aparece no portal.']} />}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
         { titulo: 'Área', ver: (r) => r.area },

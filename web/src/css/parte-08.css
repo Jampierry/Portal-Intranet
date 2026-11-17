@@ -272,3 +272,17 @@ button.mini-item { width: 100%; text-align: left; background: none; border: 0; f
   .janela-corpo.com-previa { grid-template-columns: minmax(0, 1fr); }
   .previa-lado { position: static; order: -1; }
 }
+.rot-dica, .pv-com-dica { display: flex; align-items: center; gap: 6px; }
+.rot-dica .dica-ajuda-btn, .pv-com-dica .dica-ajuda-btn { width: 20px; height: 20px; }
+.rot-dica .dica-ajuda-btn svg, .pv-com-dica .dica-ajuda-btn svg { width: 14px; height: 14px; }
+.rot-dica .dica-ajuda-painel { max-width: min(300px, 75vw); font-weight: 500; }
+.pv-cartao { min-width: 0; }
+.pv-cartao .cartao-com, .pv-cartao .cartao-doc, .pv-cartao .cartao-app { width: 100%; pointer-events: none; }
+.pv-pessoa { max-width: 220px; margin: 0 auto; pointer-events: none; }
+.pv-post { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); }
+.pv-post header { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.pv-post-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--vinho); }
+.pv-post img, .pv-post-sem { width: 100%; max-height: 260px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--linha); }
+.pv-post-sem { display: grid; place-items: center; background: var(--afundado); color: var(--suave); font-size: 12px; }
+.pv-post p { margin: 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9em; overflow: hidden; }
+.pv-post-link { color: var(--vinho-texto); overflow-wrap: anywhere; }

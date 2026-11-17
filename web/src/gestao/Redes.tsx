@@ -1,3 +1,4 @@
+import { PreviaRede } from './PreviasCadastro';
 import { useState } from 'react';
 import { urlSegura } from '../links';
 import { api } from '../api';
@@ -54,6 +55,7 @@ export function RedesSociais({ exigeAprovacao }: { exigeAprovacao: boolean }) {
           { chave: 'imagem', rotulo: 'Imagem ou arte (opcional)', tipo: 'imagem' },
           { chave: 'anexos', rotulo: 'Arquivos para o RH conferir', tipo: 'custom', render: (v, m) => <CampoAnexos valor={(v as Anexo[]) ?? []} mudar={m} /> },
         ]}
+        previa={(v) => <PreviaRede v={v} plataforma={nomeDe(String(v.plataforma ?? ''))} />}
         colunas={[
           { titulo: 'Plataforma', ver: (r) => nomeDe(r.plataforma) },
           { titulo: 'Título', ver: (r) => r.titulo },

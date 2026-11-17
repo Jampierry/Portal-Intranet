@@ -1,4 +1,5 @@
 import { Icone } from '../icones';
+import { Dica } from '../Dica';
 import { ehVideo, VideoFundo } from '../midia';
 
 const POSICOES: { id: string; nome: string; razao: string }[] = [
@@ -42,11 +43,10 @@ export function PreviaBanner({ v }: { v: Record<string, string | boolean | objec
       </div>
       <p className="pv-legenda">Carrossel da {POSICOES.find((p) => p.id === posicao)?.nome.toLowerCase()} · tamanho real aproximado {menor ? '700 × 330' : '1000 × 330'} px</p>
 
-      <h3 className="pv-titulo">Lugar no Início</h3>
+      <h3 className="pv-titulo pv-com-dica">Lugar no Início <Dica lado="dir">Os três carrosséis ficam lado a lado no topo do Início e giram juntos.</Dica></h3>
       <div className="pv-mapa" aria-hidden="true">
         {POSICOES.map((p) => <span key={p.id} className={p.id === posicao ? 'pv-mapa-ativo' : undefined}>{p.nome}</span>)}
       </div>
-      <p className="pv-legenda">Os três carrosséis ficam lado a lado no topo do Início e giram juntos.</p>
 
       {avisos.length > 0 && <ul className="pv-avisos">{avisos.map((a) => <li key={a}>{a}</li>)}</ul>}
     </div>
