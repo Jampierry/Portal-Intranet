@@ -68,6 +68,7 @@ Canal de cada área (e-mail, ramal, celular corporativo ou link). Se não achar,
 - Clique no ícone de grade na barra da direita para ver os aplicativos e abrir um.
 - **Computador:** o aplicativo abre em **nova aba** e o portal continua aberto. **Celular:** abre na **mesma aba**; use **Voltar** do navegador para retornar.
 - Clique na **estrela** para favoritar. Os favoritos ficam na sua conta e aparecem como ícones na barra.
+- **Ordem dos favoritos:** arraste os ícones (com a barra aberta ou fechada) para colocar na ordem que preferir; a ordem vale nas duas formas e fica salva na sua conta. No celular, segure o ícone e arraste; no teclado, use **Alt + seta para cima/baixo**. Na aba **Todos os apps** os favoritos vêm primeiro, na mesma ordem.
 - Alguns aplicativos são **restritos** e só aparecem para quem foi liberado.
 
 ## 8. Pesquisas

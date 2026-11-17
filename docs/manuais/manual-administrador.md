@@ -51,7 +51,10 @@ Datas importantes e feriados locais (com importação de feriados) e escolha das
 ### Integrações
 
 ![Integrações: serviço de e-mail e agenda.](img/admin-integracoes.png)
-Conexão com o serviço **zimbra-mcp** (separado, fora do Git, com credenciais): situação, teste, contas de e-mail/agenda e OAuth (Google/Microsoft). Em produção depende da TI (endereço de retorno real cadastrado nos provedores).
+Três cartões lado a lado:
+- **Agenda por CalDAV** (calendário do portal): endereço da agenda, usuário, senha e nome da agenda da empresa. **Salvar e testar** lista as agendas da conta. Exemplo no Zimbra: `https://<servidor>/dav/<conta>/<agenda>`.
+- **Serviço Zimbra (só e-mail)** (zimbra-mcp, separado, opcional): hoje serve só de plano B para o envio de e-mails.
+- **Aviso de comunicados por e-mail:** liga/desliga o aviso, escolhe "só urgentes" e o endereço do portal (para o botão "Abrir no portal"). O envio é feito **pelo próprio portal, por SMTP, usando por padrão a mesma conta do CalDAV**. A seção **Servidor de envio (SMTP)** só precisa ser preenchida se a TI indicar outra conta; **Testar conexão** confere o login sem enviar e **Enviar e-mail de teste para mim** manda um e-mail real (cadastre antes o seu e-mail em Usuários › Editar). Se recusar a senha, a conta pode não ter permissão de SMTP; se não conectar, o servidor do portal pode não alcançar o correio (portas 465/587).
 
 ### Pastas de documentos (só administrador)
 
@@ -97,7 +100,8 @@ Registro só de inclusão de quem fez o quê e quando (login, criação, altera�
 - **Ninguém consegue entrar em produção:** o cookie de sessão é `Secure`, então é preciso **HTTPS** por proxy reverso; confira `ORIGENS_PERMITIDAS` e `TRUST_PROXY=1`.
 - **Imagens ou carrosséis não aparecem:** confira se o serviço está atualizado e recarregue com Ctrl+F5.
 - **Documento da rede não abre:** o usuário do serviço está sem leitura na pasta, ou a origem foi movida.
-- **E-mail ou agenda não funcionam:** confira o serviço zimbra-mcp (porta 8765, só local) e o OAuth.
+- **Agenda não aparece:** em Integrações use **Salvar e testar** no CalDAV (a lista de agendas deve trazer o nome informado). **E-mail não sai:** use **Testar conexão** no cartão de avisos; a mensagem diz se é senha/permissão ou rede.
+- **Login corporativo (Keycloak) dá 401 `Invalid client credentials`:** o secret no `HML_ENV` não é o do cliente (aba Credentials do cliente no Keycloak; costuma ter dezenas de caracteres). Regenere o secret, cole sem espaço no fim, e faça novo deploy (push em `develop`).
 - **Voltar atrás:** parar o serviço, restaurar o backup do banco, `git checkout` da etiqueta anterior, `npm ci`, `npm run build`, iniciar.
 
 ## Entrar pelo login corporativo (Keycloak)

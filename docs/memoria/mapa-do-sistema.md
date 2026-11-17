@@ -39,7 +39,7 @@ Componentes-chave: `Crud.tsx` (lista+formulário genérico, ordenação por cabe
 - **imagens**: upload `/api/gestao/imagens` e leitura `/api/imagens/:nome` (PNG/JPG/WebP/GIF/ICO, 5 MB, sem SVG).
 - **CalDAV direto (17/11):** `GET/PUT /api/integracoes/caldav`, `POST /api/integracoes/caldav/testar`; se configurado, `calendario` lê/cria/exclui por CalDAV em vez do serviço Zimbra.
 - **calendario**: `GET/POST /api/calendario`, `DELETE /api/calendario/:id` (via serviço Zimbra, cache 5 min).
-- **integracoes**: `/api/integracoes/zimbra` (situação, conexão, testar, config do serviço, agendas).
+- **integracoes**: `/api/integracoes/zimbra` (situação, conexão, testar, config do serviço, agendas); `/api/integracoes/smtp[/testar]` (envio de e-mail do portal por SMTP, padrão = conta do CalDAV).
 - Proteções globais: sessão por cookie httpOnly, CSRF por origem, bloqueio por tentativas de login, auditoria só-inclusão.
 
 ## 4. Banco (migrações 001–014)
