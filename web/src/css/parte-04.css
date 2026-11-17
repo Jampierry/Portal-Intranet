@@ -103,7 +103,7 @@ code { font-size: .92em; background: var(--hover); padding: 1px 5px; border-radi
 .int-bloco .barra { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
 
 /* Integrações: grade fixa de 3 colunas; os cartões de uma linha têm a mesma altura e os botões ficam alinhados embaixo. */
-.crud.integracoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.crud.integracoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .crud.integracoes > * { min-width: 0; margin: 0; }
 .crud.integracoes > :not(.cartao-sec):not(.int-form) { grid-column: 1 / -1; }  /* dica, avisos, mensagens */
 .crud.integracoes > .int-form { display: contents; }

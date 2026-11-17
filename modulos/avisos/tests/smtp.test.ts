@@ -39,11 +39,12 @@ function smtpFalso(senhaCerta = 'segredo') {
   return new Promise<{ recebidos: Recebido[]; porta: number; fechar: () => void }>((ok) => servidor.listen(0, '127.0.0.1', () => ok({ recebidos, porta: (servidor.address() as AddressInfo).port, fechar: () => servidor.close() })));
 }
 
-test('monta o e-mail com texto e HTML, escapando o conteúdo e só aceitando link http(s)', () => {
-  const m = montarEmail({ assunto: 'x', titulo: 'Aviso <b>', mensagem: 'Linha 1 & 2', app: 'Portal', botao_texto: 'Abrir no portal', botao_link: 'https://portal.exemplo.invalid/#c' });
+test('monta o e-mail com selo, categoria, aviso e botão, escapando o conteúdo e só aceitando link http(s)', () => {
+  const m = montarEmail({ titulo: 'Aviso <b>', mensagem: 'Linha 1 & 2', app: 'Portal', etiqueta: 'Urgente', tom: 'urgente', categoria: 'Segurança', destaque: 'Exige confirmação de leitura.', botao_texto: 'Ler e confirmar', botao_link: 'https://portal.exemplo.invalid/#c' });
   assert.match(m.html, /Aviso &lt;b&gt;/); assert.match(m.html, /Linha 1 &amp; 2/); assert.match(m.html, /href="https:\/\/portal\.exemplo\.invalid\/#c"/);
-  assert.match(m.text, /Abrir no portal: https:\/\/portal/);
-  assert.doesNotMatch(montarEmail({ assunto: 'x', titulo: 't', mensagem: 'm', app: 'P', botao_link: 'javascript:alert(1)' }).html, /href=/);
+  assert.match(m.html, /Urgente/); assert.match(m.html, /Segurança/); assert.match(m.html, /Exige confirmação/); assert.match(m.html, /#cf4a39/); // tom urgente
+  assert.match(m.text, /Ler e confirmar: https:\/\/portal/); assert.match(m.text, /\[Urgente · Segurança\]/);
+  assert.doesNotMatch(montarEmail({ titulo: 't', mensagem: 'm', app: 'P', botao_link: 'javascript:alert(1)' }).html, /href=/);
 });
 
 test('sem configuração não há envio; com CalDAV a mesma conta e o mesmo servidor valem para o SMTP', async () => {

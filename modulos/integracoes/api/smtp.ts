@@ -34,14 +34,51 @@ export function conexaoSmtp(db: Banco): ConexaoSmtp | null {
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export interface Mensagem { para: string; assunto: string; titulo: string; mensagem: string; app: string; botao_texto?: string; botao_link?: string }
+/** Tom visual do e-mail: define a cor da faixa e do botão. */
+export type TomEmail = 'marca' | 'urgente' | 'neutro';
+const CORES: Record<TomEmail, string> = { marca: '#6e3a58', urgente: '#cf4a39', neutro: '#4a4650' };
 
-/** Texto e HTML padronizados do aviso (cores neutras; sem imagens externas). */
-export function montarEmail(m: Omit<Mensagem, 'para'>): { text: string; html: string } {
+export interface Mensagem {
+  para: string; assunto: string; titulo: string; mensagem: string; app: string; botao_texto?: string; botao_link?: string;
+  /** Selo no alto do e-mail (ex.: URGENTE, NOVO COMUNICADO, TESTE). */
+  etiqueta?: string; tom?: TomEmail;
+  /** Assunto da publicação (ex.: a categoria do comunicado), mostrado ao lado do selo. */
+  categoria?: string;
+  /** Aviso em destaque dentro do e-mail (ex.: exige confirmação de leitura). */
+  destaque?: string;
+  /** Frase pequena no rodapé (ex.: como desligar os avisos). */
+  rodape?: string;
+}
+
+/** Texto e HTML padronizados do aviso: tabelas e estilos em linha (funciona no Zimbra, Outlook e celular), sem imagens externas. */
+export function montarEmail(m: Omit<Mensagem, 'para' | 'assunto'>): { text: string; html: string } {
   const link = m.botao_link && /^https?:\/\//i.test(m.botao_link) ? m.botao_link : '';
-  const text = `${m.titulo}\n\n${m.mensagem}\n${link ? `\n${m.botao_texto ?? 'Abrir'}: ${link}\n` : ''}\n— ${m.app}`;
-  const botao = link ? `<p style="margin:20px 0 0"><a href="${esc(link)}" style="background:#6b2c4a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600;display:inline-block">${esc(m.botao_texto ?? 'Abrir')}</a></p>` : '';
-  const html = `<div style="font-family:Segoe UI,Arial,sans-serif;background:#f4f1f3;padding:24px"><div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;color:#2a2227"><h2 style="margin:0 0 12px;font-size:20px">${esc(m.titulo)}</h2><p style="margin:0;line-height:1.5;white-space:pre-line">${esc(m.mensagem)}</p>${botao}<p style="margin:24px 0 0;font-size:12px;color:#7a6d75">${esc(m.app)}</p></div></div>`;
+  const cor = CORES[m.tom ?? 'marca'];
+  const rotulo = m.botao_texto ?? 'Abrir no portal';
+  const linhas = [
+    m.etiqueta ? '[' + m.etiqueta + (m.categoria ? ' · ' + m.categoria : '') + ']' : '',
+    m.titulo, '', m.mensagem,
+    m.destaque ? '\n' + m.destaque : '',
+    link ? '\n' + rotulo + ': ' + link : '',
+    '', '— ' + m.app, m.rodape ?? '',
+  ];
+  const text = linhas.filter((x, i) => x !== '' || i === 2 || i === 6).join('\n');
+  const selo = m.etiqueta ? '<span style="display:inline-block;background:' + cor + ';color:#ffffff;font-size:11px;font-weight:700;letter-spacing:.08em;padding:4px 10px;border-radius:99px;text-transform:uppercase">' + esc(m.etiqueta) + '</span>' : '';
+  const chip = m.categoria ? '<span style="display:inline-block;margin-left:6px;background:#f1ecee;color:#4a4650;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px">' + esc(m.categoria) + '</span>' : '';
+  const caixa = m.destaque ? '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 0"><tr><td style="background:#fbf4f2;border-left:4px solid ' + cor + ';padding:12px 14px;border-radius:6px;font-size:14px;line-height:1.5;color:#2a2227">' + esc(m.destaque) + '</td></tr></table>' : '';
+  const botao = link ? '<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 0"><tr><td style="background:' + cor + ';border-radius:8px"><a href="' + esc(link) + '" style="display:inline-block;padding:13px 26px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;font-family:Segoe UI,Arial,sans-serif">' + esc(rotulo) + ' &rarr;</a></td></tr></table><p style="margin:14px 0 0;font-size:12px;color:#7a6d75;line-height:1.4">Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all;color:#4a4650">' + esc(link) + '</span></p>' : '';
+  const resumo = esc(m.mensagem.slice(0, 120));
+  const html = '<!doctype html><html><body style="margin:0;padding:0;background:#f1ecee">'
+    + '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f1ecee">' + resumo + '</div>'
+    + '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1ecee"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;font-family:Segoe UI,Arial,sans-serif;color:#2a2227">'
+    + '<tr><td style="background:#2b2a2d;padding:18px 28px;border-radius:12px 12px 0 0"><span style="color:#ffffff;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">' + esc(m.app) + '</span></td></tr>'
+    + '<tr><td style="height:5px;line-height:5px;font-size:0;background:' + cor + '">&nbsp;</td></tr>'
+    + '<tr><td style="background:#ffffff;padding:28px 28px 30px">' + selo + chip
+    + '<h1 style="margin:16px 0 12px;font-size:24px;line-height:1.25;color:#1d1a24">' + esc(m.titulo) + '</h1>'
+    + '<p style="margin:0;font-size:16px;line-height:1.6;color:#2a2227;white-space:pre-line">' + esc(m.mensagem) + '</p>' + caixa + botao + '</td></tr>'
+    + '<tr><td style="background:#faf7f8;padding:16px 28px;border-radius:0 0 12px 12px;font-size:12px;line-height:1.5;color:#7a6d75">' + esc(m.rodape ?? 'Mensagem automática do portal.') + '</td></tr>'
+    + '</table></td></tr></table></body></html>';
   return { text, html };
 }
 

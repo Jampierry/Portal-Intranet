@@ -6,7 +6,7 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { permissoesEfetivas } from '../../acessos/api/permissoes.ts';
 import { chamarZimbra, conexaoZimbra, ErroZimbra } from '../../integracoes/api/zimbra.ts';
-import { conexaoSmtp, enviarEmails, ErroSmtp } from '../../integracoes/api/smtp.ts';
+import { conexaoSmtp, enviarEmails, ErroSmtp, type Mensagem } from '../../integracoes/api/smtp.ts';
 import { noPublico } from '../../publico/api/index.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
 
@@ -32,7 +32,8 @@ const nomePortal = (db: Banco) => {
 /** Há como enviar e-mail: SMTP direto (conta própria ou a do CalDAV) ou o serviço zimbra-mcp. */
 export const emailDisponivel = (db: Banco) => !!conexaoSmtp(db) || !!conexaoZimbra(db);
 
-interface Notificacao { para: string[]; assunto: string; titulo: string; mensagem: string; botao_texto?: string; botao_link?: string; app: string }
+type Extras = Pick<Mensagem, 'etiqueta' | 'tom' | 'categoria' | 'destaque' | 'rodape'>;
+interface Notificacao extends Extras { para: string[]; assunto: string; titulo: string; mensagem: string; botao_texto?: string; botao_link?: string; app: string }
 /** Envia pelo SMTP do portal; sem ele, pelo serviço zimbra-mcp. Devolve quantos saíram (lança ErroSmtp/ErroZimbra se nada saiu). */
 async function enviarNotificacao(db: Banco, n: Notificacao): Promise<{ enviados: number; falhas: number }> {
   const smtp = conexaoSmtp(db);
@@ -46,7 +47,7 @@ async function enviarNotificacao(db: Banco, n: Notificacao): Promise<{ enviados:
   let enviados = 0, falhas = 0;
   for (let i = 0; i < n.para.length; i += LOTE) {
     const lote = n.para.slice(i, i + LOTE);
-    try { const r = await chamarZimbra<{ enviados?: number }>(conexao, 'POST', '/api/notificar', { ...n, para: lote }, 60_000); enviados += r.enviados ?? lote.length; } catch { falhas += lote.length; }
+    try { const r = await chamarZimbra<{ enviados?: number }>(conexao, 'POST', '/api/notificar', { para: lote, assunto: n.assunto, titulo: n.titulo, mensagem: n.mensagem, botao_texto: n.botao_texto, botao_link: n.botao_link, app: n.app }, 60_000); enviados += r.enviados ?? lote.length; } catch { falhas += lote.length; }
   }
   return { enviados, falhas };
 }
@@ -67,7 +68,7 @@ export async function avisarNovoComunicado(db: Banco, slug: string, quem: number
   try {
     const cfg = lerAvisos(db);
     if (!cfg.ativo) return;
-    const c = db.prepare("SELECT id, titulo, resumo, prioridade, status, notificado_em FROM comunicados WHERE slug = ?").get(slug) as { id: number; titulo: string; resumo: string; prioridade: string; status: string; notificado_em: string | null } | undefined;
+    const c = db.prepare("SELECT id, titulo, resumo, categoria, prioridade, exige_leitura, status, notificado_em FROM comunicados WHERE slug = ?").get(slug) as { id: number; titulo: string; resumo: string; categoria: string; prioridade: string; exige_leitura: number; status: string; notificado_em: string | null } | undefined;
     if (!c || c.status !== 'publicado' || c.notificado_em) return;
     if (cfg.so_urgentes && c.prioridade !== 'urgente') return;
     // marca antes de enviar: duas edições seguidas não mandam duas vezes
@@ -80,7 +81,10 @@ export async function avisarNovoComunicado(db: Banco, slug: string, quem: number
     try {
       const r = await enviarNotificacao(db, {
         para, assunto: `${urgente ? 'URGENTE: ' : 'Novo comunicado: '}${c.titulo}`, titulo: c.titulo, mensagem: c.resumo,
-        ...(base ? { botao_texto: 'Abrir no portal', botao_link: `${base}/#comunicados/${encodeURIComponent(slug)}` } : {}), app: nomePortal(db),
+        etiqueta: urgente ? 'Urgente' : 'Novo comunicado', tom: urgente ? 'urgente' : 'marca', categoria: c.categoria,
+        ...(c.exige_leitura ? { destaque: 'Este comunicado exige a sua confirmação de leitura: abra-o no portal e clique em “Li e estou ciente”.' } : {}),
+        rodape: 'Você recebe este aviso porque tem acesso aos comunicados do portal. Para parar de receber, desligue “Avisos por e-mail” em Minha conta.',
+        ...(base ? { botao_texto: c.exige_leitura ? 'Ler e confirmar' : 'Ler comunicado', botao_link: `${base}/#comunicados/${encodeURIComponent(slug)}` } : {}), app: nomePortal(db),
       });
       enviados = r.enviados; falhas = r.falhas;
     } catch { /* tudo falhou: fica na auditoria */ }
@@ -124,7 +128,7 @@ export async function rotasAvisos(app: FastifyInstance, { db }: { db: Banco; pro
     if (!eu.email) return resp.code(400).send({ erro: 'Cadastre o seu e-mail em Configurações › Usuários › Editar para receber o teste.' });
     if (!emailDisponivel(db)) return resp.code(400).send({ erro: 'Ainda não há servidor de e-mail configurado (Configurações › Integrações).' });
     try {
-      await enviarNotificacao(db, { para: [eu.email], assunto: 'Teste de aviso do portal', titulo: 'Teste de aviso', mensagem: 'Se você recebeu este e-mail, os avisos de comunicados por e-mail estão funcionando.', app: nomePortal(db) });
+      await enviarNotificacao(db, { para: [eu.email], assunto: 'Teste de aviso do portal', titulo: 'Teste de aviso', mensagem: 'Se você recebeu este e-mail, os avisos de comunicados por e-mail estão funcionando.', etiqueta: 'Teste', tom: 'neutro', rodape: 'Este é um e-mail de teste enviado pelas configurações do portal.', app: nomePortal(db) });
     } catch (e) { if (e instanceof ErroZimbra) return resp.code(e.status).send({ erro: e.message }); if (e instanceof ErroSmtp) return resp.code(502).send({ erro: e.message }); throw e; }
     auditar(db, req.usuario!.id, 'avisos_email_teste', {});
     return { ok: true, para: eu.email };
