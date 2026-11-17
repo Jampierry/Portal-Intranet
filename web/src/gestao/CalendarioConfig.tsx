@@ -10,6 +10,9 @@ import { useOrdenacao } from './Ordenar';
 
 interface Agendas { conectado: boolean; exibir: string[]; disponiveis: string[]; erro?: string }
 const br = (iso: string) => `${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+const DIAS_SEMANA = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+/** Dia da semana de uma data ISO (AAAA-MM-DD), 0 = domingo. Meio-dia evita erro de fuso. */
+const diaDaSemana = (iso: string) => new Date(`${iso}T12:00:00`).getDay();
 type Form = { id?: number; titulo: string; data: string; data_fim: string; tipo: TipoData; anual: boolean };
 
 /** Configurações › Calendário: datas e feriados da empresa e quais agendas do Zimbra aparecem no calendário. */
@@ -31,7 +34,7 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
   const daqui = (dados ?? []).filter((d) => (d.anual ? true : d.data.slice(0, 4) === String(ano) || (d.data_fim ?? '').slice(0, 4) === String(ano)))
     .map((d) => ({ ...d, mostrada: d.anual ? `${ano}${d.data.slice(4)}` : d.data }))
     .sort((a, b) => a.mostrada.localeCompare(b.mostrada));
-  const ord = useOrdenacao(daqui, { data: (d) => d.mostrada, titulo: (d) => d.titulo, tipo: (d) => NOME_TIPO[d.tipo], repete: (d) => (d.anual ? 'Todo ano' : `Só em ${d.data.slice(0, 4)}`) });
+  const ord = useOrdenacao(daqui, { data: (d) => d.mostrada, semana: (d) => diaDaSemana(d.mostrada), titulo: (d) => d.titulo, tipo: (d) => NOME_TIPO[d.tipo], repete: (d) => (d.anual ? 'Todo ano' : `Só em ${d.data.slice(0, 4)}`) });
 
   const gerar = async () => {
     setAviso('');
@@ -89,12 +92,13 @@ export function CalendarioConfig({ permissoes }: { permissoes: string[] }) {
         {dados && (
           <div className="rolagem">
             <table className="dados">
-              <thead><tr>{ord.cab('data', 'Data')}{ord.cab('titulo', 'Título')}{ord.cab('tipo', 'Tipo')}{ord.cab('repete', 'Repete')}{(edita || exclui) && <th className="col-acoes">Ações</th>}</tr></thead>
+              <thead><tr>{ord.cab('data', 'Data')}{ord.cab('semana', 'Dia da semana')}{ord.cab('titulo', 'Título')}{ord.cab('tipo', 'Tipo')}{ord.cab('repete', 'Repete')}{(edita || exclui) && <th className="col-acoes">Ações</th>}</tr></thead>
               <tbody>
-                {daqui.length === 0 && <tr><td colSpan={5} className="vazio">Nada cadastrado em {ano}. {edita ? 'Use “Gerar feriados”.' : ''}</td></tr>}
+                {daqui.length === 0 && <tr><td colSpan={6} className="vazio">Nada cadastrado em {ano}. {edita ? 'Use “Gerar feriados”.' : ''}</td></tr>}
                 {(ord.linhas ?? []).map((d) => (
                   <tr key={d.id}>
                     <td data-rotulo="Data" className="nowrap">{br(d.mostrada)}{d.data_fim && !d.anual ? ` a ${br(d.data_fim)}` : ''}</td>
+                    <td data-rotulo="Dia da semana" className="nowrap">{DIAS_SEMANA[diaDaSemana(d.mostrada)]}</td>
                     <td data-rotulo="Título">{d.titulo}</td>
                     <td data-rotulo="Tipo"><Selo texto={NOME_TIPO[d.tipo]} tom={d.tipo === 'evento' ? 'ok' : d.tipo === 'facultativo' ? 'aviso' : 'neutro'} /></td>
                     <td data-rotulo="Repete">{d.anual ? 'Todo ano' : 'Só em ' + d.data.slice(0, 4)}</td>

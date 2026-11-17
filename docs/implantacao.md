@@ -89,7 +89,7 @@ Com `MODO_DEBUG=1` no `.env` do ambiente (secret `HML_ENV` ou `.env` local), uma
 No `.env` do ambiente (secret), `ADMIN_REDEFINIR=1` junto com `ADMIN_LOGIN` e `ADMIN_SENHA` (8+) faz o próximo deploy **redefinir** a senha desse administrador (perfil admin, conta ativa, troca obrigatória no primeiro acesso, sessões dele encerradas; auditado como `admin_redefinido_env`). Se o login não existir, ele é criado. **Depois de entrar, remova `ADMIN_REDEFINIR` e `ADMIN_SENHA` do secret**, senão toda subida repete a redefinição.
 
 ### Login pelo Keycloak (SSO)
-Botão "Entrar com o login corporativo (Keycloak)" na tela de entrada (OpenID Connect, código + PKCE; módulo `modulos/keycloak`). O login local continua valendo (reserva do administrador).
+Botão "Entrar com login corporativo" na tela de entrada (OpenID Connect, código + PKCE; módulo `modulos/keycloak`). O login local continua valendo (reserva do administrador).
 - **Variáveis no secret** (`HML_ENV` / `PROD_ENV`): `KEYCLOAK_ISSUER_URL` (ex.: `https://auth.dipaula.com.br/realms/dipaula-corp`; ou, alternativa, `KEYCLOAK_URL` + `KEYCLOAK_REALM`), `KEYCLOAK_CLIENT_ID` (ex.: `portal-intranet-hml`), `KEYCLOAK_CLIENT_SECRET`. Opcional `KEYCLOAK_REDIRECT_URI`. Sem emissor, client e secret, o botão não aparece. **Nunca** coloque o secret do cliente no Git nem em conversa.
 - **Retorno:** `https://<portal>/api/v1/admin/auth/callback` (o endereço que a TI cadastrou; `/api/v1/auth/callback` também responde, para o campo "Admin URL").
 - **Primeiro acesso por SSO:** coloque `ADMIN_EMAIL=<e-mail corporativo>` junto de `ADMIN_LOGIN`/`ADMIN_SENHA` (e `ADMIN_REDEFINIR=1` se o administrador já existir): o e-mail fica gravado e o botão do Keycloak já funciona, sem entrar antes com a senha local.

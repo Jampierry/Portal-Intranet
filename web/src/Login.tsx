@@ -102,7 +102,7 @@ export function Login({ entrar, entrarBiometria }: { entrar: (login: string, sen
           <button className="btn btn-pri entrar-botao" disabled={enviando || !login || !senha}>{enviando ? 'Entrando…' : 'Entrar'}</button>
           {biometria && <button type="button" className="entrar-bio" disabled={enviando} onClick={() => void porBiometria()} aria-label="Entrar com biometria (digital ou rosto)" title="Entrar com biometria"><Icone nome="digital" tamanho={22} /></button>}
         </div>
-        {sso && <a className="btn btn-sec entrar-botao" href="/api/auth/keycloak/entrar" style={{ textAlign: 'center' }}>Entrar com o login corporativo (Keycloak)</a>}
+        {sso && <a className="btn btn-sec entrar-botao" href="/api/auth/keycloak/entrar" style={{ textAlign: 'center' }}>Entrar com login corporativo</a>}
         <div className="entrar-esqueci">
           {pedido === 'enviado'
             ? <p className="ok" role="status">Pedido enviado. O administrador foi avisado e vai passar uma senha provisória para você.</p>
