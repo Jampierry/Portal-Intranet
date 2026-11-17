@@ -16,7 +16,7 @@ interface Tile { chave: string; nome: string; foto: string | null; iniciais: str
 
 /** Cartão no formato do Colaborador Destaque: 3 pessoas por página (foto quadrada, nome, detalhe e data), setas, pontos e giro automático
  *  (pausa com o mouse/foco; tempos levemente diferentes entre os cartões para não virarem todos juntos). */
-function CartaoPessoas({ id, titulo, itens, deslocar = 0 }: { id: string; titulo: string; itens: Tile[]; deslocar?: number }) {
+function CartaoPessoas({ id, titulo, itens, vazio, deslocar = 0 }: { id: string; titulo: string; itens: Tile[]; /** Texto quando não há ninguém (o cartão aparece sempre). */ vazio: string; deslocar?: number }) {
   const paginas = Math.max(1, Math.ceil(itens.length / POR_PAGINA));
   const [i, setI] = useState(0);
   const [pausa, setPausa] = useState(false);
@@ -32,7 +32,8 @@ function CartaoPessoas({ id, titulo, itens, deslocar = 0 }: { id: string; titulo
     <section className="cartao-sec destaques compacto pm-card" aria-labelledby={id}
       onMouseEnter={() => setPausa(true)} onMouseLeave={() => setPausa(false)} onFocus={() => setPausa(true)} onBlur={() => setPausa(false)}>
       <div className="sec-topo"><h2 id={id}><Icone nome="pessoas" tamanho={22} /> {titulo}</h2></div>
-      <div className="carrossel">
+      {itens.length === 0 && <p className="pm-vazio"><Icone nome="pessoas" tamanho={30} /><span>{vazio}</span></p>}
+      {itens.length > 0 && <div className="carrossel">
         {paginas > 1 ? <button type="button" className="seta-car" onClick={() => mover(-1)} aria-label="Anteriores"><Icone nome="esq" /></button> : <span />}
         <div className="pessoas-janela">
           <div className="pessoas-trilho" style={{ transform: `translateX(-${pag * 100}%)` }}>
@@ -52,7 +53,7 @@ function CartaoPessoas({ id, titulo, itens, deslocar = 0 }: { id: string; titulo
           </div>
         </div>
         {paginas > 1 ? <button type="button" className="seta-car" onClick={() => mover(1)} aria-label="Próximos"><Icone nome="dir" /></button> : <span />}
-      </div>
+      </div>}
       {paginas > 1 && <div className="pontos" aria-label={`Página ${pag + 1} de ${paginas}`}>
         {Array.from({ length: paginas }, (_, n) => <button key={n} type="button" aria-label={`Ir para a página ${n + 1}`} aria-current={n === pag ? 'true' : undefined} onClick={() => setI(n)} />)}
       </div>}
@@ -85,24 +86,18 @@ export function PessoasDoMes() {
   useEffect(() => { api<Resposta>('/api/pessoas-do-mes').then(setR).catch(() => setR(null)); }, []);
   const empresa = useEmpresa();
   const aniversarioEmpresa = <AniversarioEmpresa fundacao={empresa.fundacao} nome={empresa.nome} />;
-  if (!r || (r.aniversariantes.length === 0 && r.novos.length === 0 && (r.casa?.length ?? 0) === 0)) return aniversarioEmpresa;
-  const mes = MESES_LONGOS[r.mes - 1].toLowerCase();
+  const mes = MESES_LONGOS[(r?.mes ?? new Date().getMonth() + 1) - 1].toLowerCase();
+  const aniversariantes = r?.aniversariantes ?? [], casa = r?.casa ?? [], novos = r?.novos ?? [];
   return (
     <>
     {aniversarioEmpresa}
     <div className="pessoas-mes" aria-label="Pessoas do mês">
-      {r.aniversariantes.length > 0 && (
-        <CartaoPessoas id="pm-aniv" titulo={`Aniversariantes de ${mes}`}
-          itens={r.aniversariantes.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: a.area, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
-      )}
-      {(r.casa?.length ?? 0) > 0 && (
-        <CartaoPessoas id="pm-casa" titulo="Tempo de casa" deslocar={600}
-          itens={r.casa.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: `${a.anos} ${a.anos === 1 ? 'ano' : 'anos'} · ${a.area}`, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
-      )}
-      {r.novos.length > 0 && (
-        <CartaoPessoas id="pm-novos" titulo="Novos colaboradores" deslocar={1200}
-          itens={r.novos.map((n) => ({ chave: `${n.nome}|${n.entrada}`, nome: n.nome, foto: n.foto, iniciais: n.iniciais, linha: [n.funcao, n.area].filter(Boolean).join(' · '), chip: dataCurta(n.entrada), dica: n.mensagem ?? undefined }))} />
-      )}
+      <CartaoPessoas id="pm-aniv" titulo={`Aniversariantes de ${mes}`} vazio={`Nenhum aniversariante em ${mes} por enquanto.`}
+          itens={aniversariantes.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: a.area, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
+      <CartaoPessoas id="pm-casa" titulo="Tempo de casa" deslocar={600} vazio={`Ninguém completa ano de casa em ${mes}.`}
+          itens={casa.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: `${a.anos} ${a.anos === 1 ? 'ano' : 'anos'} · ${a.area}`, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
+      <CartaoPessoas id="pm-novos" titulo="Novos colaboradores" deslocar={1200} vazio="Nenhum novo colaborador nos últimos 30 dias."
+          itens={novos.map((n) => ({ chave: `${n.nome}|${n.entrada}`, nome: n.nome, foto: n.foto, iniciais: n.iniciais, linha: [n.funcao, n.area].filter(Boolean).join(' · '), chip: dataCurta(n.entrada), dica: n.mensagem ?? undefined }))} />
     </div>
     </>
   );

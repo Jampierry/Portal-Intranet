@@ -1,9 +1,11 @@
 import { RotuloDica } from '../Dica';
+import { abrirFlutuante, posicionarFlutuante } from '../flutuante';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FocusEvent } from 'react';
 import { api } from '../api';
 
 interface Com { slug: string; titulo: string; categoria: string }
-interface Opcao { valor: string; rotulo: string; detalhe?: string; grupo: 'Páginas do portal' | 'Comunicados' }
+interface Doc { slug: string; titulo: string; categoria: string }
+interface Opcao { valor: string; rotulo: string; detalhe?: string; grupo: 'Páginas do portal' | 'Comunicados' | 'Documentos' }
 
 const PAGINAS: Opcao[] = [
   { valor: '#inicio', rotulo: 'Início', grupo: 'Páginas do portal' },
@@ -20,6 +22,7 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState('');
   const [coms, setComs] = useState<Com[]>([]);
+  const [docs, setDocs] = useState<Doc[]>([]);
   const [externo, setExterno] = useState(() => valor !== '' && !valor.startsWith('#'));
   const raiz = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
@@ -27,32 +30,16 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
   const campoBusca = useRef<HTMLInputElement>(null);
 
   // Comunicados publicados (se a pessoa não tiver acesso à lista, ficam só as páginas).
-  useEffect(() => { api<Com[]>('/api/comunicados').then(setComs).catch(() => setComs([])); }, []);
+  useEffect(() => { api<Com[]>('/api/comunicados').then(setComs).catch(() => setComs([])); api<Doc[]>('/api/documentos').then(setDocs).catch(() => setDocs([])); }, []);
 
   // O painel é "fixed" (fica por cima do pop-up, sem aumentar a rolagem dele). Como a página pode estar com zoom, a posição é
   // medida depois de desenhada e corrigida: o painel sempre nasce colado no campo, abaixo dele (ou acima, se não couber).
   useLayoutEffect(() => {
     const p = painel.current, b = botao.current;
     if (!aberto || !p || !b) return;
-    const r = b.getBoundingClientRect();
-    p.style.maxHeight = ''; p.style.width = `${r.width}px`;
-    const escala = (() => { const w = p.getBoundingClientRect().width; return w ? r.width / w : 1; })(); // inverso do zoom da página
-    p.style.width = `${r.width * escala}px`;
-    // Coloca o painel exatamente em (esq, topo), nas medidas dos elementos: converte pelo zoom e corrige a sobra uma vez.
-    const colocar = (esq: number, topo: number) => {
-      p.style.left = `${esq * escala}px`; p.style.top = `${topo * escala}px`;
-      const a = p.getBoundingClientRect();
-      p.style.left = `${esq * escala + (esq - a.left) * escala}px`; p.style.top = `${topo * escala + (topo - a.top) * escala}px`;
-    };
-    colocar(r.left, r.bottom + 4);
-    // Abre para baixo; só vai para cima se a lista não couber embaixo e houver mais espaço em cima.
-    const altura = viewportAltura();
-    const abaixo = altura - r.bottom - 12, acima = r.top - 12;
-    p.style.maxHeight = `${380 * escala}px`;
-    const natural = p.getBoundingClientRect().height; // altura que a lista quer ter (até 380)
-    const paraCima = natural > abaixo && acima > abaixo;
-    p.style.maxHeight = `${Math.max(120, Math.min(natural, paraCima ? acima : abaixo)) * escala}px`;
-    if (paraCima) colocar(r.left, r.top - 4 - p.getBoundingClientRect().height);
+    abrirFlutuante(p); // camada superior: não é cortada pela janela pop-up
+    // Abre embaixo se couber; senão, para o lado com mais espaço (limitando a altura, com rolagem dentro da lista).
+    posicionarFlutuante(p, b.getBoundingClientRect(), { larguraIgual: true, alturaMax: 380 });
     campoBusca.current?.focus({ preventScroll: true });
   }, [aberto]);
 
@@ -66,7 +53,8 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
   const opcoes: Opcao[] = useMemo(() => [
     ...PAGINAS,
     ...coms.map((c) => ({ valor: `#comunicados/${c.slug}`, rotulo: c.titulo, detalhe: c.categoria, grupo: 'Comunicados' as const })),
-  ], [coms]);
+    ...docs.map((d) => ({ valor: `#documentos/${d.slug}`, rotulo: d.titulo, detalhe: d.categoria, grupo: 'Documentos' as const })),
+  ], [coms, docs]);
   const atual = opcoes.find((o) => o.valor === valor);
   const filtradas = opcoes.filter((o) => semAcento(`${o.rotulo} ${o.detalhe ?? ''}`).includes(semAcento(busca.trim())));
 
@@ -86,11 +74,11 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
         </button>
       </label>
       {aberto && (
-        <div ref={painel} className="campo-link-painel" role="dialog" aria-label="Escolher o destino do botão">
+        <div ref={painel} popover="manual" className="campo-link-painel" role="dialog" aria-label="Escolher o destino do botão">
           <input ref={campoBusca} type="search" placeholder="Pesquisar comunicado ou página…" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Pesquisar" />
           <ul role="listbox">
             <li><button type="button" role="option" aria-selected={valor === '' && !externo} onClick={() => escolher('')}><i>Sem link</i></button></li>
-            {(['Páginas do portal', 'Comunicados'] as const).map((g) => {
+            {(['Páginas do portal', 'Comunicados', 'Documentos'] as const).map((g) => {
               const itens = filtradas.filter((o) => o.grupo === g);
               return itens.length === 0 ? null : (
                 <li key={g} role="presentation" className="grupo">
@@ -117,8 +105,3 @@ export function CampoLink({ rotulo, id, valor, mudar, dica, obrigatorio, metade 
   );
 }
 
-/** Altura útil da janela no mesmo "espaço" das medidas dos elementos (a página pode ter zoom). */
-function viewportAltura() {
-  const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom')) || 1;
-  return innerHeight / z;
-}

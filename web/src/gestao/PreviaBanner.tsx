@@ -1,6 +1,7 @@
 import { Icone } from '../icones';
 import { Dica } from '../Dica';
-import { ehVideo, VideoFundo } from '../midia';
+import { FundoSlide } from '../inicio/Novidades';
+import { FormatoIdeal } from './FormatoIdeal';
 
 const POSICOES: { id: string; nome: string; razao: string }[] = [
   { id: 'principal', nome: 'Esquerda', razao: '1000 / 330' },
@@ -28,9 +29,7 @@ export function PreviaBanner({ v }: { v: Record<string, string | boolean | objec
       <div className="pv-banner" style={{ aspectRatio: razao }}>
         <section className={`hero novidades${menor ? ' menor' : ''}`} aria-label="Prévia do banner">
           <div className="slide ativo">
-            {imagem
-              ? (ehVideo(imagem) ? <VideoFundo className="slide-fundo" src={imagem} /> : <img className="slide-fundo" src={imagem} alt="" />)
-              : <span className="slide-fundo slide-cor" />}
+            <FundoSlide imagem={imagem} />
             <span className="slide-veu" />
             <div className="slide-texto">
               {!menor && <small className="eyebrow">NOVIDADES DA SEMANA</small>}
@@ -48,6 +47,11 @@ export function PreviaBanner({ v }: { v: Record<string, string | boolean | objec
         {POSICOES.map((p) => <span key={p.id} className={p.id === posicao ? 'pv-mapa-ativo' : undefined}>{p.nome}</span>)}
       </div>
 
+      <FormatoIdeal itens={[
+        { rotulo: 'Imagem', texto: menor ? '700 × 330 px (proporção ≈ 2:1), PNG, JPG, WebP ou GIF, até 5 MB.' : '1000 × 330 px (proporção ≈ 3:1), PNG, JPG, WebP ou GIF, até 5 MB.' },
+        { rotulo: 'Vídeo', texto: menor ? 'MP4 (H.264), horizontal, 1400 × 660 px (≈ 2:1), de 6 a 15 segundos, até 40 MB.' : 'MP4 (H.264), horizontal, 1920 × 630 px (≈ 3:1), de 6 a 15 segundos, até 40 MB.' },
+        { rotulo: 'Dica', texto: 'O vídeo toca sem som e em laço. O texto do banner fica à esquerda: deixe esse lado mais livre. Se a proporção for muito diferente, o portal mostra a mídia inteira e preenche as sobras com ela desfocada.' },
+      ]} />
       {avisos.length > 0 && <ul className="pv-avisos">{avisos.map((a) => <li key={a}>{a}</li>)}</ul>}
     </div>
   );

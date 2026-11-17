@@ -12,12 +12,12 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
 import { hashSenha } from '../../acessos/api/senha.ts';
 import { perfilExiste } from '../../acessos/api/permissoes.ts';
-import { auditar, COOKIE_SESSAO, criarSessao, horasDaSessao } from '../../acessos/api/guard.ts';
+import { auditar, COOKIE_SESSAO, criarSessao, exigirPerm, horasDaSessao } from '../../acessos/api/guard.ts';
 import { registrarUso } from '../../uso/api/registro.ts';
 
 export const CAMINHOS_RETORNO = ['/api/v1/admin/auth/callback', '/api/v1/auth/callback'];
 
-interface Cfg { base: string; clientId: string; segredo: string; redirect: string }
+interface Cfg { base: string; clientId: string; segredo: string; redirect: string; /** …/admin/realms/<realm> (API de administração, para listar as pessoas do realm) */ admin: string }
 export function lerCfg(env: NodeJS.ProcessEnv = process.env): Cfg | null {
   // O jeito simples: KEYCLOAK_ISSUER_URL (ex.: https://auth.dipaula.com.br/realms/dipaula-corp). Alternativa: KEYCLOAK_URL + KEYCLOAK_REALM.
   const issuer = env.KEYCLOAK_ISSUER_URL?.trim().replace(/\/+$/, '');
@@ -28,7 +28,7 @@ export function lerCfg(env: NodeJS.ProcessEnv = process.env): Cfg | null {
   const origem = config.origensPermitidas[0]?.replace(/\/+$/, '');
   const redirect = env.KEYCLOAK_REDIRECT_URI?.trim() || (origem ? `${origem}${CAMINHOS_RETORNO[0]}` : '');
   if (!redirect) return null;
-  return { base: `${emissor}/protocol/openid-connect`, clientId, segredo, redirect };
+  return { base: `${emissor}/protocol/openid-connect`, clientId, segredo, redirect, admin: emissor.replace(/\/realms\/([^/]+)$/, '/admin/realms/$1') };
 }
 
 /** Login livre a partir do e-mail (letras minúsculas, números, ponto, hífen e sublinhado; 3 a 32 caracteres). */
@@ -38,6 +38,40 @@ function loginLivre(db: Banco, sugestao: string): string {
   let login = base, n = 2;
   while (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) login = `${base}${n++}`;
   return login;
+}
+
+/** Pessoa do realm do Keycloak, no formato que a tela de Usuários usa. */
+export interface PessoaKeycloak { id: string; nome: string; login: string; email: string; ativo: boolean }
+
+/** Lê todas as pessoas do realm pela API de administração do Keycloak (somente leitura), com a conta de serviço do cliente do portal.
+ *  KEYCLOAK_ADMIN_CLIENT_ID / KEYCLOAK_ADMIN_CLIENT_SECRET usam outro cliente só para isso; sem elas vale o cliente do login. */
+export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env): Promise<PessoaKeycloak[]> {
+  const cfg = lerCfg(env);
+  if (!cfg) throw new ErroKeycloak(503, 'O Keycloak não está configurado neste ambiente.');
+  const id = env.KEYCLOAK_ADMIN_CLIENT_ID?.trim() || cfg.clientId, segredo = env.KEYCLOAK_ADMIN_CLIENT_SECRET?.trim() || cfg.segredo;
+  const t = await fetch(`${cfg.base}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(10_000), body: new URLSearchParams({ grant_type: 'client_credentials', client_id: id, client_secret: segredo }) })
+    .catch((e: Error) => { throw new ErroKeycloak(502, `Não foi possível falar com o Keycloak (${e.message}).`); });
+  const tj = await t.json().catch(() => ({})) as { access_token?: string; error?: string };
+  if (!t.ok || !tj.access_token) throw new ErroKeycloak(502, `O Keycloak recusou a conta de serviço do portal (HTTP ${t.status}${tj.error ? `, ${tj.error}` : ''}). Peça à TI para ligar "Service accounts" no cliente ${id} e dar à conta de serviço o papel view-users do realm-management (ou informe KEYCLOAK_ADMIN_CLIENT_ID e KEYCLOAK_ADMIN_CLIENT_SECRET).`);
+  const lista: PessoaKeycloak[] = [];
+  const TAM = 200;
+  for (let primeiro = 0; primeiro < 10_000; primeiro += TAM) {
+    const r = await fetch(`${cfg.admin}/users?first=${primeiro}&max=${TAM}&briefRepresentation=true`, { headers: { Authorization: `Bearer ${tj.access_token}` }, signal: AbortSignal.timeout(15_000) })
+      .catch((e: Error) => { throw new ErroKeycloak(502, `Não foi possível ler os usuários do Keycloak (${e.message}).`); });
+    if (r.status === 401 || r.status === 403) throw new ErroKeycloak(502, 'A conta de serviço do portal não pode listar os usuários do Keycloak. Peça à TI o papel view-users (realm-management) para ela.');
+    if (!r.ok) throw new ErroKeycloak(502, `O Keycloak respondeu com erro ao listar os usuários (HTTP ${r.status}).`);
+    const pagina = await r.json() as { id: string; username?: string; firstName?: string; lastName?: string; email?: string; enabled?: boolean }[];
+    for (const u of pagina) {
+      const nome = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim().replace(/\s+/g, ' ');
+      lista.push({ id: u.id, nome: nome || u.username || '', login: String(u.username ?? ''), email: String(u.email ?? '').trim().toLowerCase(), ativo: u.enabled !== false });
+    }
+    if (pagina.length < TAM) break;
+  }
+  return lista;
+}
+export class ErroKeycloak extends Error {
+  status: number;
+  constructor(status: number, mensagem: string) { super(mensagem); this.status = status; }
 }
 
 const b64 = (b: Buffer) => b.toString('base64url');
@@ -50,6 +84,21 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
   const falha = (resp: FastifyReply, motivo: string, detalhe?: string) => resp.redirect(`/login?sso=${motivo}${config.modoDebug && detalhe ? `&detalhe=${encodeURIComponent(detalhe.slice(0, 300))}` : ''}`);
 
   app.get('/api/auth/keycloak/ativo', async () => ({ ativo: lerCfg() !== null }));
+
+  // Configurações › Usuários › "Sem cadastro": pessoas do Keycloak que ainda não têm usuário no portal (casa pelo e-mail ou pelo login).
+  let cache: { ate: number; itens: PessoaKeycloak[] } | null = null;
+  app.get<{ Querystring: { atualizar?: string } }>('/api/gestao/usuarios/keycloak', { preHandler: exigirPerm('cfg.usuarios.criar') }, async (req, resp) => {
+    try {
+      if (!cache || cache.ate < Date.now() || req.query.atualizar === '1') cache = { ate: Date.now() + 120_000, itens: await listarPessoasKeycloak() };
+    } catch (e) {
+      if (e instanceof ErroKeycloak) return resp.code(e.status).send({ erro: e.message });
+      throw e;
+    }
+    const emails = new Set((db.prepare("SELECT lower(email) AS e FROM usuarios WHERE email IS NOT NULL AND email <> ''").all() as { e: string }[]).map((x) => x.e));
+    const logins = new Set((db.prepare('SELECT lower(login) AS l FROM usuarios').all() as { l: string }[]).map((x) => x.l));
+    const itens = cache.itens.filter((p) => !(p.email && emails.has(p.email)) && !(p.login && logins.has(p.login.toLowerCase())));
+    return { total: cache.itens.length, cadastrados: cache.itens.length - itens.length, itens };
+  });
 
   app.get('/api/auth/keycloak/entrar', async (_req, resp) => {
     const cfg = lerCfg();

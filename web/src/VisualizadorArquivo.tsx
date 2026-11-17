@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icone } from './icones';
+import { ESTILO_DOC, extensao, lerCsv, lerPlanilha, nomeDoCabecalho } from './arquivos';
 
 export interface ArquivoParaVer { titulo: string; /** rota do arquivo (ex.: /api/documentos/<slug>/arquivo) */ url: string; /** dica do tipo (ex.: "PDF"); o nome real vem do servidor */ formato?: string }
 type Conteudo =
@@ -14,39 +15,7 @@ type Conteudo =
   | { tipo: 'csv'; linhas: string[][] }
   | { tipo: 'sem-previa'; ext: string };
 
-const nomeDoCabecalho = (cd: string | null) => {
-  const m = /filename\*=UTF-8''([^;]+)/i.exec(cd ?? '');
-  try { return m ? decodeURIComponent(m[1]) : ''; } catch { return ''; }
-};
-const extensao = (nome: string, mime: string) => {
-  const e = /\.([a-z0-9]+)$/i.exec(nome)?.[1]?.toLowerCase();
-  if (e) return e;
-  if (mime.includes('pdf')) return 'pdf';
-  if (mime.startsWith('image/')) return mime.slice(6).replace('jpeg', 'jpg');
-  if (mime.startsWith('text/csv')) return 'csv';
-  if (mime.startsWith('text/')) return 'txt';
-  return '';
-};
 
-/** CSV simples (separador ; ou ,), com aspas. */
-function lerCsv(t: string): string[][] {
-  const sep = (t.split('\n', 1)[0].match(/;/g)?.length ?? 0) >= (t.split('\n', 1)[0].match(/,/g)?.length ?? 0) ? ';' : ',';
-  const linhas: string[][] = []; let campo = '', linha: string[] = [], aspas = false;
-  for (let i = 0; i < t.length; i++) {
-    const c = t[i];
-    if (aspas) { if (c === '"') { if (t[i + 1] === '"') { campo += '"'; i++; } else aspas = false; } else campo += c; }
-    else if (c === '"') aspas = true;
-    else if (c === sep) { linha.push(campo); campo = ''; }
-    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; linha.push(campo); campo = ''; linhas.push(linha); linha = []; }
-    else campo += c;
-  }
-  if (campo || linha.length) { linha.push(campo); linhas.push(linha); }
-  return linhas.slice(0, 2000);
-}
-
-const ESTILO_DOC = `body{font:14px/1.55 system-ui,Segoe UI,Arial,sans-serif;color:#1a1a1a;background:#fff;margin:0;padding:28px 36px;max-width:820px}
-img{max-width:100%;height:auto}table{border-collapse:collapse;max-width:100%}td,th{border:1px solid #bbb;padding:4px 8px;vertical-align:top}
-h1,h2,h3{line-height:1.25}a{color:#0b5cad}@media print{body{padding:0;max-width:none}}`;
 
 export function VisualizadorArquivo({ arquivo, aoFechar }: { arquivo: ArquivoParaVer; aoFechar: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -78,6 +47,10 @@ export function VisualizadorArquivo({ arquivo, aoFechar }: { arquivo: ArquivoPar
           const mammoth = await import('mammoth');
           const out = await mammoth.convertToHtml({ arrayBuffer: buf });
           if (vivo) setConteudo({ tipo: 'html', html: out.value || '<p>(documento sem texto)</p>' });
+        } else if (ext === 'xlsx') {
+          // Planilha ilegível (arquivo corrompido ou de outro formato com a extensão trocada): cai em "sem pré-visualização".
+          const linhas = await lerPlanilha(await r.arrayBuffer(), 2000).catch(() => null);
+          if (vivo) setConteudo(linhas ? { tipo: 'csv', linhas } : { tipo: 'sem-previa', ext: 'XLSX' });
         } else if (ext === 'csv') {
           const t = await r.text(); if (vivo) setConteudo({ tipo: 'csv', linhas: lerCsv(t) });
         } else if (ext === 'txt') {

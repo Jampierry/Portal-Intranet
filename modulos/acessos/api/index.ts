@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { config } from '../../../servidor/src/config.ts';
@@ -184,16 +185,19 @@ export async function rotasAcessos(app: FastifyInstance, { db, producao }: { db:
     const nome = String(texto(c, 'nome', 'Nome', { min: 2, max: 80 }));
     const perfil = perfilDoCorpo(db, c, 'consulta');
     const email = emailDoCorpo(c);
-    const senha = String(texto(c, 'senha', 'Senha provisória', { max: 128 }));
-    validarSenhaNova(senha, login);
+    // Pessoa vinda do Keycloak: entra só pelo SSO (casa pelo e-mail), sem senha local utilizável.
+    const sso = c.sso === true;
+    if (sso && !email) throw new ErroValidacao('E-mail: informe o e-mail corporativo da pessoa; é por ele que o login pelo Keycloak a reconhece.');
+    const senha = sso ? randomBytes(24).toString('base64url') : String(texto(c, 'senha', 'Senha provisória', { max: 128 }));
+    if (!sso) validarSenhaNova(senha, login);
     if (db.prepare('SELECT 1 FROM usuarios WHERE login = ?').get(login)) return resp.code(409).send({ erro: 'Já existe um usuário com esse login.' });
     const departamento = departamentoDoCorpo(db, c, null);
     const ajustes = ajustesDoCorpo(c);
     // Quem não é administrador também não pode escolher um perfil que dê mais acesso do que ele tem.
     if ((!ehAdmin(req) && perfil === 'admin') || excede(req, [...permissoesDoPerfil(db, perfil), ...Object.keys(ajustes).filter((k) => ajustes[k])])) return resp.code(403).send(NEGADO);
-    const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes, departamento_id) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)')
-      .run(login, nome, email, hashSenha(senha), perfil, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null, departamento);
-    auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes });
+    const r = db.prepare('INSERT INTO usuarios (login, nome, email, senha_hash, perfil, trocar_senha, criado_em, permissoes, departamento_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(login, nome, email, hashSenha(senha), perfil, sso ? 0 : 1, new Date().toISOString(), Object.keys(ajustes).length ? JSON.stringify(ajustes) : null, departamento);
+    auditar(db, req.usuario!.id, 'usuario_criado', { id: Number(r.lastInsertRowid), login, perfil, ajustes, sso });
     return resp.code(201).send(paraTela(db, db.prepare(`SELECT ${DTO} FROM usuarios WHERE id = ?`).get(Number(r.lastInsertRowid)) as Record<string, unknown>));
   });
 

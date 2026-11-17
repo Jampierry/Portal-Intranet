@@ -3,12 +3,14 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { criarAppTeste } from '../../acessos/tests/ajuda.ts';
+import { criarAppTeste, entrar } from '../../acessos/tests/ajuda.ts';
 
 let kc: Server;
 const emailDoKeycloak = 'ana@dipaula.com.br';
 let verificado: boolean | undefined = true;
 let ultimoToken: URLSearchParams | null = null;
+let contaDeServicoOk = true;
+const PESSOAS_KC = Array.from({ length: 250 }, (_, i) => ({ id: `kc-${i}`, username: `pessoa${i}`, firstName: `Pessoa`, lastName: `Número ${i}`, email: `pessoa${i}@dipaula.com.br`, enabled: i !== 3 }));
 
 before(async () => {
   kc = createServer((req, resp) => {
@@ -16,9 +18,15 @@ before(async () => {
     if (req.url?.endsWith('/token') && req.method === 'POST') {
       let b = ''; req.on('data', (d) => { b += d; }); req.on('end', () => {
         ultimoToken = new URLSearchParams(b);
+        if (ultimoToken.get('grant_type') === 'client_credentials') return contaDeServicoOk && ultimoToken.get('client_secret') === 'segredo-de-teste' ? fim(200, { access_token: 'tok-admin' }) : fim(401, { error: 'unauthorized_client' });
         if (ultimoToken.get('client_secret') !== 'segredo-de-teste' || ultimoToken.get('code') !== 'codigo-ok') return fim(400, { error: 'invalid_grant' });
         fim(200, { access_token: 'tok' });
       });
+    } else if (req.url?.includes('/admin/realms/dipaula/users')) {
+      if (req.headers.authorization !== 'Bearer tok-admin') return fim(403, {});
+      const q = new URL(req.url, 'http://x').searchParams;
+      const de = Number(q.get('first')), tam = Number(q.get('max'));
+      fim(200, PESSOAS_KC.slice(de, de + tam));
     } else if (req.url?.endsWith('/userinfo')) {
       if (req.headers.authorization !== 'Bearer tok') return fim(401, {});
       fim(200, { email: emailDoKeycloak, email_verified: verificado, name: 'Ana Souza', preferred_username: 'ana.souza' });
@@ -142,4 +150,50 @@ test('sem as variáveis o login por Keycloak fica desligado; erro vindo do Keycl
   assert.deepEqual((await app.inject({ url: '/api/auth/keycloak/ativo' })).json(), { ativo: false });
   assert.equal((await app.inject({ url: '/api/auth/keycloak/entrar' })).headers.location, '/login?sso=desligado');
   process.env.KEYCLOAK_CLIENT_SECRET = guardado;
+});
+
+
+test('Configurações › Usuários › Sem cadastro: lista as pessoas do Keycloak (todas as páginas) que ainda não têm usuário no portal', async () => {
+  const { app, db } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  // Duas já cadastradas: uma pelo e-mail (em maiúsculas) e outra pelo login.
+  db.prepare("UPDATE usuarios SET email = ? WHERE login = 'le'").run('Pessoa10@DiPaula.com.br');
+  db.prepare("UPDATE usuarios SET login = ? WHERE login = 'edita'").run('pessoa20');
+  const r = await app.inject({ url: '/api/gestao/usuarios/keycloak?atualizar=1', headers: adm });
+  assert.equal(r.statusCode, 200);
+  const j = r.json<{ total: number; cadastrados: number; itens: { id: string; nome: string; login: string; email: string; ativo: boolean }[] }>();
+  assert.equal(j.total, 250, 'leu as duas páginas');
+  assert.equal(j.cadastrados, 2);
+  assert.equal(j.itens.length, 248);
+  assert.equal(j.itens.some((p) => p.login === 'pessoa10' || p.login === 'pessoa20'), false);
+  assert.equal(j.itens.find((p) => p.login === 'pessoa3')?.ativo, false, 'mostra a situação no Keycloak');
+  assert.equal(j.itens.find((p) => p.login === 'pessoa7')?.nome, 'Pessoa Número 7');
+  // Só quem pode cadastrar usuários vê a lista.
+  assert.equal((await app.inject({ url: '/api/gestao/usuarios/keycloak', headers: await entrar(app, 'le') })).statusCode, 403);
+  assert.equal((await app.inject({ url: '/api/gestao/usuarios/keycloak' })).statusCode, 401);
+});
+
+test('cadastrar pessoa do Keycloak: sem senha local, entra pelo SSO e sai da lista de pendentes', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const cria = (extra: object) => app.inject({ method: 'POST', url: '/api/usuarios', headers: adm, payload: { login: 'pessoa99', nome: 'Pessoa Número 99', perfil: 'consulta', sso: true, ...extra } });
+  assert.equal((await cria({})).statusCode, 400, 'precisa do e-mail: é por ele que o SSO reconhece a pessoa');
+  const ok = await cria({ email: 'pessoa99@dipaula.com.br' });
+  assert.equal(ok.statusCode, 201);
+  assert.equal(ok.json<{ trocar_senha: number }>().trocar_senha, 0, 'não pede troca de senha: não há senha local');
+  const lista = (await app.inject({ url: '/api/gestao/usuarios/keycloak?atualizar=1', headers: adm })).json<{ itens: { login: string }[] }>();
+  assert.equal(lista.itens.some((p) => p.login === 'pessoa99'), false);
+  // Sem a senha vinda do formulário, ninguém consegue entrar por senha com esse login.
+  assert.equal((await app.inject({ method: 'POST', url: '/api/login', payload: { login: 'pessoa99', senha: '' } })).statusCode >= 400, true);
+});
+
+test('conta de serviço recusada pelo Keycloak devolve uma mensagem que diz o que a TI precisa fazer', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  contaDeServicoOk = false;
+  try {
+    const r = await app.inject({ url: '/api/gestao/usuarios/keycloak?atualizar=1', headers: adm });
+    assert.equal(r.statusCode, 502);
+    assert.match(r.json<{ erro: string }>().erro, /Service accounts.*view-users/s);
+  } finally { contaDeServicoOk = true; }
 });

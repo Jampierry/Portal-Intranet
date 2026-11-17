@@ -4,6 +4,7 @@ import { Icone } from '../icones';
 import { MarcaEntrada, PADRAO_ENTRADA, type ConfigEntrada } from '../MarcaEntrada';
 import { DicaAba } from '../Dica';
 import { ehVideo } from '../midia';
+import { FormatoIdeal } from './FormatoIdeal';
 
 /** Envia uma imagem ou um vídeo curto para a tela de entrada e devolve o endereço público dele. */
 async function enviar(arq: File): Promise<string> {
@@ -129,6 +130,11 @@ export function EntradaConfig({ permissoes }: { permissoes: string[] }) {
         <div className="entcfg-previa">
           <small className="suave">Prévia</small>
           <MarcaEntrada cfg={{ ...cfg, linhas: cfg.linhas.map((l) => l.trim()).filter(Boolean) }} previa />
+          <FormatoIdeal itens={[
+            { rotulo: 'Imagem', texto: '1200 × 1400 px (proporção 6:7, quase quadrada), PNG, JPG, WebP ou GIF, até 5 MB.' },
+            { rotulo: 'Vídeo', texto: 'MP4 (H.264), 1080 × 1260 px (6:7), de 10 a 20 segundos, até 40 MB; toca sem som e em laço.' },
+            { rotulo: 'Dica', texto: 'A mídia preenche o lado esquerdo da tela e as bordas são cortadas conforme o tamanho da janela: deixe o assunto principal no centro e sem texto escrito na mídia, porque o portal escreve a frase e a logo por cima.' },
+          ]} />
         </div>
       </div>
     </section>

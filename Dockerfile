@@ -21,8 +21,9 @@ COPY infra infra
 COPY docs/manuais docs/manuais
 COPY web/public/marca web/public/marca
 COPY --from=build /app/web/dist web/dist
-# Dados persistentes (banco, mídia, documentos, backups) ficam no volume /dados.
-RUN mkdir -p /dados && chown -R node:node /dados
+# Dados persistentes: banco e backups no volume /dados; fotos, vídeos, anexos e documentos no volume /arquivos.
+# As pastas nascem com dono node: o volume nomeado herda esse dono na primeira vez que é montado.
+RUN mkdir -p /dados /arquivos/midia /arquivos/documentos && chown -R node:node /dados /arquivos
 USER node
 EXPOSE 3100
 CMD ["node", "servidor/src/main.ts"]

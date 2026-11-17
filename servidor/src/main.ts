@@ -5,6 +5,7 @@ import { abrirBanco, migrar } from './db.ts';
 import { criarApp } from './app.ts';
 import { avisarAberturas } from '../../modulos/pulso/api/index.ts';
 import { criarAdminInicial } from './admin-inicial.ts';
+import { copiarPastaLegada } from './pasta-legada.ts';
 
 if (config.producao) {
   // Trava de segurança: sem a origem pública, as alterações vindas do navegador seriam recusadas ou mal protegidas.
@@ -16,6 +17,13 @@ if (config.producao) {
     console.error(`Produção: site compilado não encontrado em ${config.pastaSite}. Rode "npm run build" antes.`);
     process.exit(1);
   }
+}
+
+// Volume novo de arquivos: traz para ele o que já estava na pasta antiga (antes de qualquer leitura de mídia).
+for (const [legada, destino] of [[process.env.PASTA_MIDIA_LEGADA, process.env.PASTA_MIDIA], [process.env.DOCUMENTOS_PASTA_LEGADA, config.pastaDocumentos()]] as const) {
+  if (!destino) continue;
+  const n = copiarPastaLegada(legada, destino);
+  if (n > 0) console.log(`Arquivos copiados de ${legada} para ${destino}: ${n}`);
 }
 
 const db = abrirBanco(config.caminhoBanco);

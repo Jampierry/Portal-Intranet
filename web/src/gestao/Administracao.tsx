@@ -151,6 +151,55 @@ function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id:
   );
 }
 
+interface PessoaKc { id: string; nome: string; login: string; email: string; ativo: boolean }
+const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Aba "Sem cadastro": pessoas do Keycloak que ainda não têm usuário no portal. Cadastrar abre o formulário já preenchido, para ajustar o que for preciso. */
+function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => void; versao: number }) {
+  const [res, setRes] = useState<{ total: number; cadastrados: number; itens: PessoaKc[] } | null>(null);
+  const [erro, setErro] = useState('');
+  const [q, setQ] = useState('');
+  const [sit, setSit] = useState('todas');
+  const [carregando, setCarregando] = useState(false);
+  const ler = (atualizar: boolean) => {
+    setCarregando(true); setErro('');
+    api<typeof res>(`/api/gestao/usuarios/keycloak${atualizar ? '?atualizar=1' : ''}`).then(setRes).catch((e: Error) => { setRes(null); setErro(e.message); }).finally(() => setCarregando(false));
+  };
+  useEffect(() => { ler(false); }, [versao]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alvo = semAcento(q.trim());
+  const itens = (res?.itens ?? []).filter((p) => (sit === 'todas' || (sit === 'ativo') === p.ativo) && (!alvo || semAcento(`${p.nome} ${p.login} ${p.email}`).includes(alvo)));
+  const ord = useOrdenacao(itens, { nome: (p) => p.nome, login: (p) => p.login, email: (p) => p.email, sit: (p) => (p.ativo ? 'Ativo' : 'Desativado') });
+  return (
+    <>
+      <div className="barra filtros-usuarios">
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar pessoas do Keycloak" /></label>
+        <select value={sit} onChange={(e) => setSit(e.target.value)} aria-label="Situação no Keycloak"><option value="todas">Todas as situações</option><option value="ativo">Ativas no Keycloak</option><option value="desativado">Desativadas no Keycloak</option></select>
+        {res && <span className="suave" aria-live="polite">{itens.length} de {res.itens.length} sem cadastro · {res.cadastrados} já cadastradas</span>}
+        <span className="barra-fim-grupo"><button className="btn btn-sec btn-pequeno" disabled={carregando} onClick={() => ler(true)}>{carregando ? 'Atualizando…' : 'Atualizar lista'}</button></span>
+      </div>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      {!res && !erro && <p className="vazio">Carregando as pessoas do Keycloak…</p>}
+      {res && (
+        <div className="rolagem">
+          <table className="dados">
+            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login no Keycloak')}{ord.cab('email', 'E-mail')}{ord.cab('sit', 'Situação no Keycloak')}<th className="col-acoes">Ações</th></tr></thead>
+            <tbody>
+              {(ord.linhas ?? []).length === 0 && <tr><td colSpan={5} className="vazio">{res.itens.length === 0 ? 'Todas as pessoas do Keycloak já têm cadastro no portal.' : 'Nenhuma pessoa encontrada com esses filtros.'}</td></tr>}
+              {(ord.linhas ?? []).map((p) => (
+                <tr key={p.id}>
+                  <td data-rotulo="Nome">{p.nome || '—'}</td><td data-rotulo="Login no Keycloak">{p.login || '—'}</td><td data-rotulo="E-mail">{p.email || '—'}</td>
+                  <td data-rotulo="Situação no Keycloak"><Selo texto={p.ativo ? 'Ativa' : 'Desativada'} tom={p.ativo ? 'ok' : 'neutro'} /></td>
+                  <td className="col-acoes"><button className="btn btn-pequeno" onClick={() => aoCadastrar(p)}><Icone nome="mais" tamanho={13} /> Cadastrar</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: string[] }) {
   const libera = (acao: string) => permissoes.includes(`cfg.usuarios.${acao}`);
   // Quem não é administrador não cria nem promove administradores (o servidor também recusa).
@@ -162,7 +211,23 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
     situacao: (u) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado'), acesso: (u) => u.ultimo_acesso,
   });
   const [aviso, setAviso] = useState('');
-  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes; departamento_id: number | null } | null>(null);
+  const [novo, setNovo] = useState<{ login: string; nome: string; email: string; perfil: PerfilAcesso; senha: string; permissoes: Ajustes; departamento_id: number | null; sso?: boolean } | null>(null);
+  const [aba, setAba] = useState<'com' | 'sem'>('com');
+  const [versaoKc, setVersaoKc] = useState(0);
+  const [q, setQ] = useState('');
+  const [fPerfil, setFPerfil] = useState('');
+  const [fDepto, setFDepto] = useState('');
+  const [fSit, setFSit] = useState('');
+  const situacaoDe = (u: Usr) => (u.ativo ? (u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo') : 'Desativado');
+  const departamentos = [...new Set((dados ?? []).map((u) => u.departamento).filter((d): d is string => !!d))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const perfisNaLista = [...new Map((dados ?? []).map((u) => [u.perfil, u.perfil_nome] as const)).entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  const alvoBusca = semAcento(q.trim());
+  const visiveis = (ord.linhas ?? []).filter((u) => (!fPerfil || u.perfil === fPerfil) && (!fDepto || (fDepto === '__nenhum' ? !u.departamento : u.departamento === fDepto)) && (!fSit || situacaoDe(u) === fSit)
+    && (!alvoBusca || semAcento(`${u.nome} ${u.login} ${u.email ?? ''}`).includes(alvoBusca)));
+  const cadastrarDoKeycloak = (p: PessoaKc) => {
+    const base = (p.login.includes('@') || !p.login ? p.email.split('@')[0] : p.login).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9._-]+/g, '.').replace(/^[._-]+|[._-]+$/g, '').slice(0, 32);
+    setNovo({ login: base, nome: p.nome.slice(0, 80), email: p.email, perfil: 'consulta', senha: '', permissoes: {}, departamento_id: null, sso: true });
+  };
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
   const [apps, setApps] = useState<Usr | null>(null);
@@ -187,11 +252,25 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
 
   return (
     <section className="crud">
-      {libera('criar') && <div className="barra barra-fim">
-        <Dica lado="dir">
-          O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil.
-        </Dica>
-        <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {}, departamento_id: null })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>
+      {libera('criar') && (
+        <div className="abas abas-gestao" role="tablist" aria-label="Usuários">
+          <button role="tab" aria-selected={aba === 'com'} onClick={() => setAba('com')}>Com cadastro{dados ? ` (${dados.length})` : ''}</button>
+          <button role="tab" aria-selected={aba === 'sem'} onClick={() => setAba('sem')}>Sem cadastro (Keycloak)</button>
+        </div>
+      )}
+      {aba === 'sem' && libera('criar') && <SemCadastro aoCadastrar={cadastrarDoKeycloak} versao={versaoKc} />}
+      {aba === 'com' && <div className="barra filtros-usuarios">
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar usuários" /></label>
+        <select value={fPerfil} onChange={(e) => setFPerfil(e.target.value)} aria-label="Filtrar por perfil"><option value="">Todos os perfis</option>{perfisNaLista.map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select>
+        <select value={fDepto} onChange={(e) => setFDepto(e.target.value)} aria-label="Filtrar por departamento"><option value="">Todos os departamentos</option><option value="__nenhum">Sem departamento</option>{departamentos.map((d) => <option key={d} value={d}>{d}</option>)}</select>
+        <select value={fSit} onChange={(e) => setFSit(e.target.value)} aria-label="Filtrar por situação"><option value="">Todas as situações</option><option>Ativo</option><option>Aguardando 1º acesso</option><option>Desativado</option></select>
+        {dados && <span className="suave" aria-live="polite">{visiveis.length} de {dados.length}</span>}
+        <span className="barra-fim-grupo">
+          <Dica lado="dir">
+            O <b>perfil</b> define o padrão de cada pessoa (veja e edite em Perfis). Em <b>Editar</b>, você pode permitir ou negar itens só para ela: isso vale por cima do perfil. Pessoas do Keycloak que ainda não têm cadastro ficam na aba <b>Sem cadastro</b>.
+          </Dica>
+          {libera('criar') && <button className="btn" onClick={() => setNovo({ login: '', nome: '', email: '', perfil: 'consulta', senha: gerarSenha(), permissoes: {}, departamento_id: null })}><Icone nome="mais" tamanho={15} /> Novo usuário</button>}
+        </span>
       </div>}
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {erro && <p className="erro" role="alert">{erro}</p>}
@@ -212,12 +291,13 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
           })}
         </div>
       )}
-      {dados && (
+      {aba === 'com' && dados && (
         <div className="rolagem">
           <table className="dados">
             <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login')}{ord.cab('perfil', 'Perfil')}{ord.cab('depto', 'Departamento')}{ord.cab('situacao', 'Situação')}{ord.cab('acesso', 'Último acesso')}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
-              {(ord.linhas ?? []).map((u) => (
+              {dados.length > 0 && visiveis.length === 0 && <tr><td colSpan={7} className="vazio">Nenhum usuário encontrado com esses filtros.</td></tr>}
+              {visiveis.map((u) => (
                 <tr key={u.id}>
                   <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td><td data-rotulo="Departamento">{u.departamento ?? '—'}</td>
                   <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
@@ -237,10 +317,15 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       )}
 
       {novo && (
-        <JanelaForm titulo="Novo usuário" rotuloEnviar="Criar usuário" aoFechar={() => setNovo(null)}
-          aoEnviar={async () => { await api('/api/usuarios', novo); setAviso(`Usuário "${novo.login}" criado. Senha provisória: ${novo.senha}`); setNovo(null); recarregar(); }}>
+        <JanelaForm titulo={novo.sso ? 'Cadastrar pessoa do Keycloak' : 'Novo usuário'} rotuloEnviar={novo.sso ? 'Cadastrar' : 'Criar usuário'} aoFechar={() => setNovo(null)}
+          aoEnviar={async () => {
+            if (novo.sso) { const { senha: _s, ...corpo } = novo; await api('/api/usuarios', corpo); setAviso(`"${novo.nome}" cadastrada. Ela entra pelo botão do Keycloak, sem senha local.`); setVersaoKc((v) => v + 1); }
+            else { await api('/api/usuarios', novo); setAviso(`Usuário "${novo.login}" criado. Senha provisória: ${novo.senha}`); }
+            setNovo(null); recarregar();
+          }}>
+          {novo.sso && <p className="suave" style={{ marginTop: 0 }}>Dados vindos do Keycloak. Ajuste o que for preciso, escolha o perfil e o departamento. O e-mail precisa ser o corporativo: é por ele que o login pelo Keycloak reconhece a pessoa.</p>}
           <label>Nome completo *<input value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} maxLength={80} required /></label>
-          <label>E-mail (opcional)<input type="email" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} maxLength={120} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" />
+          <label>E-mail{novo.sso ? ' *' : ' (opcional)'}<input type="email" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} maxLength={120} required={!!novo.sso} autoCapitalize="none" spellCheck={false} placeholder="nome@empresa.com.br" />
             <small className="suave">Usado nos avisos de comunicados por e-mail (a pessoa pode desligar em Minha conta).</small></label>
           <label>Login *<input value={novo.login} onChange={(e) => setNovo({ ...novo, login: e.target.value.toLowerCase() })} maxLength={32} minLength={3} required autoCapitalize="none" spellCheck={false} />
             <small className="suave">Só letras minúsculas, números, ponto, hífen e sublinhado. Ex.: maria.silva</small></label>
@@ -249,7 +334,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
               {perfisEscolha.map((p) => <option key={p.codigo} value={p.codigo}>{p.nome}</option>)}
             </select></label>
           <CampoDepartamento valor={novo.departamento_id} mudar={(departamento_id) => setNovo({ ...novo, departamento_id })} />
-          <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />
+          {!novo.sso && <CampoSenha valor={novo.senha} mudar={(senha) => setNovo({ ...novo, senha })} />}
           <AjustesUsuario perfil={novo.perfil} ajustes={novo.permissoes} mudar={(permissoes) => setNovo({ ...novo, permissoes })} />
         </JanelaForm>
       )}

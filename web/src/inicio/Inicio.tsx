@@ -37,8 +37,7 @@ export function Inicio({ irPara, comunicados, veComunicados = true, veDocumentos
   return (
     <>
       {banners === null && <section className="hero novidades" aria-label="Novidades da semana" />}
-      {banners && banners.length > 0 && <Novidades banners={banners} irPara={irPara} padrao={heroPadrao} />}
-      {banners && banners.length === 0 && heroPadrao}
+      {banners && <Novidades banners={banners} irPara={irPara} padrao={heroPadrao} />}
 
       <div className="inicio-grade">
         <div className="inicio-principal">

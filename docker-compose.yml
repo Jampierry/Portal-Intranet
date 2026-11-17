@@ -13,8 +13,12 @@ services:
       # Endereço público com https (ex.: https://portal-hml.apps.dipaula.com.br). Defina no .env do ambiente.
       ORIGENS_PERMITIDAS: ${ORIGENS_PERMITIDAS:?defina ORIGENS_PERMITIDAS no .env do ambiente}
       BANCO: /dados/portal.db
-      PASTA_MIDIA: /dados/midia
-      DOCUMENTOS_PASTA: /dados/documentos
+      # Fotos, vídeos, anexos e documentos ficam no volume nomeado portal_arquivos (separado do banco, em portal_dados).
+      PASTA_MIDIA: /arquivos/midia
+      DOCUMENTOS_PASTA: /arquivos/documentos
+      # Na primeira subida com o volume novo, copia o que já estava em /dados (volume antigo) para /arquivos, sem apagar o original.
+      PASTA_MIDIA_LEGADA: /dados/midia
+      DOCUMENTOS_PASTA_LEGADA: /dados/documentos
       PASTA_BACKUP: /dados/backups
       # Só em homologação, se quiser os dados fictícios de exemplo: PERMITIR_DADOS_EXEMPLO=1
       PERMITIR_DADOS_EXEMPLO: ${PERMITIR_DADOS_EXEMPLO:-0}
@@ -47,6 +51,8 @@ services:
       APP_SHA: ${APP_SHA}
     volumes:
       - portal_dados:/dados
+      - portal_arquivos:/arquivos
 
 volumes:
   portal_dados:
+  portal_arquivos:

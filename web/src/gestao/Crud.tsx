@@ -159,16 +159,19 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
   return (
     <div className={c.metade ? 'meia' : undefined}>
       <label htmlFor={id}><RotuloDica texto={`${c.rotulo}${c.obrigatorio ? ' *' : ''}`} dica={c.dica} />
-        <select id={id} required={c.obrigatorio} value={nova ? NOVA : valor}
-          onChange={(e) => { if (e.target.value === NOVA) { setNova(true); mudar(''); } else { setNova(false); mudar(e.target.value); } }}>
-          <option value="" disabled>Selecione…</option>
-          {opcoes.map((s) => <option key={s} value={s}>{s}</option>)}
-          <option value={NOVA}>＋ Nova categoria…</option>
-        </select>
+        {nova
+          // "Nova categoria": o próprio campo vira um texto, na mesma linha e com a mesma altura (nada empurra o formulário).
+          ? <span className="nova-cat-linha">
+              <input id={id} type="text" autoFocus required={c.obrigatorio} maxLength={c.max} value={valor} placeholder="Nome da nova categoria" onChange={(e) => mudar(e.target.value)} />
+              <button type="button" className="btn btn-sec btn-pequeno" title="Voltar à lista de categorias" onClick={() => { setNova(false); mudar(''); }}>Lista</button>
+            </span>
+          : <select id={id} required={c.obrigatorio} value={valor}
+              onChange={(e) => { if (e.target.value === NOVA) { setNova(true); mudar(''); } else { mudar(e.target.value); } }}>
+              <option value="" disabled>Selecione…</option>
+              {opcoes.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value={NOVA}>＋ Nova categoria…</option>
+            </select>}
       </label>
-      {nova && <label htmlFor={`${id}-nova`}>Nome da nova categoria
-        <input id={`${id}-nova`} type="text" autoFocus required={c.obrigatorio} maxLength={c.max} value={valor} onChange={(e) => mudar(e.target.value)} />
-      </label>}
     </div>
   );
 }

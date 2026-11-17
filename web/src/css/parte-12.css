@@ -110,3 +110,129 @@
 @media (min-width: 861px) {
   .entrar > .entrar-form { max-height: calc(100dvh / var(--zoom, 1)); overflow-y: auto; justify-content: safe center; }
 }
+
+/* Banner: imagem ou vídeo inteiros (sem cortar), com as sobras preenchidas pela própria imagem desfocada */
+.slide-fundo.contido { object-fit: contain; }
+.slide-fundo.slide-desfoque { object-fit: cover; filter: blur(22px) brightness(.72); transform: scale(1.15); }
+
+/* Nova categoria: o campo do nome flutua sobre o formulário em vez de empurrar os campos de baixo */
+
+/* Comunicado em destaque: retângulo de tamanho fixo (não estica pela tela quando há só um) */
+@media (min-width: 861px) {
+  .destaque-com { grid-template-columns: 1fr 1fr; height: 180px; min-height: 0; width: min(100%, 620px); align-self: flex-start; }
+  .destaque-com-texto { padding: 14px 20px; gap: 6px; min-width: 0; }
+  .destaque-com h2 { font-size: clamp(18px, 1.8vw, 24px); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .destaque-com p { font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .destaque-com .capa-grande { min-height: 0; height: 100%; padding: 14px; }
+  .destaque-com .capa-grande .lema { font-size: 12px; }
+}
+
+/* Usuários: busca e filtros na barra da lista */
+.filtros-usuarios { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px; }
+.filtros-usuarios .busca-pagina { flex: 1 1 240px; min-width: 200px; max-width: 360px; margin: 0; }
+.filtros-usuarios select { width: auto; max-width: 220px; }
+.filtros-usuarios .barra-fim-grupo { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+
+/* Cartão de documento: prévia (1ª página do PDF ou imagem) e botão centralizado */
+.cartao-doc .texto > .abrir-doc { align-self: center; margin-top: 10px; }
+.doc-previa { position: relative; height: 150px; margin-top: 10px; border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; background: var(--afundado); }
+.doc-previa iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: #fff; }
+.doc-previa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.doc-previa-vazia { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; color: var(--suave); }
+.pv-cartao .cartao-doc .abrir-doc { align-self: center; }
+
+/* ===== Início: três carrosséis sempre visíveis; os sem banner mostram uma arte fixa ===== */
+.hero.novidades.nov-vazio { background: var(--menu); }
+.nov-vazio-aneis { position: absolute; right: -40px; top: 50%; width: 150px; height: 150px; transform: translateY(-50%); border-radius: 50%; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 0 0 22px rgba(255, 255, 255, .04), 0 0 0 46px rgba(255, 255, 255, .03); }
+.nov-vazio-conteudo { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; gap: 14px; padding: 0 22px; color: #fff; }
+.nov-vazio-icone { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .28); }
+.nov-vazio-conteudo h3 { margin: 0 0 2px; font-size: 15px; color: #fff; }
+.nov-vazio-conteudo p { margin: 0; font-size: 12px; line-height: 1.4; color: rgba(255, 255, 255, .8); }
+@media (min-width: 1181px) and (max-height: 700px) { .nov-vazio-conteudo p { display: none; } }
+
+/* ===== Início: quadros de pessoas sem ninguém ===== */
+.pm-vazio { flex: 1; display: grid; place-content: center; justify-items: center; gap: 8px; margin: 0; padding: 10px 14px; text-align: center; color: var(--suave); font-size: 13px; }
+.pm-vazio svg { opacity: .55; }
+
+/* ===== Missão, visão e valores: vidro nas cores do tema, no layout do cartão (Diretrizes + blocos + valores) ===== */
+.mvv.mvv-vidro {
+  position: relative; overflow: hidden; isolation: isolate;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vinho) 16%, transparent), color-mix(in srgb, var(--card) 70%, transparent) 62%);
+  border: 1px solid color-mix(in srgb, var(--vinho) 28%, var(--linha-suave));
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+}
+.mvv-marca { position: absolute; z-index: -1; right: -22px; bottom: -30px; width: 190px; height: 190px; fill: none; stroke: var(--vinho); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: .14; pointer-events: none; }
+.mvv-marca .cheio { fill: var(--vinho); }
+.mvv h3 { display: flex; align-items: center; gap: 8px; }
+.mvv-bola { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--vinho-texto); background: color-mix(in srgb, var(--vinho) 18%, transparent); border: 1.5px solid color-mix(in srgb, var(--vinho) 55%, transparent); }
+.mvv-visao .mvv-bola { color: var(--coral); background: color-mix(in srgb, var(--coral) 16%, transparent); border-color: color-mix(in srgb, var(--coral) 55%, transparent); }
+.mvv-proposito .mvv-bola { color: var(--vinho-texto); background: color-mix(in srgb, var(--rosa) 22%, transparent); border-color: color-mix(in srgb, var(--rosa) 70%, transparent); }
+.mvv-valores .mvv-bola { color: var(--vinho-texto); }
+.mvv-valores li { background: color-mix(in srgb, var(--vinho) 14%, transparent); border: 1px solid color-mix(in srgb, var(--vinho) 30%, transparent); }
+
+/* ===== Cartão de documento: texto à esquerda e prévia (página do documento) à direita ===== */
+.cartao-doc .doc-previa { flex: none; width: 124px; height: auto; min-height: 160px; align-self: stretch; margin-top: 0; }
+@media (max-width: 420px) { .cartao-doc .doc-previa { width: 96px; } }
+.slide-fundo.slide-caixa { display: block; overflow: hidden; }
+.grade-docs { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
+.cartao-doc .texto { overflow-wrap: break-word; }
+
+/* Quadro "formato ideal" nas prévias de banner e da tela de entrada */
+.pv-formato { margin-top: 6px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; background: color-mix(in srgb, var(--vinho) 8%, transparent); font-size: 12px; color: var(--suave); }
+.pv-formato h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12.5px; color: var(--texto); }
+.pv-formato dl { margin: 0; display: grid; gap: 5px; }
+.pv-formato dl > div { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; }
+.pv-formato dt { font-weight: 700; color: var(--texto); }
+.pv-formato dd { margin: 0; line-height: 1.4; }
+
+/* Painéis flutuantes na camada superior (popover): ficam por cima das janelas pop-up e não são cortados por elas */
+[popover].campo-link-painel, [popover].dica-ajuda-painel { position: fixed; inset: auto; margin: 0; }
+[popover].dica-ajuda-painel { overflow: auto; width: max-content; max-width: min(380px, 85vw); }
+[popover].dica-ajuda-painel.esq, [popover].dica-ajuda-painel.dir { right: auto; }
+.nova-cat-linha { display: flex; align-items: center; gap: 6px; }
+.nova-cat-linha input { flex: 1 1 auto; min-width: 0; margin: 0; }
+.nova-cat-linha .btn { flex: none; }
+.campo-link-painel, .dica-ajuda-painel { box-sizing: border-box; }
+
+/* Miniatura do documento: só a página, sem moldura de leitor (borda fina, papel branco) */
+.cartao-doc .doc-previa { border: 1px solid var(--linha); border-radius: 6px; background: var(--afundado); }
+.cartao-doc .doc-previa.pronta { background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
+.doc-previa img { object-fit: cover; object-position: top center; }
+.doc-pagina { position: absolute; inset: 0; overflow: hidden; background: #fff; }
+.doc-pagina iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: top left; pointer-events: none; background: #fff; }
+
+/* Mídia mostrada inteira (com fundo desfocado): encostada à direita, para não ficar atrás do texto do banner */
+.slide-fundo.contido { object-position: right center; }
+
+/* Cartão de documento: tamanho e proporção fixos (400 × 260), igual para todos; a prévia é uma folha fixa com o documento centralizado */
+.grade-docs { grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 400px)); justify-content: start; gap: 14px; }
+.cartao-doc { box-sizing: border-box; width: 100%; height: 260px; overflow: hidden; align-items: center; }
+.cartao-doc .icone { align-self: flex-start; }
+.cartao-doc .texto { align-self: stretch; min-height: 0; min-width: 0; overflow: hidden; justify-content: flex-start; }
+.cartao-doc h3, .cartao-doc .texto > p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cartao-doc .meta-doc { flex-direction: column; gap: 2px; margin-top: 6px; }
+.cartao-doc .meta-doc > div { min-width: 0; }
+.cartao-doc .meta-doc dd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cartao-doc .texto > .abrir-doc { margin-top: auto; }
+.cartao-doc .doc-previa { flex: none; width: 128px; height: 180px; min-height: 0; align-self: center; margin: 0; }
+.doc-previa img { object-fit: contain; object-position: center; }
+@media (max-width: 420px) { .cartao-doc .doc-previa { width: 104px; height: 147px; } }
+
+/* Documentos: 4 cartões por linha aproveitando a largura (cada coluna se divide por igual), com 10px de margem nas bordas da página */
+.conteudo:has(> .grade-docs) { padding-inline: 10px; }
+.grade-docs { grid-template-columns: repeat(auto-fill, minmax(min(100%, 370px), 1fr)); justify-content: stretch; }
+.grade-docs { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+.cartao-doc { container-type: inline-size; }
+@container (max-width: 380px) { .cartao-doc .doc-previa { width: 106px; height: 150px; } }
+/* Sempre 4 cartões por linha no computador; a divisão da largura é igual e o conteúdo do cartão se adapta ao espaço */
+.grade-docs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 1100px) { .grade-docs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .grade-docs { grid-template-columns: minmax(0, 1fr); } }
+@container (max-width: 340px) { .cartao-doc .doc-previa { width: 98px; height: 138px; } }
+
+/* Cartão de documento: ícone da categoria no canto superior direito; botão sempre centralizado no cartão (rodapé) */
+.cartao-doc { position: relative; padding: 16px 16px 58px; align-items: stretch; }
+.cartao-doc .icone { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 8px; z-index: 1; }
+.cartao-doc .icone svg { width: 17px; height: 17px; }
+.cartao-doc .doc-previa { align-self: center; }
+.cartao-doc .texto > .abrir-doc { position: absolute; left: 50%; bottom: 14px; margin: 0; transform: translateX(-50%); white-space: nowrap; }
