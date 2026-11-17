@@ -241,9 +241,3 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .entrar-rodape { text-align: center; margin-top: 18px; }
 
 
-/* Serviço Zimbra recolhido (só e-mail): ocupa a linha toda e organiza os cartões de dentro em colunas */
-.crud.integracoes > .int-avancado { grid-column: 1 / -1; }
-.int-avancado > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.int-avancado .int-interno { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 10px; align-items: stretch; }
-.int-avancado .int-interno > .int-form { display: contents; }
-.int-avancado .int-interno .int-funcoes, .int-avancado .int-interno > .cartao-sec:has(table) { grid-column: 1 / -1; }

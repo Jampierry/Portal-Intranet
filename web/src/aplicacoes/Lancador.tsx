@@ -22,7 +22,8 @@ export function Lancador({ aberto, barraMobile = false, alternar, fechar, favori
   const favsBase = favoritos.map((s) => todos.find((a) => a.slug === s)).filter((a): a is Aplicacao => !!a);
   const ord = useOrdenar(favsBase.map((a) => a.slug), ordenarFavoritos);
   const favs = ord.ordem.map((s) => favsBase.find((a) => a.slug === s)).filter((a): a is Aplicacao => !!a);
-  const lista = aba === 'favoritos' ? favs : todos;
+  // "Todos os apps": os favoritos vêm primeiro, na mesma ordem escolhida; os demais seguem em ordem alfabética.
+  const lista = aba === 'favoritos' ? favs : [...favs, ...todos.filter((a) => !favoritos.includes(a.slug))];
   const classeItem = (slug: string) => (ord.ativo === slug ? ' arrastando' : '');
   return (
     <>
