@@ -94,3 +94,6 @@ Registro só de inclusão de quem fez o quê e quando (login, criação, altera�
 - **Documento da rede não abre:** o usuário do serviço está sem leitura na pasta, ou a origem foi movida.
 - **E-mail ou agenda não funcionam:** confira o serviço zimbra-mcp (porta 8765, só local) e o OAuth.
 - **Voltar atrás:** parar o serviço, restaurar o backup do banco, `git checkout` da etiqueta anterior, `npm ci`, `npm run build`, iniciar.
+
+## Entrar pelo login corporativo (Keycloak)
+Na tela de entrada, o botão **Entrar com o login corporativo (Keycloak)** aparece quando o Keycloak está ligado no ambiente. Quem é do domínio e ainda não tem cadastro entra como **Consulta** (só leitura): o portal cria o usuário na hora, com o nome e o e-mail do Keycloak e sem senha local. Para quem precisa de mais acesso (Editor, RH etc.), abra **Configurações › Usuários**, edite a pessoa e escolha o perfil; o login seguinte não desfaz a sua escolha. Para impedir alguém, desative o usuário: ele deixa de entrar mesmo existindo no Keycloak.

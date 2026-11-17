@@ -8,6 +8,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | Método | Rota | Permissão |
 |---|---|---|
 | POST | `/api/login` | — (corpo aceita `manter: true`: sessão de 30 dias em vez de 12 h) |
+| GET | `/api/auth/keycloak/ativo` · `/api/auth/keycloak/entrar` · `/api/v1/admin/auth/callback` (`/api/v1/auth/callback`) | pública (login pelo Keycloak: diz se está ligado, redireciona ao Keycloak e recebe o retorno; cria sessão e responde 302) |
 | GET | `/api/biometria` | — (biometrias da própria pessoa) |
 | POST | `/api/biometria/registro/opcoes` · `/api/biometria/registro` | — (cadastra a digital/rosto deste aparelho; até 5 por pessoa) |
 | DELETE | `/api/biometria/:id` | — (só a própria) |
