@@ -2,6 +2,12 @@
 
 > O histórico abaixo não é cronológico: o mais recente está **no fim do arquivo**; esta seção é a mais nova.
 
+## 17/11/2026 — migração 049 aplicada e `enviar org` exercitado de verdade
+- **API de dev reiniciada:** migração 049 aplicada (`passkeys`, `uso_eventos` existem). Biometria e barra de apps **validadas no iPhone** pelo usuário (HTTPS liberado pela TI).
+- **`enviar org` feito:** `org/main` = `018a56b` (7 arquivos de docs/manuais; 205 testes OK); `org-base` = `b048ebd`. A nota antiga de `org/main = 6f3194b` estava velha.
+- **Caminhos do script agora exercitados:** simulação, envio real e falha (a 1ª tentativa falhou porque `npm.ps1` é bloqueado pela política de execução; o script desfez a `org-main` e voltou à `main` sem sujeira). **Correção:** o script chama `npm.cmd`; gatilhos anotam o `-ExecutionPolicy Bypass` como plano B.
+- **Pendências restantes:** comunicados lidos × publicados no painel de uso, exportar CSV, prints novos nos manuais, biometria como 2º fator, manuais por perfil, mais testes de tela, security-review, Zimbra real.
+
 ## 16/11/2026 (tarde e noite) — biometria, "manter conectado", Uso do portal e barra de apps no celular (ENVIADO ao origin)
 - **Biometria** (`modulos/biometria`, migração 049 `passkeys`): passkeys WebAuthn (`@simplewebauthn/server` + `/browser`); cadastro em Meu perfil (`BiometriaPessoal`, até 5 aparelhos), botão "Entrar com biometria" no login. Só funciona em HTTPS/localhost e com endereço com nome (IP não vale): **validar no iPhone quando a TI liberar o HTTPS**; `WEBAUTHN_RP_ID` opcional. Testes: autenticador de mentira (`modulos/biometria/tests`) e autenticador virtual do Chromium (`e2e/biometria.spec.ts`, usa `http://localhost`; `subir-api.ts` agora permite `localhost` nas origens).
 - **Manter conectado:** `login` e biometria aceitam `manter` (sessão de 30 dias, `sessoes.manter`; padrão 12 h); trocar a senha preserva a escolha; caixa no login lembra a última escolha neste navegador.

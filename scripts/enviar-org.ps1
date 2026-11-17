@@ -67,8 +67,9 @@ $falhou = $null
 try {
   Invoke-Git apply --3way --index $patch
   Write-Host "Rodando verificações (publicar + test)..."
-  npm run publicar; if ($LASTEXITCODE -ne 0) { throw "publicar falhou" }
-  npm test; if ($LASTEXITCODE -ne 0) { throw "testes falharam" }
+  # npm.cmd (e não npm): o npm.ps1 é bloqueado pela política de execução do PowerShell
+  npm.cmd run publicar; if ($LASTEXITCODE -ne 0) { throw "publicar falhou" }
+  npm.cmd test; if ($LASTEXITCODE -ne 0) { throw "testes falharam" }
   if (-not $Mensagem) { $Mensagem = (git log -1 --format=%s main).Trim() }
   # Segurança: nada interno pode entrar
   $proibidos = git diff --cached --name-only | Select-String -Pattern '^(CLAUDE\.md|\.claude/|docs/memoria/|docs/origem-manus/|web/imagens/)'
