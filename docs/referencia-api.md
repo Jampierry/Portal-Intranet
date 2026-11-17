@@ -78,6 +78,9 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | GET | `/api/integracoes/caldav` | cfg.integracoes.ver |
 | PUT | `/api/integracoes/caldav` | cfg.integracoes.editar |
 | POST | `/api/integracoes/caldav/testar` | cfg.integracoes.editar |
+| GET | `/api/integracoes/smtp` | cfg.integracoes.ver (servidor de envio de e-mail; vazio = usa a conta do CalDAV) |
+| PUT | `/api/integracoes/smtp` | cfg.integracoes.editar (host, porta, usuario, senha, remetente; `limpar: true` volta ao CalDAV) |
+| POST | `/api/integracoes/smtp/testar` | cfg.integracoes.editar (verifica conexão e login, sem enviar) |
 | GET | `/api/integracoes/avisos` | cfg.integracoes.ver |
 | PUT | `/api/integracoes/avisos` | cfg.integracoes.editar |
 | POST | `/api/integracoes/avisos/teste` | cfg.integracoes.editar |

@@ -16,7 +16,10 @@ export function Lancador({ aberto, barraMobile = false, alternar, fechar, favori
   const [aba, setAba] = useState<'favoritos' | 'todos'>('todos');
   // Nome do app ao passar o mouse (ou focar) no ícone da barra recolhida. Fica fora da barra (portal) porque ela corta o que passa da borda.
   const [dica, setDica] = useState<{ nome: string; y: number; x: number } | null>(null);
-  const mostrar = (nome: string) => (e: SyntheticEvent<HTMLElement>) => { const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect(); setDica({ nome, y: r.top + r.height / 2, x: innerWidth - r.left + 10 }); };
+  const mostrar = (nome: string) => (e: SyntheticEvent<HTMLElement>) => { const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect();
+    // A dica é `fixed` dentro da página com zoom (--zoom): as medidas do navegador vêm em pixels da tela, então voltam para pixels de CSS.
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zoom')) || 1;
+    setDica({ nome, y: (r.top + r.height / 2) / z, x: (innerWidth - r.left) / z + 10 }); };
   const todos = dados ?? [];
   // Favoritos na ordem escolhida pela pessoa (arrastar os ícones; Alt + setas no teclado).
   const favsBase = favoritos.map((s) => todos.find((a) => a.slug === s)).filter((a): a is Aplicacao => !!a);

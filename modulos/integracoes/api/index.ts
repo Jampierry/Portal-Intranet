@@ -5,6 +5,7 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
 import { agendaCalDavSalva, conexaoCalDav, ErroCalDav, gravarCalDav, limparCacheCalDav, listarAgendasCalDav, temSenhaCalDav, urlCalDavSalva, usuarioCalDavSalvo } from './caldav.ts';
+import { conexaoSmtp, ErroSmtp, gravarSmtp, lerSmtpSalvo, limparTransporteSmtp, testarSmtp } from './smtp.ts';
 import { limparCacheCalendario } from '../../calendario/api/index.ts';
 import { agendaSalva,chamarZimbra, conexaoZimbra, ErroZimbra, gravarIntegracao, temTokenSalvo, urlSalva } from './zimbra.ts';
 
@@ -189,5 +190,35 @@ export async function rotasIntegracoes(app: FastifyInstance, { db }: { db: Banco
     if (!c) return resp.code(400).send({ erro: 'Preencha endereço, usuário e senha e salve antes de testar.' });
     try { limparCacheCalDav(); return { ok: true, agendas: (await listarAgendasCalDav(c)).map((a) => a.nome) }; }
     catch (e) { return respCalDav(e, resp); } finally { auditar(db, req.usuario!.id, 'integracao_caldav_testada'); }
+  });
+
+  // ----- Servidor de envio de e-mail (SMTP) do portal: vazio = usa a conta do CalDAV -----
+  app.get('/api/integracoes/smtp', ver, async () => {
+    const c = conexaoSmtp(db);
+    return { ...lerSmtpSalvo(db), origem: c?.origem ?? null, efetivo: c ? { host: c.host, porta: c.porta, usuario: c.usuario, remetente: c.remetente } : null };
+  });
+  app.put('/api/integracoes/smtp', editar, async (req) => {
+    const c = corpoObjeto(req.body);
+    if (c.limpar === true) for (const k of ['host', 'porta', 'usuario', 'senha', 'remetente'] as const) gravarSmtp(db, k, '');
+    else {
+      const t = (k: string) => (typeof c[k] === 'string' ? (c[k] as string).trim() : undefined) ?? undefined;
+      const host = t('host'), usuario = t('usuario'), remetente = t('remetente');
+      if (host !== undefined) { if (host.length > 200 || /[\s/]/.test(host)) throw new ErroValidacao('Servidor de envio: informe só o endereço (ex.: correio.suaempresa.com.br).'); gravarSmtp(db, 'host', host); }
+      if (typeof c.porta === 'string' || typeof c.porta === 'number') { const n = Number(c.porta); if (c.porta !== '' && (!Number.isInteger(n) || n < 1 || n > 65535)) throw new ErroValidacao('Porta inválida.'); gravarSmtp(db, 'porta', c.porta === '' ? '' : String(n)); }
+      if (usuario !== undefined) { if (usuario.length > 200) throw new ErroValidacao('Usuário: texto longo demais.'); gravarSmtp(db, 'usuario', usuario); }
+      if (remetente !== undefined) { if (remetente !== '' && !/^[^\s@"<>]+@[^\s@"<>]+\.[^\s@"<>]+$/.test(remetente)) throw new ErroValidacao('Remetente: informe um e-mail válido.'); gravarSmtp(db, 'remetente', remetente); }
+      if (typeof c.senha === 'string' && c.senha) { if (c.senha.length > 300) throw new ErroValidacao('Senha: texto longo demais.'); gravarSmtp(db, 'senha', c.senha); }
+    }
+    limparTransporteSmtp();
+    auditar(db, req.usuario!.id, 'integracao_smtp_alterada', { limpar: c.limpar === true, senha_alterada: typeof c.senha === 'string' && !!c.senha });
+    const ef = conexaoSmtp(db);
+    return { ...lerSmtpSalvo(db), origem: ef?.origem ?? null, efetivo: ef ? { host: ef.host, porta: ef.porta, usuario: ef.usuario, remetente: ef.remetente } : null };
+  });
+  app.post('/api/integracoes/smtp/testar', editar, async (req, resp) => {
+    const c = conexaoSmtp(db);
+    if (!c) return resp.code(400).send({ erro: 'Não há servidor de e-mail: configure o CalDAV (a conta é reaproveitada) ou preencha o servidor de envio.' });
+    try { await testarSmtp(c); return { ok: true, host: c.host, porta: c.porta, usuario: c.usuario }; }
+    catch (e) { if (e instanceof ErroSmtp) return resp.code(502).send({ erro: e.message }); throw e; }
+    finally { auditar(db, req.usuario!.id, 'integracao_smtp_testada'); }
   });
 }

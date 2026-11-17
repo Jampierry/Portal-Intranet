@@ -6,6 +6,7 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { permissoesEfetivas } from '../../acessos/api/permissoes.ts';
 import { chamarZimbra, conexaoZimbra, ErroZimbra } from '../../integracoes/api/zimbra.ts';
+import { conexaoSmtp, enviarEmails, ErroSmtp } from '../../integracoes/api/smtp.ts';
 import { noPublico } from '../../publico/api/index.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
 
@@ -28,6 +29,28 @@ const nomePortal = (db: Banco) => {
   try { return String((JSON.parse(r?.valor ?? '{}') as { nome_portal?: string }).nome_portal || 'Portal Intranet'); } catch { return 'Portal Intranet'; }
 };
 
+/** Há como enviar e-mail: SMTP direto (conta própria ou a do CalDAV) ou o serviço zimbra-mcp. */
+export const emailDisponivel = (db: Banco) => !!conexaoSmtp(db) || !!conexaoZimbra(db);
+
+interface Notificacao { para: string[]; assunto: string; titulo: string; mensagem: string; botao_texto?: string; botao_link?: string; app: string }
+/** Envia pelo SMTP do portal; sem ele, pelo serviço zimbra-mcp. Devolve quantos saíram (lança ErroSmtp/ErroZimbra se nada saiu). */
+async function enviarNotificacao(db: Banco, n: Notificacao): Promise<{ enviados: number; falhas: number }> {
+  const smtp = conexaoSmtp(db);
+  if (smtp) {
+    const r = await enviarEmails(smtp, n.para.map((para) => ({ ...n, para })));
+    if (r.enviados === 0 && r.erro) throw new ErroSmtp(r.erro);
+    return { enviados: r.enviados, falhas: r.falhas };
+  }
+  const conexao = conexaoZimbra(db);
+  if (!conexao) throw new ErroSmtp('Ainda não há servidor de e-mail configurado (Configurações › Integrações).');
+  let enviados = 0, falhas = 0;
+  for (let i = 0; i < n.para.length; i += LOTE) {
+    const lote = n.para.slice(i, i + LOTE);
+    try { const r = await chamarZimbra<{ enviados?: number }>(conexao, 'POST', '/api/notificar', { ...n, para: lote }, 60_000); enviados += r.enviados ?? lote.length; } catch { falhas += lote.length; }
+  }
+  return { enviados, falhas };
+}
+
 export const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Destinatários: ativos, com e-mail, que não desligaram os avisos e podem ver comunicados. */
@@ -49,21 +72,18 @@ export async function avisarNovoComunicado(db: Banco, slug: string, quem: number
     if (cfg.so_urgentes && c.prioridade !== 'urgente') return;
     // marca antes de enviar: duas edições seguidas não mandam duas vezes
     db.prepare('UPDATE comunicados SET notificado_em = ? WHERE id = ?').run(new Date().toISOString(), c.id);
-    const conexao = conexaoZimbra(db);
-    if (!conexao) { auditar(db, quem, 'avisos_email_sem_conexao', { slug }); return; }
+    if (!emailDisponivel(db)) { auditar(db, quem, 'avisos_email_sem_conexao', { slug }); return; }
     const para = destinatarios(db, c.id);
-    let enviados = 0, falhas = 0;
     const urgente = c.prioridade === 'urgente';
     const base = cfg.url_portal.replace(/\/+$/, '');
-    for (let i = 0; i < para.length; i += LOTE) {
-      try {
-        const r = await chamarZimbra<{ enviados?: number }>(conexao, 'POST', '/api/notificar', {
-          para: para.slice(i, i + LOTE), assunto: `${urgente ? 'URGENTE: ' : 'Novo comunicado: '}${c.titulo}`, titulo: c.titulo, mensagem: c.resumo,
-          ...(base ? { botao_texto: 'Abrir no portal', botao_link: `${base}/#comunicados/${encodeURIComponent(slug)}` } : {}), app: nomePortal(db),
-        }, 60_000);
-        enviados += r.enviados ?? Math.min(LOTE, para.length - i);
-      } catch { falhas += Math.min(LOTE, para.length - i); }
-    }
+    let enviados = 0, falhas = para.length;
+    try {
+      const r = await enviarNotificacao(db, {
+        para, assunto: `${urgente ? 'URGENTE: ' : 'Novo comunicado: '}${c.titulo}`, titulo: c.titulo, mensagem: c.resumo,
+        ...(base ? { botao_texto: 'Abrir no portal', botao_link: `${base}/#comunicados/${encodeURIComponent(slug)}` } : {}), app: nomePortal(db),
+      });
+      enviados = r.enviados; falhas = r.falhas;
+    } catch { /* tudo falhou: fica na auditoria */ }
     auditar(db, quem, 'avisos_email_enviados', { slug, destinatarios: para.length, enviados, falhas });
   } catch { /* o aviso nunca atrapalha a publicação */ }
 }
@@ -85,7 +105,7 @@ export async function rotasAvisos(app: FastifyInstance, { db }: { db: Banco; pro
 
   const ver = { preHandler: exigirPerm('cfg.integracoes.ver') }, editar = { preHandler: exigirPerm('cfg.integracoes.editar') };
 
-  app.get('/api/integracoes/avisos', ver, async () => ({ ...lerAvisos(db), destinatarios: destinatarios(db).length, conectado: !!conexaoZimbra(db) }));
+  app.get('/api/integracoes/avisos', ver, async () => ({ ...lerAvisos(db), destinatarios: destinatarios(db).length, conectado: emailDisponivel(db), origem: conexaoSmtp(db)?.origem ?? (conexaoZimbra(db) ? 'zimbra' : null) }));
   app.put('/api/integracoes/avisos', editar, async (req) => {
     const c = corpoObjeto(req.body);
     let url = String(c.url_portal ?? '').trim();
@@ -96,17 +116,16 @@ export async function rotasAvisos(app: FastifyInstance, { db }: { db: Banco; pro
     const nova: ConfigAvisos = { ativo: c.ativo === true, so_urgentes: c.so_urgentes !== false, url_portal: url };
     gravarAvisos(db, nova);
     auditar(db, req.usuario!.id, 'avisos_email_configurados', { ativo: nova.ativo, so_urgentes: nova.so_urgentes });
-    return { ...nova, destinatarios: destinatarios(db).length, conectado: !!conexaoZimbra(db) };
+    return { ...nova, destinatarios: destinatarios(db).length, conectado: emailDisponivel(db), origem: conexaoSmtp(db)?.origem ?? (conexaoZimbra(db) ? 'zimbra' : null) };
   });
   // E-mail de teste para o próprio e-mail de quem pede.
   app.post('/api/integracoes/avisos/teste', editar, async (req, resp) => {
     const eu = db.prepare('SELECT email FROM usuarios WHERE id = ?').get(req.usuario!.id) as { email: string | null };
     if (!eu.email) return resp.code(400).send({ erro: 'Cadastre o seu e-mail em Configurações › Usuários › Editar para receber o teste.' });
-    const conexao = conexaoZimbra(db);
-    if (!conexao) return resp.code(400).send({ erro: 'Ainda não há conexão com o serviço Zimbra (Configurações › Integrações).' });
+    if (!emailDisponivel(db)) return resp.code(400).send({ erro: 'Ainda não há servidor de e-mail configurado (Configurações › Integrações).' });
     try {
-      await chamarZimbra(conexao, 'POST', '/api/notificar', { para: eu.email, assunto: 'Teste de aviso do portal', titulo: 'Teste de aviso', mensagem: 'Se você recebeu este e-mail, os avisos de comunicados por e-mail estão funcionando.', app: nomePortal(db) });
-    } catch (e) { if (e instanceof ErroZimbra) return resp.code(e.status).send({ erro: e.message }); throw e; }
+      await enviarNotificacao(db, { para: [eu.email], assunto: 'Teste de aviso do portal', titulo: 'Teste de aviso', mensagem: 'Se você recebeu este e-mail, os avisos de comunicados por e-mail estão funcionando.', app: nomePortal(db) });
+    } catch (e) { if (e instanceof ErroZimbra) return resp.code(e.status).send({ erro: e.message }); if (e instanceof ErroSmtp) return resp.code(502).send({ erro: e.message }); throw e; }
     auditar(db, req.usuario!.id, 'avisos_email_teste', {});
     return { ok: true, para: eu.email };
   });
