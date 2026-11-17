@@ -247,3 +247,28 @@ button.mini-item { width: 100%; text-align: left; background: none; border: 0; f
 .aprov-texto { white-space: pre-wrap; max-height: 84px; overflow-y: auto; }
 .aprov-cartao footer { display: flex; gap: 6px; margin-top: 2px; justify-content: center; }
 
+
+/* Formulário com prévia ao vivo à direita (ex.: novo banner) */
+.janela-previa { width: min(1040px, calc((100vw / var(--zoom, 1)) - 24px)); }
+.janela-corpo.com-previa { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); gap: 20px; align-items: start; }
+.previa-form { min-width: 0; }
+.previa-lado { position: sticky; top: 0; min-width: 0; padding: 14px; border: 1px solid var(--linha); border-radius: 12px; background: var(--afundado); }
+.pv { display: grid; gap: 8px; }
+.pv-titulo { margin: 0; font-size: 13px; font-weight: 700; }
+.pv-banner { width: 100%; border-radius: var(--raio); overflow: hidden; box-shadow: var(--sombra); }
+.pv-banner .hero { height: 100%; min-height: 0; }
+.pv-banner .slide-texto { padding: 0 24px; gap: 4px; }
+.pv-banner .slide-texto h2 { font-size: 20px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pv-banner .hero.menor .slide-texto h2 { font-size: 16px; -webkit-line-clamp: 2; }
+.pv-banner .slide-texto p { font-size: 12px; max-width: 90%; }
+.pv-banner .slide-texto .btn { padding: 4px 10px; font-size: 12px; min-height: 0; pointer-events: none; }
+.pv-banner .slide-texto .eyebrow { font-size: 10px; }
+.pv-legenda { margin: 0; font-size: 12px; color: var(--suave); }
+.pv-mapa { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pv-mapa span { display: grid; place-items: center; height: 34px; border: 1px dashed var(--linha); border-radius: 8px; font-size: 12px; color: var(--suave); }
+.pv-mapa .pv-mapa-ativo { border-style: solid; border-color: var(--vinho); background: color-mix(in srgb, var(--vinho) 18%, var(--card)); color: var(--texto); font-weight: 700; }
+.pv-avisos { margin: 0; padding-left: 18px; font-size: 12px; color: var(--suave); display: grid; gap: 2px; }
+@media (max-width: 860px) {
+  .janela-corpo.com-previa { grid-template-columns: minmax(0, 1fr); }
+  .previa-lado { position: static; order: -1; }
+}

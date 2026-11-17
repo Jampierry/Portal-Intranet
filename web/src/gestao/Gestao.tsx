@@ -23,6 +23,7 @@ import { PesquisaPulso } from './Pulso';
 import { RedesSociais } from './Redes';
 import { Aprovacoes } from './Aprovacoes';
 import { UsoPortal } from './Uso';
+import { PreviaBanner } from './PreviaBanner';
 
 const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
@@ -120,17 +121,18 @@ function Banners({ exigeAprovacao }: { exigeAprovacao: boolean }) {
     <Crud<Ban> base="/api/gestao/banners" rotuloItem="banner" idDe={(r) => r.id}
       introducao={(exigeAprovacao ? 'Você precisa de aprovação do RH: o banner só aparece no Início depois de aprovado. ' : '') + "O topo do Início tem 3 carrosséis lado a lado que giram juntos: esquerda (maior), meio e direita. Escolha em qual cada banner aparece; a ordem vale dentro de cada carrossel. Carrossel da esquerda sem banner mostra a faixa padrão."}
       campos={[
-        { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER },
+        { chave: 'posicao', rotulo: 'Em qual carrossel aparece', tipo: 'select', opcoes: POSICOES_BANNER, metade: true },
+        { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
         { chave: 'titulo', rotulo: 'Título', obrigatorio: true, max: 80 },
         { chave: 'subtitulo', rotulo: 'Subtítulo (só no carrossel da esquerda)', max: 160 },
         { chave: 'imagem', rotulo: 'Imagem ou vídeo do banner', tipo: 'imagem', video: true, dica: 'Formato largo: esquerda ≈ 1000 × 330 px; meio e direita ≈ 700 × 330 px. Imagem PNG, JPG, WebP ou GIF (até 5 MB) ou vídeo curto MP4/WebM (até 40 MB; toca sem som, em laço). Sem imagem = fundo em cor do tema.' },
         { chave: 'botao_texto', rotulo: 'Texto do botão', max: 30, dica: 'Ex.: Saiba mais (obrigatório se houver link)', metade: true },
         { chave: 'link', rotulo: 'Link do botão', tipo: 'link', max: 300, dica: 'Escolha um comunicado ou página do portal, ou use um endereço externo. Preencha também o texto do botão.', metade: true },
-        { chave: 'ordem', rotulo: 'Ordem', tipo: 'select', opcoes: ORDENS, metade: true },
-        { chave: 'ativo', rotulo: 'Ativo (aparece no Início)', tipo: 'check' },
         { chave: 'exibir_de', rotulo: 'Exibir a partir de (opcional)', tipo: 'data', metade: true },
         { chave: 'exibir_ate', rotulo: 'Exibir até (opcional)', tipo: 'data', metade: true },
+        { chave: 'ativo', rotulo: 'Ativo (aparece no Início)', tipo: 'check' },
       ]}
+      previa={(v) => <PreviaBanner v={v} />}
       colunas={[
         { titulo: 'Carrossel', ver: (r) => NOME_POSICAO[r.posicao] ?? r.posicao },
         { titulo: 'Ordem', ver: (r) => r.ordem },

@@ -40,8 +40,8 @@ export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode; /** Valor
 type Valores = Record<string, string | boolean | object>;
 
 /** Janela (dialog nativo) com formulário. Fecha com Esc ou clicando fora; erros aparecem dentro dela. */
-export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', extra, children }: {
-  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; /** Janela bem larga (formulários com muito conteúdo). */ extra?: boolean; children: ReactNode;
+export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', extra, previa, children }: {
+  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; /** Janela bem larga (formulários com muito conteúdo). */ extra?: boolean; /** Seção de prévia à direita do formulário (no celular vai para baixo). */ previa?: ReactNode; children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [erro, setErro] = useState('');
@@ -52,10 +52,15 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
     try { await aoEnviar(); } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
   };
   return (
-    <dialog className={`janela janela-larga${extra ? ' janela-extra' : ''}`} ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
+    <dialog className={`janela janela-larga${extra ? ' janela-extra' : ''}${previa ? ' janela-previa' : ''}`} ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
       <form className="janela-form" onSubmit={enviar}>
         <header><h2>{titulo}</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
-        <div className="janela-corpo">{children}{erro && <p className="erro" role="alert">{erro}</p>}</div>
+        {previa
+          ? <div className="janela-corpo com-previa">
+              <div className="previa-form">{children}{erro && <p className="erro" role="alert">{erro}</p>}</div>
+              <aside className="previa-lado" aria-label="Prévia">{previa}</aside>
+            </div>
+          : <div className="janela-corpo">{children}{erro && <p className="erro" role="alert">{erro}</p>}</div>}
         <footer><button type="button" className="btn btn-sec" onClick={() => ref.current?.close()}>Cancelar</button><button className="btn" disabled={enviando}>{enviando ? 'Salvando…' : rotuloEnviar}</button></footer>
       </form>
     </dialog>
@@ -172,10 +177,11 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
 }
 
 /** Tela de cadastro genérica (lista + novo/editar/apagar) usada em comunicados, documentos, destaques e aplicações. */
-export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao, feminino, larga, gradeClasse }: {
+export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao, feminino, larga, gradeClasse, previa }: {
   base: string; rotuloItem: string; idDe: (r: T) => string | number; campos: Campo[]; colunas: Coluna<T>[];
   valoresNovos: Valores; paraForm: (r: T) => Valores; podeApagar?: (r: T) => boolean;
   acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>, recarregar: () => void) => ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
+  /** Prévia ao vivo à direita do formulário, recebe os valores digitados. */ previa?: (v: Valores) => ReactNode;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
   const ord = useOrdenacao(dados, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
@@ -234,7 +240,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
         </div>
       )}
       {edit && (
-        <JanelaForm titulo={edit.id === null ? `${g.novo} ${rotuloItem}` : `Editar ${rotuloItem}`} extra={larga} aoFechar={() => setEdit(null)}
+        <JanelaForm titulo={edit.id === null ? `${g.novo} ${rotuloItem}` : `Editar ${rotuloItem}`} extra={larga} previa={previa?.(edit.v)} aoFechar={() => setEdit(null)}
           aoEnviar={async () => { await salvar(edit.id, edit.v); setAviso(`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} ${g.salvo}.`); setEdit(null); }}>
           <div className={`grade2${gradeClasse ? ' ' + gradeClasse : ''}`}>
             {campos.map((c) => (
