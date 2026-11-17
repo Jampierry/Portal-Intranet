@@ -218,7 +218,7 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 .cal-legenda span { display: flex; align-items: center; gap: 7px; }
 .cal-legenda i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
 
-.lancador-caixa { display: contents; }
+.lancador-caixa { display: flex; justify-content: center; }
 .lancador-dica { position: fixed; transform: translateY(-50%); z-index: 60; pointer-events: none; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 8px; background: var(--menu); color: var(--menu-texto); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 
 /* Tela de entrada: formulário em cartão, campos com ícone e o olho da senha dentro do campo. */
@@ -240,3 +240,10 @@ ul.int-duas { list-style: none; padding: 0; margin: 0; }
 
 .entrar-rodape { text-align: center; margin-top: 18px; }
 
+
+/* Serviço Zimbra recolhido (só e-mail): ocupa a linha toda e organiza os cartões de dentro em colunas */
+.crud.integracoes > .int-avancado { grid-column: 1 / -1; }
+.int-avancado > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.int-avancado .int-interno { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 10px; align-items: stretch; }
+.int-avancado .int-interno > .int-form { display: contents; }
+.int-avancado .int-interno .int-funcoes, .int-avancado .int-interno > .cartao-sec:has(table) { grid-column: 1 / -1; }

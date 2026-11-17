@@ -96,7 +96,7 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
   return (
     <section className="crud integracoes">
       <DicaAba>
-        O portal usa o serviço <b>Zimbra</b> (pasta <code>MCP/zimbra-mcp</code>) para o <b>calendário de datas importantes</b>. Aqui você liga o portal ao serviço e configura a conta do Zimbra, sem abrir outra página.
+        O <b>calendário de datas importantes</b> é lido direto do servidor de agenda pelo <b>CalDAV</b> (primeiro cartão). O serviço <b>Zimbra</b> (<code>MCP/zimbra-mcp</code>) fica recolhido abaixo e só é usado para enviar e-mails.
         Senhas e token ficam guardados no servidor e nunca voltam para o navegador.
       </DicaAba>
       {aviso && <p className="ok" role="status">{aviso}</p>}
@@ -104,8 +104,12 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
 
       <CalDav edita={edita} />
 
+      <details className="cartao-sec int-avancado" open={online || undefined}>
+        <summary><b>Serviço Zimbra (zimbra-mcp)</b> — só para avisos por e-mail e contas de envio {online ? <Selo texto="Serviço respondendo" tom="ok" /> : <Selo texto="Não conectado" tom="neutro" />}</summary>
+        <p className="suave">O calendário já funciona pelo CalDAV acima. Este serviço só é preciso para enviar e-mails do portal (avisos de comunicados).</p>
+      <div className="int-interno">
       <form className="cartao-sec int-bloco" onSubmit={salvarConexao}>
-        <h3>Alternativa: serviço Zimbra (zimbra-mcp) — 1. Conexão do portal com o serviço
+        <h3>1. Conexão do portal com o serviço
           {' '}{online ? <Selo texto="Serviço respondendo" tom="ok" /> : <Selo texto={sit?.token_salvo || sit?.origem ? 'Sem resposta do serviço' : 'Não conectado'} tom={sit?.origem ? 'erro' : 'neutro'} />}
         </h3>
         {!online && sit?.servico.erro && <p className="suave">{sit.servico.erro}</p>}
@@ -188,6 +192,8 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
         </form>
       )}
       {online && cfg && <ContasEmail edita={edita} />}
+      </div>
+      </details>
       <AvisosEmail permissoes={permissoes} />
       {!online && sit?.origem && (
         <p className="suave">Para ligar o serviço: abra a pasta <code>MCP/zimbra-mcp</code> e rode <code>.venv\Scripts\python zimbra_web.py</code>. Depois volte aqui e clique em “Salvar conexão”.</p>

@@ -148,13 +148,18 @@ export async function listarAgendasCalDav(c: ConexaoCalDav): Promise<AgendaCalDa
   if (r.status !== 207) throw new ErroCalDav(`O servidor de agenda respondeu ${r.status} em vez de uma lista de agendas. Confira o endereço do CalDAV.`, 502);
   const lista: AgendaCalDav[] = [];
   for (const b of blocos(r.texto)) {
-    if (!new RegExp(`<${P}calendar\\s*/?>`, 'i').test(b)) continue; // não é calendário (pasta de contatos, raiz…)
+    if (!new RegExp(`<${P}calendar(?:\\s[^>]*)?/?>`, 'i').test(b)) continue; // não é calendário (pasta de contatos, raiz…)
     const comp = tag(b, 'supported-calendar-component-set');
     if (comp && !/name="VEVENT"/i.test(b)) continue; // lista de tarefas
     const href = tag(b, 'href'); if (!href) continue;
     const abs = new URL(href, u); if (abs.origin !== new URL(u).origin) continue;
     const nome = tag(b, 'displayname') || decodeURIComponent(abs.pathname.replace(/\/+$/, '').split('/').pop() ?? '') || 'Agenda';
     lista.push({ nome: nome.slice(0, 80), href: abs.toString() });
+  }
+  // O endereço pode ser a própria agenda e o servidor não a identificar como calendário na listagem: vale o endereço informado.
+  if (!lista.length && blocos(r.texto).length) {
+    const fim = decodeURIComponent(new URL(u).pathname.replace(/\/+$/, '').split('/').pop() ?? '');
+    lista.push({ nome: fim || 'Agenda', href: u });
   }
   cacheAgendas.set(chave, { em: Date.now(), lista });
   return lista;

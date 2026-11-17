@@ -16,11 +16,22 @@ export async function rotasAplicacoes(app: FastifyInstance, { db }: { db: Banco;
 
   // ----- Favoritos de cada usuário (guardados no servidor) -----
   app.get('/api/favoritos', async (req) =>
-    (db.prepare(`SELECT f.aplicacao_slug FROM favoritos f JOIN aplicacoes ON aplicacoes.slug = f.aplicacao_slug WHERE f.usuario_id = ? AND (? = 'admin' OR ${VISIVEL}) ORDER BY f.criado_em`).all(req.usuario!.id, req.usuario!.perfil, req.usuario!.id, req.usuario!.perfil) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
+    (db.prepare(`SELECT f.aplicacao_slug FROM favoritos f JOIN aplicacoes ON aplicacoes.slug = f.aplicacao_slug WHERE f.usuario_id = ? AND (? = 'admin' OR ${VISIVEL}) ORDER BY f.ordem, f.criado_em`).all(req.usuario!.id, req.usuario!.perfil, req.usuario!.id, req.usuario!.perfil) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug),
   );
   app.put<{ Params: { slug: string } }>('/api/favoritos/:slug', async (req, resp) => {
     if (!db.prepare(`SELECT 1 FROM aplicacoes WHERE slug = ? AND ativo = 1 AND (? = 'admin' OR ${VISIVEL})`).get(req.params.slug, req.usuario!.perfil, req.usuario!.id, req.usuario!.perfil)) return resp.code(404).send({ erro: 'Aplicação não encontrada.' });
-    db.prepare('INSERT OR IGNORE INTO favoritos (usuario_id, aplicacao_slug, criado_em) VALUES (?, ?, ?)').run(req.usuario!.id, req.params.slug, new Date().toISOString());
+    db.prepare('INSERT OR IGNORE INTO favoritos (usuario_id, aplicacao_slug, criado_em, ordem) VALUES (?, ?, ?, (SELECT COALESCE(MAX(ordem), 0) + 1 FROM favoritos WHERE usuario_id = ?))').run(req.usuario!.id, req.params.slug, new Date().toISOString(), req.usuario!.id);
+    return { ok: true };
+  });
+  // Nova ordem dos favoritos (a pessoa arrastou os ícones). Só reordena os que já são favoritos dela; o resto fica no fim.
+  app.put('/api/favoritos', async (req) => {
+    const c = corpoObjeto(req.body);
+    if (!Array.isArray(c.slugs) || c.slugs.length > 200 || c.slugs.some((s) => typeof s !== 'string')) throw new ErroValidacao('Envie a lista de aplicativos na ordem desejada.');
+    const meus = new Set((db.prepare('SELECT aplicacao_slug FROM favoritos WHERE usuario_id = ?').all(req.usuario!.id) as { aplicacao_slug: string }[]).map((f) => f.aplicacao_slug));
+    const nova = [...new Set(c.slugs as string[])].filter((s) => meus.has(s));
+    const resto = [...meus].filter((s) => !nova.includes(s));
+    const upd = db.prepare('UPDATE favoritos SET ordem = ? WHERE usuario_id = ? AND aplicacao_slug = ?');
+    [...nova, ...resto].forEach((s, i) => upd.run(i + 1, req.usuario!.id, s));
     return { ok: true };
   });
   app.delete<{ Params: { slug: string } }>('/api/favoritos/:slug', async (req) => {

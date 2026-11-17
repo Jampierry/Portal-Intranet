@@ -288,6 +288,11 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
       setFavoritos((f) => (ja ? [...f, slug] : f.filter((x) => x !== slug))); setAvisoFav('Não foi possível salvar o favorito. Tente de novo.');
     });
   };
+  // Nova ordem dos favoritos (arrastar na barra de aplicativos): vale na hora e volta ao que era se o servidor recusar.
+  const ordenarFavoritos = (slugs: string[]) => {
+    const antes = favoritos; setFavoritos(slugs); setAvisoFav('');
+    api('/api/favoritos', { slugs }, 'PUT').catch(() => { setFavoritos(antes); setAvisoFav('Não foi possível salvar a ordem. Tente de novo.'); });
+  };
   const irPara = (t: Tela, slug?: string) => { setRota({ tela: t, slug }); setGaveta(false); try { history.pushState(null, '', t === 'inicio' ? location.pathname : `#${t}${slug ? `/${encodeURIComponent(slug)}` : ''}`); } catch { /* sem histórico */ } document.getElementById('conteudo-principal')?.scrollTo?.(0, 0); };
 
   return (
@@ -338,7 +343,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
           </main>
           <footer className="rodape-portal"><span><b>{empresa.nome}</b>{empresa.frase_rodape ? ` | ${empresa.frase_rodape}` : ''}</span><span>{empresa.nome_portal}</span></footer>
           </div>
-          <Lancador aberto={lancador} barraMobile={barraMob} alternar={() => setLancador(!lancador)} fechar={fecharApps} favoritos={favoritos} alternarFavorito={alternarFavorito} />
+          <Lancador aberto={lancador} barraMobile={barraMob} alternar={() => setLancador(!lancador)} fechar={fecharApps} favoritos={favoritos} alternarFavorito={alternarFavorito} ordenarFavoritos={ordenarFavoritos} />
         </div>
       </div>
 

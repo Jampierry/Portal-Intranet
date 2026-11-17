@@ -95,7 +95,7 @@ function ConviteInstalar({ aoInstalar }: { aoInstalar: () => void }) {
       <div className="conta-convite">
       {instalarDisponivel()
         ? <button className="btn btn-sec btn-pequeno" onClick={() => void instalarPortal().then(() => { forcar((n) => n + 1); aoInstalar(); })}>Instalar o portal neste dispositivo</button>
-        : <p className="suave" style={{ fontSize: 13, margin: "0 0 6px" }}>{ios ? 'Para instalar: toque em Compartilhar e depois em Adicionar à Tela de Início.' : 'Para instalar: no menu do navegador, escolha Instalar aplicativo ou Adicionar à tela inicial (precisa de HTTPS).'}</p>}
+        : <p className="suave" style={{ fontSize: 13, margin: "0 0 6px" }}>{ios ? 'O iPhone não deixa o portal instalar por botão. Toque no ícone Compartilhar (quadrado com seta para cima, na barra do Safari), role a lista e escolha “Adicionar à Tela de Início”. Se não achar, abra o portal no Safari.' : 'Para instalar: no menu do navegador, escolha Instalar aplicativo ou Adicionar à tela inicial (precisa de HTTPS).'}</p>}
       <button type="button" className="btn btn-sec btn-pequeno" style={{ marginTop: 6 }} onClick={dispensar}>Não quero instalar</button>
       </div>
     </>

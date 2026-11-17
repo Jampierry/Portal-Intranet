@@ -35,3 +35,18 @@ test('favoritos são por usuário e guardados no servidor', async () => {
   await app.inject({ method: 'DELETE', url: '/api/favoritos/sistema-x', headers: le });
   assert.deepEqual((await app.inject({ url: '/api/favoritos', headers: le })).json(), []);
 });
+
+test('a pessoa escolhe a ordem dos favoritos e novos entram no fim', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master'), le = await entrar(app, 'le');
+  for (const n of ['Alfa', 'Beta', 'Gama']) await app.inject({ method: 'POST', url: '/api/gestao/aplicacoes', headers: adm, payload: novo({ nome: n }) });
+  for (const s of ['alfa', 'beta']) await app.inject({ method: 'PUT', url: `/api/favoritos/${s}`, headers: le });
+  assert.deepEqual((await app.inject({ url: '/api/favoritos', headers: le })).json(), ['alfa', 'beta']);
+  const r = await app.inject({ method: 'PUT', url: '/api/favoritos', headers: le, payload: { slugs: ['beta', 'alfa', 'gama', 'nao-existe'] } }); // gama não é favorito: ignorado
+  assert.equal(r.statusCode, 200);
+  assert.deepEqual((await app.inject({ url: '/api/favoritos', headers: le })).json(), ['beta', 'alfa']);
+  await app.inject({ method: 'PUT', url: '/api/favoritos/gama', headers: le });
+  assert.deepEqual((await app.inject({ url: '/api/favoritos', headers: le })).json(), ['beta', 'alfa', 'gama']);
+  assert.deepEqual((await app.inject({ url: '/api/favoritos', headers: adm })).json(), []); // ordem é por usuário
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/favoritos', headers: le, payload: { slugs: 'x' } })).statusCode, 400);
+});

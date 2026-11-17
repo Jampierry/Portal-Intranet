@@ -49,6 +49,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | GET | `/api/aplicacoes` | — |
 | GET | `/api/favoritos` | — |
 | PUT | `/api/favoritos/:slug` | — |
+| PUT | `/api/favoritos` | — (corpo `{ slugs }`: nova ordem dos favoritos da pessoa) |
 | DELETE | `/api/favoritos/:slug` | — |
 | POST | `/api/gestao/aplicacoes/icone` | pub.aplicativos.criar, pub.aplicativos.editar |
 | GET | `/api/gestao/aplicacoes` | pub.aplicativos.ver |

@@ -4,12 +4,13 @@ import { Icone } from '../icones';
 import { IconeApp } from './IconeApp';
 import { useLista, type Aplicacao } from '../dados';
 import { LinkApp } from './LinkApp';
+import { useOrdenar } from './ordenar';
 
 
 /** Barra lateral direita de aplicativos. Recolhida (desktop): só os ícones dos favoritos. Aberta: abas Todos os apps / Favoritos.
  *  No celular some e, ao tocar em Aplicativos, aparece primeiro recolhida (só os ícones, `barraMobile`); o botão da barra a expande numa gaveta. */
-export function Lancador({ aberto, barraMobile = false, alternar, fechar, favoritos, alternarFavorito }: {
-  aberto: boolean; barraMobile?: boolean; alternar: () => void; fechar: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void;
+export function Lancador({ aberto, barraMobile = false, alternar, fechar, favoritos, alternarFavorito, ordenarFavoritos }: {
+  aberto: boolean; barraMobile?: boolean; alternar: () => void; fechar: () => void; favoritos: string[]; alternarFavorito: (slug: string) => void; ordenarFavoritos: (slugs: string[]) => void;
 }) {
   const { dados, erro } = useLista<Aplicacao>('/api/aplicacoes');
   const [aba, setAba] = useState<'favoritos' | 'todos'>('todos');
@@ -17,8 +18,12 @@ export function Lancador({ aberto, barraMobile = false, alternar, fechar, favori
   const [dica, setDica] = useState<{ nome: string; y: number; x: number } | null>(null);
   const mostrar = (nome: string) => (e: SyntheticEvent<HTMLElement>) => { const r = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect(); setDica({ nome, y: r.top + r.height / 2, x: innerWidth - r.left + 10 }); };
   const todos = dados ?? [];
-  const favs = todos.filter((a) => favoritos.includes(a.slug));
+  // Favoritos na ordem escolhida pela pessoa (arrastar os ícones; Alt + setas no teclado).
+  const favsBase = favoritos.map((s) => todos.find((a) => a.slug === s)).filter((a): a is Aplicacao => !!a);
+  const ord = useOrdenar(favsBase.map((a) => a.slug), ordenarFavoritos);
+  const favs = ord.ordem.map((s) => favsBase.find((a) => a.slug === s)).filter((a): a is Aplicacao => !!a);
   const lista = aba === 'favoritos' ? favs : todos;
+  const classeItem = (slug: string) => (ord.ativo === slug ? ' arrastando' : '');
   return (
     <>
       {(aberto || barraMobile) && <div className="cortina-lancador" onClick={fechar} />}
@@ -31,9 +36,9 @@ export function Lancador({ aberto, barraMobile = false, alternar, fechar, favori
         </div>
 
         {!aberto && (
-          <div className="lancador-mini">
+          <div className="lancador-mini" ref={ord.refLista}>
             {favs.map((a) => (
-              <span key={a.slug} className="lancador-caixa" onMouseEnter={mostrar(a.nome)} onMouseLeave={() => setDica(null)} onFocus={mostrar(a.nome)} onBlur={() => setDica(null)}>
+              <span key={a.slug} {...ord.propsItem(a.slug)} className={`lancador-caixa ordenavel${classeItem(a.slug)}`} onMouseEnter={mostrar(a.nome)} onMouseLeave={() => setDica(null)} onFocus={mostrar(a.nome)} onBlur={() => setDica(null)}>
                 <LinkApp url={a.url} className="lancador-ico"><IconeApp app={a} tamanho={20} /><span className="sr-only">{a.nome}</span></LinkApp>
               </span>
             ))}
@@ -54,11 +59,12 @@ export function Lancador({ aberto, barraMobile = false, alternar, fechar, favori
             </div>
             {erro && <p className="erro" role="alert">{erro}</p>}
             {lista.length === 0 && !erro && <p className="vazio">{aba === 'favoritos' ? 'Nenhum favorito ainda. Em “Todos os apps”, use a estrela para favoritar.' : 'Nenhum app cadastrado.'}</p>}
-            <ul className="lancador-lista">
+            {aba === 'favoritos' && favs.length > 1 && <p className="suave" style={{ fontSize: 12, margin: '0 0 6px' }}>Arraste para mudar a ordem (no celular, segure e arraste; no teclado, Alt + setas).</p>}
+            <ul className="lancador-lista" ref={aba === 'favoritos' ? ord.refLista : undefined}>
               {lista.map((a) => {
                 const fav = favoritos.includes(a.slug);
                 return (
-                  <li className="lancador-item" key={a.slug}>
+                  <li key={a.slug} {...(aba === 'favoritos' ? ord.propsItem(a.slug) : {})} className={`lancador-item${aba === 'favoritos' ? ` ordenavel${classeItem(a.slug)}` : ''}`}>
                     <LinkApp url={a.url} className="lancador-link">
                       <span className="icone"><IconeApp app={a} tamanho={20} /></span>
                       <span className="texto"><b>{a.nome}</b><small>{a.categoria}</small></span>

@@ -25,7 +25,7 @@ const TOPICOS: { grupo: Grupo; titulo: string; icone: string; corpo: ReactNode }
     corpo: <>
       <p>Clique no ícone de grade, na barra da direita (no celular, em <b>Aplicativos</b> no rodapé ou no topo). Ela abre a lista dos seus favoritos e de todos os aplicativos; clique em um nome para abrir.</p>
       <p>No computador o aplicativo abre em uma nova aba e o portal continua aberto. No celular ele abre na mesma aba: use o botão <b>Voltar</b> do navegador para retornar ao portal.</p>
-      <p>Use a estrela para favoritar. Os favoritos ficam salvos na sua conta e aparecem como ícones na barra da direita.</p>
+      <p>Use a estrela para favoritar. Os favoritos ficam salvos na sua conta e aparecem como ícones na barra da direita. Para mudar a ordem, arraste os ícones (no celular, segure e arraste; no teclado, Alt + seta para cima ou para baixo).</p>
     </>,
   },
   {
