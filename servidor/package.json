@@ -17,11 +17,10 @@
     "@fastify/cookie": "^11.0.0",
     "@simplewebauthn/server": "^13.1.1",
     "fastify": "^5.0.0",
-    "nodemailer": "^7.0.0",
+    "nodemailer": "^10.6.0",
     "web-push": "^4.0.0"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.0",
     "@types/web-push": "^3.6.4"
   }
 }

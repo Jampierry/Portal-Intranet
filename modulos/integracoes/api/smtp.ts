@@ -45,12 +45,13 @@ export function montarEmail(m: Omit<Mensagem, 'para'>): { text: string; html: st
   return { text, html };
 }
 
-let guardado: { chave: string; t: nodemailer.Transporter } | null = null;
+const novoTransporte = (c: ConexaoSmtp) => nodemailer.createTransport({ host: c.host, port: c.porta, secure: c.porta === 465, auth: { user: c.usuario, pass: c.senha }, pool: true, maxConnections: 2, connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000 });
+let guardado: { chave: string; t: ReturnType<typeof novoTransporte> } | null = null;
 function transporte(c: ConexaoSmtp) {
   const chave = `${c.host}|${c.porta}|${c.usuario}|${c.senha}`;
   if (guardado?.chave === chave) return guardado.t;
   guardado?.t.close();
-  const t = nodemailer.createTransport({ host: c.host, port: c.porta, secure: c.porta === 465, auth: { user: c.usuario, pass: c.senha }, pool: true, maxConnections: 2, connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000 });
+  const t = novoTransporte(c);
   guardado = { chave, t };
   return t;
 }
