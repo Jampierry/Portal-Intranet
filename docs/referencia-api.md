@@ -28,7 +28,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | GET | `/api/eu` | — |
 | POST | `/api/eu/senha` | — |
 | GET | `/api/usuarios` | cfg.usuarios.ver |
-| POST | `/api/usuarios` | cfg.usuarios.criar |
+| POST | `/api/usuarios` | cfg.usuarios.criar (com `sso: true`: pessoa do Keycloak, e-mail obrigatório, sem senha local) |
+| GET | `/api/gestao/usuarios/keycloak` (`?atualizar=1` ignora o cache de 2 min) | cfg.usuarios.criar (pessoas do Keycloak sem usuário no portal: `{ total, cadastrados, itens: [{ id, nome, login, email, ativo }] }`; 502 com mensagem da TI se a conta de serviço não pode listar) |
 | PUT | `/api/usuarios/:id` | cfg.usuarios.editar |
 | POST | `/api/usuarios/:id/senha` | cfg.usuarios.senha |
 | POST | `/api/esqueci-senha` | — |
@@ -134,7 +135,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | PUT | `/api/gestao/documentos/origens/:id` | perfil admin |
 | DELETE | `/api/gestao/documentos/origens/:id` | perfil admin |
 | GET | `/api/gestao/documentos` | pub.documentos.ver |
-| POST | `/api/gestao/documentos` | pub.documentos.criar |
+| POST | `/api/gestao/documentos/arquivo?nome=…` | pub.documentos.criar, pub.documentos.editar (corpo = bytes do arquivo, `Content-Type: application/x-documento`, até 50 MB; grava em `Enviados/` da pasta do portal e devolve `{ caminho, nome, tamanho }`) |
+| POST | `/api/gestao/documentos` | pub.documentos.criar (`versao` e `responsavel` são automáticos; `origem: 'envio'` = arquivo enviado do computador) |
 | PUT | `/api/gestao/documentos/:id` | pub.documentos.editar |
 | POST | `/api/gestao/documentos/:id/data` | pub.documentos.editar |
 | DELETE | `/api/gestao/documentos/:id` | pub.documentos.excluir |

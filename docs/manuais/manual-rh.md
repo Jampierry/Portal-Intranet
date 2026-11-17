@@ -5,7 +5,7 @@ Para quem cuida de pessoas, pesquisas, aprovações e reconhecimento. O perfil *
 ## 1. Aprovações
 
 ![Aprovações: a fila de quem espera decisão e o histórico.](img/rh-aprovacoes.png)
-Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **histórico**.
+Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **histórico**. Quem decide também vê, em Configurações › Usuários, a aba **Sem cadastro (Keycloak)** se tiver a permissão de criar usuários.
 - Cada item mostra uma **prévia** (comunicados, redes sociais com anexos, banners, documentos) e um botão **Abrir**.
 - **Aprovar** publica; **Rejeitar** exige um **motivo**, que a pessoa lê no sino.
 - Quem precisa de aprovação é definido **por aba e por pessoa**: o administrador marca "Precisa da aprovação do RH para publicar" em Comunicados, Redes sociais, Banners e Documentos, nas permissões do perfil ou do usuário. Quem decide precisa de `pub.aprovacoes.ver` e `pub.aprovacoes.decidir`.
@@ -17,7 +17,7 @@ Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **históric
 ![Aniversariantes: cadastre um a um ou importe a planilha.](img/rh-aniversariantes.png)
 - **Aniversariantes:** cadastre manualmente ou **importe**. A **data de admissão** (opcional) mostra "N anos de casa".
 - **Novos colaboradores:** cadastro de quem acabou de entrar.
-- Ambos aparecem no Início, na seção de pessoas do mês. Use apenas dados autorizados.
+- Ambos aparecem no Início, na seção de pessoas do mês, que **sempre mostra os três quadros** (Aniversariantes, Tempo de casa e Novos colaboradores), mesmo vazios. Os formulários têm **prévia do cartão** à direita. Só aparece quem estiver com "Autorizou divulgar". Use apenas dados autorizados.
 
 ## 3. Colaborador Destaque
 Só com **consentimento registrado** da pessoa. Sem ranking nem pontuação.

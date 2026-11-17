@@ -16,7 +16,7 @@
 | calendario / integracoes | ✅ | Calendário no menu lendo uma agenda escolhida do Zimbra (serviço `MCP/zimbra-mcp`), cadastro/exclusão de datas por permissão; configuração na aba Integrações |
 | busca global | ✅ | Busca do topo agrupa comunicados, documentos, aplicativos e contatos conforme as permissões |
 
-Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). Módulos novos desde então: pulso (Pesquisas), aprovacoes, redes, pessoasmes, avisos, push, propriedade, perfil, marca, demonstracao. Visão atual: `../README.md`. Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.
+Testes: **205** em 17/11/2026 (eram 147 em 12/11 (API com banco em memória + contraste + links). Módulos novos desde então: pulso (Pesquisas), aprovacoes, redes, pessoasmes, avisos, push, propriedade, perfil, marca, demonstracao. Visão atual: `../README.md`. Detalhes: `../roteiro-modulos.md` e `../requisitos.md`.
 
 - **Publicar › Aprovações / Redes sociais** (12/11/2026): fila do RH para comunicados, redes, banners e documentos; aprovação definida por aba e por usuário (`pub.<aba>.aprovacao`); anexos nas redes. Ver `estado-e-ponto-de-parada.md`.
 
@@ -28,3 +28,5 @@ Testes: **147** em 12/11/2026 (API com banco em memória + contraste + links). M
 - **Mídia no disco, Playwright, manuais com prints, logo oficial, revisão de código** (13/11/2026): imagens, vídeos e anexos em `PASTA_MIDIA`; `npm run e2e` (40 testes de tela, incluindo aprovação, pesquisa, permissões, confirmação de leitura e pedido de edição); prints com setas nos 4 manuais (`npm run manuais:prints`); logo oficial em `web/public/marca` + `npm run marca:logo`; correções de segurança (escalada de privilégio por perfil, chave de login, push). Detalhes em `estado-e-ponto-de-parada.md`.
 
 - **Publicação na plataforma e login pelo Keycloak** (16–17/11/2026): `Dockerfile`/`docker-compose.yml`/`app.yml`/workflow do template; homologação em https://portal-hml.apps.dipaula.com.br; `modulos/keycloak` (SSO, cria Consulta sem cadastro); `modo debug`; novo ícone ("D" itálico); login com mensagens que não estouram o cartão.
+
+- **Prévias, documentos e usuários** (17/11/2026): prévia ao vivo nos cadastros de Publicar, ícone "!" de ajuda, painéis por cima de pop-ups (`flutuante.ts`), carrosséis e quadros de pessoas sempre visíveis, documentos com versão/responsável automáticos, envio do computador, miniatura da página e cartões fixos, Usuários com busca/filtros e aba Sem cadastro (Keycloak), volume `portal_arquivos`. Ver `estado-e-ponto-de-parada.md`.

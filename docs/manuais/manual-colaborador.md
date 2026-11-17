@@ -30,6 +30,9 @@ Para todas as pessoas que usam o portal, no computador ou no celular.
 
 ## 3. Início
 Reúne novidades em três carrosséis, missão, visão e valores, **Colaborador Destaque**, aniversariantes e novos colaboradores do mês, avisos importantes, comunicados e documentos recentes. O que você vê depende das suas permissões.
+- **Carrosséis:** os três (Destaques, Avisos rápidos e Mais novidades) aparecem sempre; o que ainda não tem banner mostra um quadro explicando o que ficará ali. O botão de um banner pode abrir uma página, um comunicado, um **documento** (numa janela de visualização, com maximizar, imprimir e baixar) ou um endereço externo.
+- **Aniversariantes, Tempo de casa e Novos colaboradores:** os três quadros aparecem sempre; quando não há ninguém, o quadro diz isso.
+- **Diretrizes (missão, visão e valores):** cartão translúcido nas cores do tema, com a missão, a visão, o propósito e os valores da empresa.
 
 ## 4. Comunicados
 
@@ -42,15 +45,15 @@ Reúne novidades em três carrosséis, missão, visão e valores, **Colaborador 
 ## 5. Documentos
 
 ![Documentos: busque pelo título e abra pelo link oficial.](img/documentos-lista.png)
-Cada documento mostra versão, responsável e data de revisão. Abra sempre pelo **link oficial** para usar a versão vigente. Alguns documentos são **restritos** e só aparecem para quem tem acesso. Um documento pode ter data de publicação futura: só aparece a partir dela.
+Os documentos aparecem em **cartões do mesmo tamanho, quatro por linha** no computador, cada um com uma **miniatura da página** do documento (quando o arquivo está no portal), o ícone da categoria no canto e o botão **Visualizar** ou **Abrir documento** no centro. Cada documento mostra versão, responsável e data de revisão. Abra sempre pelo **link oficial** para usar a versão vigente. Alguns documentos são **restritos** e só aparecem para quem tem acesso. Um documento pode ter data de publicação futura: só aparece a partir dela.
 
-**Visualizar dentro do portal:** nos documentos que estão numa pasta do portal, o botão **Visualizar** abre o arquivo numa janela, sem sair do portal. Funciona com **PDF**, **Word (.docx)**, texto (.txt), planilha simples (.csv) e imagens. No alto da janela:
+**Visualizar dentro do portal:** nos documentos que estão numa pasta do portal, o botão **Visualizar** abre o arquivo numa janela, sem sair do portal. Funciona com **PDF**, **Word (.docx)**, **Excel (.xlsx**, mostrado como tabela), texto (.txt), planilha simples (.csv) e imagens. No alto da janela:
 - **Maximizar** (ícone de setas) ocupa a tela toda; clique de novo para reduzir.
 - **Imprimir** manda o documento para a impressora (ou "Salvar como PDF").
 - **Baixar** salva o arquivo no seu computador, com o nome original.
 - **Fechar** (ou a tecla Esc) volta para a lista.
 
-Word antigo (.doc), Excel, PowerPoint e outros formatos não têm pré-visualização: a janela avisa e você usa **Baixar**. Documentos com link externo continuam abrindo no endereço oficial, em outra aba.
+Word antigo (.doc), Excel antigo (.xls), PowerPoint e outros formatos não têm pré-visualização: a janela avisa e você usa **Baixar**. Documentos com link externo continuam abrindo no endereço oficial, em outra aba.
 
 ## 6. Contatos
 
