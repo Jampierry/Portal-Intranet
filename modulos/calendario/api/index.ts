@@ -6,6 +6,7 @@ import type { Banco } from '../../../servidor/src/db.ts';
 import { ErroValidacao, corpoObjeto, escolha, texto } from '../../../servidor/src/validar.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { agendasExibir, chamarZimbra, conexaoZimbra, ErroZimbra, gravarAgendasExibir } from '../../integracoes/api/zimbra.ts';
+import { apagarEventoCalDav, conexaoCalDav, criarEventoCalDav, ErroCalDav, eventosCalDav, listarAgendasCalDav } from '../../integracoes/api/caldav.ts';
 import { feriadosDoAno, type TipoData } from './feriados.ts';
 import { lerEmpresa } from '../../marca/api/index.ts';
 
@@ -37,8 +38,14 @@ export function limitesDoMes(mes: string) {
 }
 
 async function buscar(db: Banco, mes: string, agenda: string): Promise<EventoPublico[]> {
-  const c = conexaoZimbra(db)!;
   const { primeiroDia, ultimoDia, diasAntes, dias } = limitesDoMes(mes);
+  const cd = conexaoCalDav(db); // CalDAV direto tem prioridade sobre o serviço Zimbra
+  if (cd) {
+    return (await eventosCalDav(cd, agenda, primeiroDia, ultimoDia))
+      .filter((e) => e.inicio.slice(0, 10) <= ultimoDia && (e.fim || e.inicio).slice(0, 10) >= primeiroDia)
+      .map((e) => ({ id: e.id, titulo: e.titulo, inicio: e.inicio, fim: e.fim || e.inicio, dia_inteiro: e.dia_inteiro, local: e.local, agenda }));
+  }
+  const c = conexaoZimbra(db)!;
   const q = new URLSearchParams({ dias: String(Math.min(dias, 365)), dias_antes: String(Math.min(diasAntes, 365)), agenda });
   const lista = await chamarZimbra<EventoZimbra[]>(c, 'GET', `/api/eventos?${q}`, undefined, 15_000);
   return lista
@@ -74,8 +81,7 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
     const mes = req.query.mes ?? `${hoje.getFullYear()}-${doisDig(hoje.getMonth() + 1)}`;
     limitesDoMes(mes); // valida (400 se inválido)
     const datas = datasDoMes(db, mes); // locais: valem mesmo sem Zimbra
-    const conexao = conexaoZimbra(db);
-    if (!conexao) return { conectado: false, eventos: [], datas };
+    if (!conexaoCalDav(db) && !conexaoZimbra(db)) return { conectado: false, eventos: [], datas };
     // Privacidade: só se leem as agendas escolhidas de propósito (a conta pode ter agendas pessoais e de salas que não são para todos).
     const agendas = agendasExibir(db);
     if (!agendas.length) return { conectado: true, sem_agenda: true, eventos: [], datas };
@@ -86,7 +92,7 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
       if (guardado && Date.now() - guardado.em < CACHE_MS) { eventos.push(...guardado.eventos); return; }
       try { const lista = await buscar(db, mes, ag); cache.set(chave, { em: Date.now(), eventos: lista }); eventos.push(...lista); }
       catch (e) {
-        app.log.warn({ erro: (e as Error).message, agenda: ag }, 'calendario: Zimbra indisponível');
+        app.log.warn({ erro: (e as Error).message, agenda: ag }, 'calendario: agenda indisponível');
         falhou = true; // mostra o último resultado conhecido (mesmo velho) em vez de esvaziar o calendário
         if (guardado) eventos.push(...guardado.eventos);
       }
@@ -143,7 +149,11 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
   });
   // Agendas do Zimbra: o que existe na conta e o que o calendário exibe.
   app.get('/api/gestao/calendario/agendas', ver, async () => {
-    const c = conexaoZimbra(db), exibir = agendasExibir(db);
+    const cd = conexaoCalDav(db), c = conexaoZimbra(db), exibir = agendasExibir(db);
+    if (cd) {
+      try { return { conectado: true, exibir, disponiveis: [...new Set([...(await listarAgendasCalDav(cd)).map((a) => a.nome), ...exibir])] }; }
+      catch (e) { return { conectado: true, exibir, disponiveis: [...exibir], erro: e instanceof ErroCalDav ? e.message : 'Não foi possível listar as agendas.' }; }
+    }
     if (!c) return { conectado: false, exibir, disponiveis: [] as string[] };
     try {
       const lista = await chamarZimbra<Record<string, unknown>[]>(c, 'GET', '/api/agendas', undefined, 20_000);
@@ -172,8 +182,21 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
     const diaInteiro = c.dia_inteiro !== false;
     const hi = String(c.hora_inicio ?? '09:00'), hf = String(c.hora_fim ?? '10:00');
     if (!diaInteiro && (!HORA.test(hi) || !HORA.test(hf) || (inicioDia === fimDia && hf <= hi))) throw new ErroValidacao('Horário: informe início e fim válidos (fim depois do início).');
+    const cd = conexaoCalDav(db);
+    if (cd) {
+      if (!cd.agenda) return resp.code(400).send({ erro: 'Escolha a agenda da empresa em Configurações › Integrações antes de cadastrar datas.' });
+      try {
+        const id = await criarEventoCalDav(cd, cd.agenda, { titulo, local, dia_inteiro: diaInteiro, inicio: diaInteiro ? inicioDia : `${inicioDia} ${hi}`, fim: diaInteiro ? fimDia : `${fimDia} ${hf}` });
+        cache.clear();
+        auditar(db, req.usuario!.id, 'data_importante_criada', { titulo, data: inicioDia });
+        return resp.code(201).send({ id });
+      } catch (e) {
+        if (e instanceof ErroCalDav) return resp.code(e.status === 401 ? 502 : e.status).send({ erro: e.message });
+        throw e;
+      }
+    }
     const conexao = conexaoZimbra(db);
-    if (!conexao) return resp.code(400).send({ erro: 'A agenda ainda não está conectada ao Zimbra (Configurações › Integrações).' });
+    if (!conexao) return resp.code(400).send({ erro: 'A agenda ainda não está conectada (Configurações › Integrações).' });
     if (!conexao.agenda) return resp.code(400).send({ erro: 'Escolha a agenda da empresa em Configurações › Integrações antes de cadastrar datas.' });
     try {
       const r = await chamarZimbra<{ id: string }>(conexao, 'POST', '/api/eventos', {
@@ -191,8 +214,20 @@ export async function rotasCalendario(app: FastifyInstance, { db }: { db: Banco;
 
   app.delete<{ Params: { id: string } }>('/api/calendario/:id', { preHandler: exigirPerm('calendario.excluir') }, async (req, resp) => {
     if (!/^[\w.:~@=+-]{1,400}$/.test(req.params.id)) throw new ErroValidacao('Identificador inválido.');
+    const cd = conexaoCalDav(db);
+    if (cd) {
+      try {
+        await apagarEventoCalDav(cd, req.params.id);
+        cache.clear();
+        auditar(db, req.usuario!.id, 'data_importante_excluida', { id: req.params.id });
+        return { ok: true };
+      } catch (e) {
+        if (e instanceof ErroCalDav) return resp.code(e.status === 401 ? 502 : e.status).send({ erro: e.message });
+        throw e;
+      }
+    }
     const conexao = conexaoZimbra(db);
-    if (!conexao) return resp.code(400).send({ erro: 'A agenda ainda não está conectada ao Zimbra.' });
+    if (!conexao) return resp.code(400).send({ erro: 'A agenda ainda não está conectada.' });
     try {
       await chamarZimbra(conexao, 'DELETE', `/api/eventos/${encodeURIComponent(req.params.id)}`, undefined, 30_000);
       cache.clear();

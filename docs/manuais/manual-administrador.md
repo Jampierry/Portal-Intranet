@@ -43,7 +43,7 @@ Nome da empresa e do portal, frase do rodapé e ícone/logo (SVG passa por filtr
 Fundo da lateral (imagem ou carrossel com transição), marca, lema, frase e textos. Ao lado da prévia, o quadro **Formato ideal** diz o tamanho certo: imagem **1200 × 1400 px** (6:7); vídeo MP4 (H.264) **1080 × 1260 px**, de 10 a 20 segundos, até 40 MB, que toca sem som e em laço. A mídia preenche o lado esquerdo e as bordas são cortadas conforme a janela: deixe o assunto no centro e sem texto escrito na mídia, porque o portal escreve a frase e a logo por cima. No computador o painel do login tem fundo animado e cartão de vidro; no celular a imagem ocupa a tela por trás do cartão.
 
 ### Comunicados
-Configuração dos avisos de novos comunicados por e-mail (via serviço Zimbra) e contas de envio.
+Agenda por **CalDAV** (endereço, usuário, senha e agenda da empresa; botão Salvar e testar lista as agendas; tem prioridade sobre o serviço Zimbra) e configuração dos avisos de novos comunicados por e-mail (via serviço Zimbra) e contas de envio.
 
 ### Calendário
 Datas importantes e feriados locais (com importação de feriados) e escolha das agendas do Zimbra exibidas. A tabela mostra a data, o **dia da semana** (clique no título para ordenar), o título, o tipo e se repete.

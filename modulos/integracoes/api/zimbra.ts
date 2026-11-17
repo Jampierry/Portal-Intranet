@@ -1,6 +1,7 @@
 // Conexão do portal com o serviço zimbra-mcp (MCP/zimbra-mcp). Endereço e token ficam no banco (tela Configurações › Integrações),
 // com as variáveis ZIMBRA_API_URL / ZIMBRA_API_TOKEN / ZIMBRA_AGENDA como alternativa. O token nunca volta para o navegador.
 import type { Banco } from '../../../servidor/src/db.ts';
+import { conexaoCalDav } from './caldav.ts';
 
 export interface ConexaoZimbra { url: string; token: string; agenda: string; origem: 'banco' | 'ambiente' }
 
@@ -29,7 +30,7 @@ export function agendasExibir(db: Banco): string[] {
     const v = JSON.parse(ler(db, 'zimbra.agendas_exibir') || 'null');
     if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim().slice(0, 80)).slice(0, 12);
   } catch { /* lista inválida: usa o padrão */ }
-  const unica = conexaoZimbra(db)?.agenda; // agenda da empresa (banco ou ZIMBRA_AGENDA)
+  const unica = conexaoCalDav(db)?.agenda || conexaoZimbra(db)?.agenda; // agenda da empresa (CalDAV, ou banco/ZIMBRA_AGENDA do serviço Zimbra)
   return unica ? [unica] : [];
 }
 export function gravarAgendasExibir(db: Banco, lista: string[]) {

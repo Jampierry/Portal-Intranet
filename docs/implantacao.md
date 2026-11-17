@@ -79,7 +79,7 @@ O repositório segue o template da infra: `app.yml`, `Dockerfile`, `docker-compo
 - **Secrets do repositório** (Settings › Secrets and variables › Actions): `HML_ENV` e `PROD_ENV`, com o conteúdo do `.env` de cada ambiente (senhas diferentes). Variáveis lidas pelo compose:
   - obrigatória: `ORIGENS_PERMITIDAS` (endereço público com https, ex.: `https://portal-hml.apps.dipaula.com.br`);
   - primeiro acesso (sem terminal): `ADMIN_LOGIN`, `ADMIN_SENHA` (8+ caracteres) e `ADMIN_NOME` criam o administrador **só se o banco estiver sem usuários**; ele troca a senha no primeiro acesso, e depois as variáveis devem ser removidas do secret;
-  - opcionais: `WEBAUTHN_RP_ID` (biometria), `PERMITIR_DADOS_EXEMPLO=1` (só homologação), `ZIMBRA_API_URL`/`ZIMBRA_API_TOKEN` (o serviço Zimbra roda fora desta stack).
+  - opcionais: `WEBAUTHN_RP_ID` (biometria), `PERMITIR_DADOS_EXEMPLO=1` (só homologação), `CALDAV_URL`/`CALDAV_USUARIO`/`CALDAV_SENHA`/`CALDAV_AGENDA` (agenda por CalDAV direto no portal, ex.: `https://<servidor-zimbra>/dav/<conta>/`; também dá para configurar em Configurações › Integrações; o servidor do portal precisa alcançar essa rede), `ZIMBRA_API_URL`/`ZIMBRA_API_TOKEN` (alternativa: o serviço Zimbra roda fora desta stack).
 - **Pedir à infra:** liberar o deploy automático (runner) e quem pode publicar em produção.
 - Depois: `npm run marca:logo` não roda no contêiner; a logo oficial deve ser instalada pelo painel (Configurações › Empresa) ou pelo terminal quando houver acesso.
 - Não validado: a imagem **não foi construída aqui** (sem Docker nesta máquina); o primeiro push em `develop` é o teste.

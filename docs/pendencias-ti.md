@@ -28,7 +28,7 @@ Marque cada item ao concluir e anote data e responsável.
 |---|---|---|---|
 | 12 | **Leitura nas pastas de rede** | O usuário do serviço (item 4) precisa de permissão de **somente leitura** nas pastas de rede de onde o portal serve documentos. | ☐ |
 | 13 | **Firewall** | Liberar só a porta do proxy (443) para a rede interna. A porta 3100 do portal fica fechada para fora (escuta só em `127.0.0.1`). Em desenvolvimento em rede, liberar a 5174 mediante administrador. | ☐ |
-| 14 | **Zimbra / OAuth em produção** | Subir o serviço `zimbra-mcp` e cadastrar o **endereço de retorno real** (do nome interno) no Google e na Microsoft. Configurar `ZIMBRA_API_URL`, `ZIMBRA_API_TOKEN` e `ZIMBRA_AGENDA`. Sem isso o e-mail e a agenda reais não funcionam. | ☐ |
+| 14 | **Zimbra / OAuth em produção** | **Agenda:** liberar o CalDAV do Zimbra (`https://<servidor>/dav/<conta>/`) para o servidor do portal e criar uma conta própria da empresa para a agenda (usuário e senha em Configurações › Integrações › CalDAV). **E-mail/OAuth:** subir o serviço `zimbra-mcp` e cadastrar o **endereço de retorno real** (do nome interno) no Google e na Microsoft. Configurar `ZIMBRA_API_URL`, `ZIMBRA_API_TOKEN` e `ZIMBRA_AGENDA`. Sem isso o e-mail e a agenda reais não funcionam. | ☐ |
 | 15 | **Servidor de e-mail (SMTP)** | Conta e servidor para os **avisos por e-mail** e, no futuro, a recuperação de senha por e-mail. | ☐ |
 
 ## 4. Segurança e operação

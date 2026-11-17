@@ -2,6 +2,10 @@
 
 > O histórico abaixo não é cronológico: o mais recente está **no fim do arquivo**; esta seção é a mais nova.
 
+## 17/11/2026 (tarde) — agenda por CalDAV direto no portal
+- `modulos/integracoes/api/caldav.ts`: cliente CalDAV (PROPFIND lista agendas de eventos, REPORT calendar-query com `expand` para repetições, PUT/DELETE de `.ics`), iCalendar lido à mão (fuso: `PORTAL_FUSO`, padrão America/Sao_Paulo), só fala com a mesma origem do endereço configurado. Config no banco (`caldav.*` em `integracoes`, senha só no servidor, sem cifra extra) ou `CALDAV_URL/USUARIO/SENHA/AGENDA`. **Tem prioridade sobre o serviço zimbra-mcp**, que continua como alternativa. Rotas `/api/integracoes/caldav[/testar]`; tela `web/src/gestao/CalDav.tsx` no topo de Configurações › Integrações; `modulos/calendario/api` usa CalDAV para ler, criar e excluir datas. 5 testes novos (`modulos/integracoes/tests/caldav.test.ts`, servidor CalDAV simulado); 210 OK. **Não testado contra o Zimbra real**: a TI confirmou o CalDAV liberado; falta endereço e conta de serviço.
+- **Keycloak "Sem cadastro" (401 `unauthorized_client`) em hml:** TI diz que liberou, mas o erro persiste; código está correto. Conferir se o `KEYCLOAK_CLIENT_SECRET` no `HML_ENV` bate com a aba Credentials, se o cliente é confidencial com Service accounts ligado e se houve novo deploy.
+
 ## 17/11/2026 — migração 049 aplicada e `enviar org` exercitado de verdade
 - **API de dev reiniciada:** migração 049 aplicada (`passkeys`, `uso_eventos` existem). Biometria e barra de apps **validadas no iPhone** pelo usuário (HTTPS liberado pela TI).
 - **`enviar org` feito:** `org/main` = `018a56b` (7 arquivos de docs/manuais; 205 testes OK); `org-base` = `b048ebd`. A nota antiga de `org/main = 6f3194b` estava velha.

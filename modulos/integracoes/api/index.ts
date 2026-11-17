@@ -4,7 +4,9 @@ import type { FastifyInstance } from 'fastify';
 import type { Banco } from '../../../servidor/src/db.ts';
 import { auditar, exigirPerm } from '../../acessos/api/guard.ts';
 import { corpoObjeto, ErroValidacao } from '../../../servidor/src/validar.ts';
-import { agendaSalva, chamarZimbra, conexaoZimbra, ErroZimbra, gravarIntegracao, temTokenSalvo, urlSalva } from './zimbra.ts';
+import { agendaCalDavSalva, conexaoCalDav, ErroCalDav, gravarCalDav, limparCacheCalDav, listarAgendasCalDav, temSenhaCalDav, urlCalDavSalva, usuarioCalDavSalvo } from './caldav.ts';
+import { limparCacheCalendario } from '../../calendario/api/index.ts';
+import { agendaSalva,chamarZimbra, conexaoZimbra, ErroZimbra, gravarIntegracao, temTokenSalvo, urlSalva } from './zimbra.ts';
 
 const CHAVES_PERMITIDAS = ['host', 'user', 'senha', 'smtp_host', 'smtp_port', 'servicos', 'agendas', 'listas_tarefas', 'servico', 'origens', 'provedor', 'permitir_outros_dominios'] as const;
 const PROVEDORES = ['zimbra', 'gmail', 'outlook', 'outro'] as const;
@@ -150,5 +152,42 @@ export async function rotasIntegracoes(app: FastifyInstance, { db }: { db: Banco
   app.get('/api/integracoes/zimbra/agendas', ver, async (_req, resp) => {
     try { return await chamarZimbra<unknown[]>(conectar(), 'GET', '/api/agendas', undefined, 30_000); }
     catch (e) { const f = falha(e); return resp.code(f.status).send(f.corpo); }
+  });
+
+  // ----- Agenda por CalDAV, direto do portal (tem prioridade sobre o serviço Zimbra quando configurada) -----
+  const respCalDav = (e: unknown, resp: { code: (n: number) => { send: (b: unknown) => unknown } }) => {
+    if (e instanceof ErroCalDav) return resp.code(e.status === 401 ? 400 : e.status).send({ erro: e.message });
+    throw e;
+  };
+  app.get('/api/integracoes/caldav', ver, async () => {
+    const c = conexaoCalDav(db);
+    return { url: urlCalDavSalva(db) || c?.url || '', usuario: usuarioCalDavSalvo(db) || c?.usuario || '', senha_salva: temSenhaCalDav(db), agenda: agendaCalDavSalva(db) || c?.agenda || '', origem: c?.origem ?? null };
+  });
+  app.put('/api/integracoes/caldav', editar, async (req) => {
+    const c = corpoObjeto(req.body);
+    if (c.desconectar === true) {
+      for (const k of ['url', 'usuario', 'senha', 'agenda'] as const) gravarCalDav(db, k, '');
+      limparCacheCalDav(); limparCacheCalendario();
+      auditar(db, req.usuario!.id, 'integracao_caldav_desconectada');
+      return { ok: true };
+    }
+    if (c.url !== undefined) {
+      let u: URL;
+      try { u = new URL(String(c.url).trim()); if (!['http:', 'https:'].includes(u.protocol) || !u.hostname) throw new Error(); }
+      catch { throw new ErroValidacao('Endereço do CalDAV: use http:// ou https:// com o endereço completo (ex.: https://webmail.suaempresa.com.br/dav/agenda@suaempresa.com.br/).'); }
+      gravarCalDav(db, 'url', u.toString());
+    }
+    if (typeof c.usuario === 'string') { if (c.usuario.length > 200) throw new ErroValidacao('Usuário: texto longo demais.'); gravarCalDav(db, 'usuario', c.usuario.trim()); }
+    if (typeof c.senha === 'string' && c.senha) { if (c.senha.length > 300) throw new ErroValidacao('Senha: texto longo demais.'); gravarCalDav(db, 'senha', c.senha); }
+    if (typeof c.agenda === 'string') gravarCalDav(db, 'agenda', c.agenda.trim().slice(0, 80));
+    limparCacheCalDav(); limparCacheCalendario();
+    auditar(db, req.usuario!.id, 'integracao_caldav_alterada', { url: urlCalDavSalva(db), usuario: usuarioCalDavSalvo(db), senha_alterada: typeof c.senha === 'string' && !!c.senha, agenda: agendaCalDavSalva(db) });
+    return { ok: true };
+  });
+  app.post('/api/integracoes/caldav/testar', editar, async (req, resp) => {
+    const c = conexaoCalDav(db);
+    if (!c) return resp.code(400).send({ erro: 'Preencha endereço, usuário e senha e salve antes de testar.' });
+    try { limparCacheCalDav(); return { ok: true, agendas: (await listarAgendasCalDav(c)).map((a) => a.nome) }; }
+    catch (e) { return respCalDav(e, resp); } finally { auditar(db, req.usuario!.id, 'integracao_caldav_testada'); }
   });
 }

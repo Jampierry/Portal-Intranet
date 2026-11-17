@@ -74,6 +74,9 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 |---|---|---|
 | GET | `/api/avisos/lidos` | — |
 | POST | `/api/avisos/lidos` | — |
+| GET | `/api/integracoes/caldav` | cfg.integracoes.ver |
+| PUT | `/api/integracoes/caldav` | cfg.integracoes.editar |
+| POST | `/api/integracoes/caldav/testar` | cfg.integracoes.editar |
 | GET | `/api/integracoes/avisos` | cfg.integracoes.ver |
 | PUT | `/api/integracoes/avisos` | cfg.integracoes.editar |
 | POST | `/api/integracoes/avisos/teste` | cfg.integracoes.editar |

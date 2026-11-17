@@ -5,6 +5,7 @@ import { Selo } from './Crud';
 import { DicaAba } from '../Dica';
 import { ContasEmail } from './ContasEmail';
 import { AvisosEmail } from './AvisosEmail';
+import { CalDav } from './CalDav';
 
 interface EstadoServico {
   host: string; user: string; smtp_host: string; smtp_port: number; senha_salva: boolean; servico_user: string; servico_senha_salva: boolean;
@@ -101,8 +102,10 @@ export function Integracoes({ permissoes }: { permissoes: string[] }) {
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {falha && <p className="erro" role="alert">{falha}</p>}
 
+      <CalDav edita={edita} />
+
       <form className="cartao-sec int-bloco" onSubmit={salvarConexao}>
-        <h3>1. Conexão do portal com o serviço
+        <h3>Alternativa: serviço Zimbra (zimbra-mcp) — 1. Conexão do portal com o serviço
           {' '}{online ? <Selo texto="Serviço respondendo" tom="ok" /> : <Selo texto={sit?.token_salvo || sit?.origem ? 'Sem resposta do serviço' : 'Não conectado'} tom={sit?.origem ? 'erro' : 'neutro'} />}
         </h3>
         {!online && sit?.servico.erro && <p className="suave">{sit.servico.erro}</p>}
