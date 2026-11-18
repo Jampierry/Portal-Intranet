@@ -129,11 +129,18 @@ export async function rotasComunicados(app: FastifyInstance, { db }: { db: Banco
     if (!c) return resp.code(404).send({ erro: 'Comunicado não encontrado.' });
     const lidas = new Map((db.prepare('SELECT usuario_id, lido_em FROM comunicado_leituras WHERE comunicado_id = ?').all(id) as { usuario_id: number; lido_em: string }[]).map((l) => [l.usuario_id, l.lido_em]));
     const doPublico = new Set(pessoasDoPublico(db, 'comunicado', id));
-    const alvo = (db.prepare('SELECT id, login, nome, perfil, permissoes FROM usuarios WHERE ativo = 1 ORDER BY nome').all() as { id: number; login: string; nome: string; perfil: string; permissoes: string | null }[])
+    const alvo = (db.prepare(`SELECT u.id, u.login, u.nome, u.perfil, u.permissoes, COALESCE(p.nome, u.perfil) AS funcao, d.nome AS departamento
+        FROM usuarios u LEFT JOIN perfis_permissoes p ON p.perfil = u.perfil LEFT JOIN departamentos d ON d.id = u.departamento_id WHERE u.ativo = 1 ORDER BY u.nome`).all() as { id: number; login: string; nome: string; perfil: string; permissoes: string | null; funcao: string; departamento: string | null }[])
       .filter((u) => doPublico.has(u.id) && permissoesEfetivas(db, u.perfil, u.permissoes).includes('ver.comunicados'));
-    const lidos = alvo.filter((u) => lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login, lido_em: lidas.get(u.id)! })).sort((a, b) => a.lido_em.localeCompare(b.lido_em));
-    const pendentes = alvo.filter((u) => !lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login }));
-    return { titulo: c.titulo, exige_leitura: !!c.exige_leitura, total: alvo.length, lidos, pendentes };
+    const lidos = alvo.filter((u) => lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login, funcao: u.funcao, departamento: u.departamento, lido_em: lidas.get(u.id)! })).sort((a, b) => a.lido_em.localeCompare(b.lido_em));
+    const pendentes = alvo.filter((u) => !lidas.has(u.id)).map((u) => ({ nome: u.nome, login: u.login, funcao: u.funcao, departamento: u.departamento }));
+    // Indicadores: esperadas × confirmaram, agrupados por função (perfil) e por departamento.
+    const agrupar = (chave: (u: (typeof alvo)[number]) => string) => {
+      const m = new Map<string, { nome: string; total: number; lidos: number }>();
+      for (const u of alvo) { const n = chave(u); const g = m.get(n) ?? { nome: n, total: 0, lidos: 0 }; g.total++; if (lidas.has(u.id)) g.lidos++; m.set(n, g); }
+      return [...m.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+    };
+    return { titulo: c.titulo, exige_leitura: !!c.exige_leitura, total: alvo.length, lidos, pendentes, por_funcao: agrupar((u) => u.funcao), por_departamento: agrupar((u) => u.departamento ?? 'Sem departamento') };
   });
 
   app.delete<{ Params: { id: string } }>('/api/gestao/comunicados/:id', { preHandler: exigirPerm('pub.comunicados.excluir') }, async (req, resp) => {

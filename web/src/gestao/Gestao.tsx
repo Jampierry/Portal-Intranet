@@ -31,24 +31,46 @@ const s = (v: string | null | undefined) => v ?? '';
 const SIT_COM: Record<string, ['ok' | 'aviso' | 'neutro', string]> = { publicado: ['ok', 'Publicado'], rascunho: ['aviso', 'Rascunho'], arquivado: ['neutro', 'Arquivado'] };
 
 interface Com { id: number; titulo: string; resumo: string; corpo: string | null; categoria: string; prioridade: string; imagem: string | null; status: string; exibir_de: string | null; exibir_ate: string | null; publicado_em: string | null; exige_leitura: number; departamentos?: number[]; publico_texto?: string; aprovacao_status?: string | null; aprovacao_motivo?: string | null }
-interface Leituras { titulo: string; total: number; lidos: { nome: string; login: string; lido_em: string }[]; pendentes: { nome: string; login: string }[] }
+interface Grupo { nome: string; total: number; lidos: number }
+interface Leituras { titulo: string; total: number; lidos: { nome: string; login: string; funcao: string; departamento: string | null; lido_em: string }[]; pendentes: { nome: string; login: string; funcao: string; departamento: string | null }[]; por_funcao: Grupo[]; por_departamento: Grupo[] }
+const pctDe = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+function IndicadorGrupo({ titulo, itens }: { titulo: string; itens: Grupo[] }) {
+  return (
+    <section className="leitura-card" aria-label={titulo}>
+      <h3>{titulo}</h3>
+      <ul className="leitura-ind">
+        {itens.length === 0 ? <li className="suave">Sem dados.</li> : itens.map((g) => (
+          <li key={g.nome}><span className="leitura-ind-nome">{g.nome}</span><span className="leitura-barra" aria-hidden="true"><i style={{ width: `${pctDe(g.lidos, g.total)}%` }} /></span><small>{g.lidos}/{g.total} · {pctDe(g.lidos, g.total)}%</small></li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 /** Janela "Leituras": quem já confirmou e quem falta confirmar um comunicado. */
 function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
   const { dados, erro } = useLeituras(c.id);
   const pct = dados && dados.total ? Math.round((dados.lidos.length / dados.total) * 100) : 0;
   return (
-    <JanelaForm titulo={`Leituras: ${c.titulo}`} rotuloEnviar="Fechar" aoFechar={aoFechar} aoEnviar={async () => aoFechar()}>
+    <JanelaForm extra titulo={`Leituras: ${c.titulo}`} rotuloEnviar="Fechar" aoFechar={aoFechar} aoEnviar={async () => aoFechar()}>
       {erro && <p className="erro" role="alert">{erro}</p>}
       {!dados && !erro && <p className="suave">Carregando…</p>}
       {dados && (
         <div className="leitura-rel">
-          <p style={{ margin: 0 }}><b>{dados.lidos.length} de {dados.total}</b> pessoas confirmaram ({pct}%).</p>
-          <div className="leitura-barra" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+          <div className="leitura-indicadores">
+            <section className="leitura-card leitura-geral" aria-label="Geral">
+              <h3>Geral</h3>
+              <p className="leitura-pct">{pct}%</p>
+              <p style={{ margin: 0 }}><b>{dados.lidos.length} de {dados.total}</b> pessoas confirmaram.</p>
+              <div className="leitura-barra" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+            </section>
+            <IndicadorGrupo titulo="Por função" itens={dados.por_funcao} />
+            <IndicadorGrupo titulo="Por departamento" itens={dados.por_departamento} />
+          </div>
           <div className="leitura-listas">
-            <div><b>Confirmaram ({dados.lidos.length})</b>
-              <ul>{dados.lidos.length === 0 ? <li className="suave">Ninguém ainda.</li> : dados.lidos.map((p) => <li key={p.login}><span>{p.nome}</span><small className="suave">{dataCurta(p.lido_em.slice(0, 10))}</small></li>)}</ul></div>
-            <div><b>Faltam ({dados.pendentes.length})</b>
-              <ul>{dados.pendentes.length === 0 ? <li className="suave">Todos confirmaram.</li> : dados.pendentes.map((p) => <li key={p.login}><span>{p.nome}</span><small className="suave">{p.login}</small></li>)}</ul></div>
+            <section className="leitura-card" aria-label="Confirmaram"><h3>Confirmaram ({dados.lidos.length})</h3>
+              <ul>{dados.lidos.length === 0 ? <li className="suave">Ninguém ainda.</li> : dados.lidos.map((p) => <li key={p.login}><span>{p.nome}<small className="suave">{[p.funcao, p.departamento].filter(Boolean).join(' · ')}</small></span><small className="suave">{dataCurta(p.lido_em.slice(0, 10))}</small></li>)}</ul></section>
+            <section className="leitura-card" aria-label="Faltam"><h3>Faltam ({dados.pendentes.length})</h3>
+              <ul>{dados.pendentes.length === 0 ? <li className="suave">Todos confirmaram.</li> : dados.pendentes.map((p) => <li key={p.login}><span>{p.nome}<small className="suave">{[p.funcao, p.departamento].filter(Boolean).join(' · ')}</small></span><small className="suave">{p.login}</small></li>)}</ul></section>
           </div>
         </div>
       )}

@@ -41,7 +41,19 @@ function loginLivre(db: Banco, sugestao: string): string {
 }
 
 /** Pessoa do realm do Keycloak, no formato que a tela de Usuários usa. */
-export interface PessoaKeycloak { id: string; nome: string; login: string; email: string; ativo: boolean }
+export interface PessoaKeycloak { id: string; nome: string; login: string; email: string; ativo: boolean; /** Setor/departamento, se algum atributo conhecido do usuário no Keycloak o traz. */ departamento: string; /** Nome do atributo de onde veio o departamento (ou vazio). */ departamento_campo: string; /** Todos os atributos do usuário (primeiro valor de cada), para a tela mostrar o que existe. */ atributos: Record<string, string> }
+
+/** Atributos comuns de setor em Keycloak/AD/LDAP, em ordem de preferência (KEYCLOAK_ATRIBUTO_DEPARTAMENTO força um nome). */
+const ATRIBUTOS_DEPARTAMENTO = ['department', 'departamento', 'setor', 'sector', 'departmentnumber', 'ou', 'organizationalunit', 'area', 'área', 'lotacao', 'lotação', 'unidade', 'division', 'divisao', 'company', 'empresa', 'physicaldeliveryofficename'];
+export function departamentoDe(atributos: Record<string, string>, forcado = ''): { valor: string; campo: string } {
+  const chaves = Object.keys(atributos);
+  const ordem = forcado ? [forcado.toLowerCase(), ...ATRIBUTOS_DEPARTAMENTO] : ATRIBUTOS_DEPARTAMENTO;
+  for (const nome of ordem) {
+    const k = chaves.find((c) => c.toLowerCase() === nome && atributos[c]);
+    if (k) return { valor: atributos[k], campo: k };
+  }
+  return { valor: '', campo: '' };
+}
 
 /** Lê todas as pessoas do realm pela API de administração do Keycloak (somente leitura), com a conta de serviço do cliente do portal.
  *  KEYCLOAK_ADMIN_CLIENT_ID / KEYCLOAK_ADMIN_CLIENT_SECRET usam outro cliente só para isso; sem elas vale o cliente do login. */
@@ -56,14 +68,17 @@ export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env
   const lista: PessoaKeycloak[] = [];
   const TAM = 200;
   for (let primeiro = 0; primeiro < 10_000; primeiro += TAM) {
-    const r = await fetch(`${cfg.admin}/users?first=${primeiro}&max=${TAM}&briefRepresentation=true`, { headers: { Authorization: `Bearer ${tj.access_token}` }, signal: AbortSignal.timeout(15_000) })
+    const r = await fetch(`${cfg.admin}/users?first=${primeiro}&max=${TAM}&briefRepresentation=false`, { headers: { Authorization: `Bearer ${tj.access_token}` }, signal: AbortSignal.timeout(15_000) })
       .catch((e: Error) => { throw new ErroKeycloak(502, `Não foi possível ler os usuários do Keycloak (${e.message}).`); });
     if (r.status === 401 || r.status === 403) throw new ErroKeycloak(502, 'A conta de serviço do portal não pode listar os usuários do Keycloak. Peça à TI o papel view-users (realm-management) para ela.');
     if (!r.ok) throw new ErroKeycloak(502, `O Keycloak respondeu com erro ao listar os usuários (HTTP ${r.status}).`);
-    const pagina = await r.json() as { id: string; username?: string; firstName?: string; lastName?: string; email?: string; enabled?: boolean }[];
+    const pagina = await r.json() as { id: string; username?: string; firstName?: string; lastName?: string; email?: string; enabled?: boolean; attributes?: Record<string, string[] | string> }[];
     for (const u of pagina) {
       const nome = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim().replace(/\s+/g, ' ');
-      lista.push({ id: u.id, nome: nome || u.username || '', login: String(u.username ?? ''), email: String(u.email ?? '').trim().toLowerCase(), ativo: u.enabled !== false });
+      const atributos: Record<string, string> = {};
+      for (const [k, v] of Object.entries(u.attributes ?? {})) { const x = String(Array.isArray(v) ? v[0] ?? '' : v ?? '').trim(); if (x) atributos[k] = x.slice(0, 200); }
+      const dep = departamentoDe(atributos, env.KEYCLOAK_ATRIBUTO_DEPARTAMENTO?.trim());
+      lista.push({ id: u.id, nome: nome || u.username || '', login: String(u.username ?? ''), email: String(u.email ?? '').trim().toLowerCase(), ativo: u.enabled !== false, departamento: dep.valor.slice(0, 80), departamento_campo: dep.campo, atributos });
     }
     if (pagina.length < TAM) break;
   }

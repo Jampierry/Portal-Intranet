@@ -151,11 +151,11 @@ function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id:
   );
 }
 
-interface PessoaKc { id: string; nome: string; login: string; email: string; ativo: boolean }
+interface PessoaKc { id: string; nome: string; login: string; email: string; ativo: boolean; departamento: string; departamento_campo: string; atributos: Record<string, string> }
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Aba "Sem cadastro": pessoas do Keycloak que ainda não têm usuário no portal. Cadastrar abre o formulário já preenchido, para ajustar o que for preciso. */
-function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => void; versao: number }) {
+function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => void | Promise<void>; versao: number }) {
   const [res, setRes] = useState<{ total: number; cadastrados: number; itens: PessoaKc[] } | null>(null);
   const [erro, setErro] = useState('');
   const [q, setQ] = useState('');
@@ -167,8 +167,8 @@ function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => vo
   };
   useEffect(() => { ler(false); }, [versao]); // eslint-disable-line react-hooks/exhaustive-deps
   const alvo = semAcento(q.trim());
-  const itens = (res?.itens ?? []).filter((p) => (sit === 'todas' || (sit === 'ativo') === p.ativo) && (!alvo || semAcento(`${p.nome} ${p.login} ${p.email}`).includes(alvo)));
-  const ord = useOrdenacao(itens, { nome: (p) => p.nome, login: (p) => p.login, email: (p) => p.email, sit: (p) => (p.ativo ? 'Ativo' : 'Desativado') });
+  const itens = (res?.itens ?? []).filter((p) => (sit === 'todas' || (sit === 'ativo') === p.ativo) && (!alvo || semAcento(`${p.nome} ${p.login} ${p.email} ${p.departamento}`).includes(alvo)));
+  const ord = useOrdenacao(itens, { nome: (p) => p.nome, login: (p) => p.login, email: (p) => p.email, depto: (p) => p.departamento, sit: (p) => (p.ativo ? 'Ativo' : 'Desativado') });
   return (
     <>
       <div className="barra filtros-usuarios">
@@ -182,12 +182,13 @@ function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => vo
       {res && (
         <div className="rolagem">
           <table className="dados">
-            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login no Keycloak')}{ord.cab('email', 'E-mail')}{ord.cab('sit', 'Situação no Keycloak')}<th className="col-acoes">Ações</th></tr></thead>
+            <thead><tr>{ord.cab('nome', 'Nome')}{ord.cab('login', 'Login no Keycloak')}{ord.cab('email', 'E-mail')}{ord.cab('depto', 'Departamento (Keycloak)')}{ord.cab('sit', 'Situação no Keycloak')}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
-              {(ord.linhas ?? []).length === 0 && <tr><td colSpan={5} className="vazio">{res.itens.length === 0 ? 'Todas as pessoas do Keycloak já têm cadastro no portal.' : 'Nenhuma pessoa encontrada com esses filtros.'}</td></tr>}
+              {(ord.linhas ?? []).length === 0 && <tr><td colSpan={6} className="vazio">{res.itens.length === 0 ? 'Todas as pessoas do Keycloak já têm cadastro no portal.' : 'Nenhuma pessoa encontrada com esses filtros.'}</td></tr>}
               {(ord.linhas ?? []).map((p) => (
                 <tr key={p.id}>
                   <td data-rotulo="Nome">{p.nome || '—'}</td><td data-rotulo="Login no Keycloak">{p.login || '—'}</td><td data-rotulo="E-mail">{p.email || '—'}</td>
+                  <td data-rotulo="Departamento (Keycloak)" title={p.departamento_campo ? `Atributo "${p.departamento_campo}"` : Object.keys(p.atributos).length ? `Atributos existentes: ${Object.keys(p.atributos).join(', ')}` : 'Nenhum atributo preenchido no Keycloak'}>{p.departamento || '—'}</td>
                   <td data-rotulo="Situação no Keycloak"><Selo texto={p.ativo ? 'Ativa' : 'Desativada'} tom={p.ativo ? 'ok' : 'neutro'} /></td>
                   <td className="col-acoes"><button className="btn btn-pequeno" onClick={() => aoCadastrar(p)}><Icone nome="mais" tamanho={13} /> Cadastrar</button></td>
                 </tr>
@@ -224,9 +225,12 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
   const alvoBusca = semAcento(q.trim());
   const visiveis = (ord.linhas ?? []).filter((u) => (!fPerfil || u.perfil === fPerfil) && (!fDepto || (fDepto === '__nenhum' ? !u.departamento : u.departamento === fDepto)) && (!fSit || situacaoDe(u) === fSit)
     && (!alvoBusca || semAcento(`${u.nome} ${u.login} ${u.email ?? ''}`).includes(alvoBusca)));
-  const cadastrarDoKeycloak = (p: PessoaKc) => {
+  const cadastrarDoKeycloak = async (p: PessoaKc) => {
+    // Se o Keycloak traz o setor e já existe um departamento com o mesmo nome no portal, o formulário vem com ele escolhido.
+    const deps = p.departamento ? await api<{ id: number; nome: string }[]>('/api/departamentos').catch(() => []) : [];
+    const dep = deps.find((d) => semAcento(d.nome) === semAcento(p.departamento));
     const base = (p.login.includes('@') || !p.login ? p.email.split('@')[0] : p.login).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9._-]+/g, '.').replace(/^[._-]+|[._-]+$/g, '').slice(0, 32);
-    setNovo({ login: base, nome: p.nome.slice(0, 80), email: p.email, perfil: 'consulta', senha: '', permissoes: {}, departamento_id: null, sso: true });
+    setNovo({ login: base, nome: p.nome.slice(0, 80), email: p.email, perfil: 'consulta', senha: '', permissoes: {}, departamento_id: dep?.id ?? null, sso: true });
   };
   const [edit, setEdit] = useState<Usr | null>(null);
   const [reset, setReset] = useState<{ u: Usr; senha: string } | null>(null);
