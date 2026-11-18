@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useFiltros } from './Filtros';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../api';
@@ -173,7 +174,7 @@ function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => vo
   return (
     <>
       <div className="barra filtros-usuarios">
-        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar pessoas do Keycloak" /></label>
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar pessoas do Keycloak" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}</label>
         <select value={sit} onChange={(e) => setSit(e.target.value)} aria-label="Situação no Keycloak"><option value="todas">Todas as situações</option><option value="ativo">Ativas no Keycloak</option><option value="desativado">Desativadas no Keycloak</option></select>
         {res && <span className="suave" aria-live="polite">{itens.length} de {res.itens.length} sem cadastro · {res.cadastrados} já cadastradas</span>}
         <span className="barra-fim-grupo"><button className="btn btn-sec btn-pequeno" disabled={carregando} onClick={() => ler(true)}>{carregando ? 'Atualizando…' : 'Atualizar lista'}</button></span>
@@ -265,7 +266,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       )}
       {aba === 'sem' && libera('criar') && <SemCadastro aoCadastrar={cadastrarDoKeycloak} versao={versaoKc} />}
       {aba === 'com' && <div className="barra filtros-usuarios">
-        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar usuários" /></label>
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar usuários" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}</label>
         <select value={fPerfil} onChange={(e) => setFPerfil(e.target.value)} aria-label="Filtrar por perfil"><option value="">Todos os perfis</option>{perfisNaLista.map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select>
         <select value={fDepto} onChange={(e) => setFDepto(e.target.value)} aria-label="Filtrar por departamento"><option value="">Todos os departamentos</option><option value="__nenhum">Sem departamento</option>{departamentos.map((d) => <option key={d} value={d}>{d}</option>)}</select>
         <select value={fSit} onChange={(e) => setFSit(e.target.value)} aria-label="Filtrar por situação"><option value="">Todas as situações</option><option>Ativo</option><option>Aguardando 1º acesso</option><option>Desativado</option></select>

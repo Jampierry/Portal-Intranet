@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
 
@@ -18,7 +19,7 @@ export function useFiltros<T>(linhas: T[] | null, filtros: FiltroDef<T>[], texto
   const ativo = !!busca || Object.values(escolhidos).some(Boolean);
   const barra = (extra?: React.ReactNode) => (
     <div className="barra filtros-usuarios">
-      <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nesta lista" aria-label="Pesquisar nesta lista" /></label>
+      <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nesta lista" aria-label="Pesquisar nesta lista" />{busca && <BotaoLimpar aoLimpar={() => setBusca('')} />}</label>
       {filtros.map((f) => (
         <select key={f.chave} value={escolhidos[f.chave] ?? ''} onChange={(e) => setEscolhidos((o) => ({ ...o, [f.chave]: e.target.value }))} aria-label={`Filtrar por ${f.rotulo.toLowerCase()}`}>
           <option value="">{f.rotulo}: todos</option>

@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { avisar } from '../Confirmar.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icone } from '../icones';
@@ -88,7 +89,7 @@ export function Documentos({ busca, limparBusca }: { busca: string; limparBusca:
       <Cabecalho titulo="Documentos" sub="Procedimentos, políticas e materiais da equipe, sempre com versão e responsável." />
       <label className="busca-pagina">
         <Icone nome="busca" tamanho={18} />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por título, assunto ou categoria" aria-label="Buscar documentos" />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por título, assunto ou categoria" aria-label="Buscar documentos" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}
       </label>
       <div className="barra">
         <div className="pilulas filtros" role="group" aria-label="Filtrar por categoria">

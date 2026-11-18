@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useEffect, useId, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -24,7 +25,7 @@ export function EscolherPessoa({ aoEscolher, dica }: { aoEscolher: (p: PessoaPor
     <div className="escolher-pessoa">
       <label>Preencher com uma pessoa do portal (opcional)
         <span className="busca-pagina"><Icone nome="busca" tamanho={16} />
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={itens ? `Nome, login ou e-mail (${itens.length} pessoas)` : 'Carregando pessoas…'} aria-controls={idLista} autoComplete="off" disabled={!itens} />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={itens ? `Nome, login ou e-mail (${itens.length} pessoas)` : 'Carregando pessoas…'} aria-controls={idLista} autoComplete="off" disabled={!itens} />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}
         </span>
       </label>
       {dica && <small className="suave">{dica}</small>}

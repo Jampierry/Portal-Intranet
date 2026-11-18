@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
 import { Estado } from '../Cabecalho';
@@ -30,7 +31,7 @@ export function Pessoas({ busca, limparBusca }: { busca: string; limparBusca: ()
     <>
       <label className="busca-pagina">
         <Icone nome="busca" tamanho={18} />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar área, assunto, e-mail ou ramal" aria-label="Buscar contatos" />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar área, assunto, e-mail ou ramal" aria-label="Buscar contatos" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}
       </label>
       <Estado dados={dados} erro={erro} vazio={!!dados && lista.length === 0} limpar={() => { limparBusca(); setQ(''); }} />
       <div className="grade-areas">

@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { confirmar } from '../Confirmar.tsx';
 import { ehVideo } from '../midia';
 import { CampoDocumento } from './CampoDocumento';
@@ -223,7 +224,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
     <section className="crud">
       {introducao && !libera('criar') && <DicaAba>{introducao}</DicaAba>}
       <div className="barra filtros-usuarios">
-        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nesta lista" aria-label={`Pesquisar ${rotuloItem}`} /></label>
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nesta lista" aria-label={`Pesquisar ${rotuloItem}`} />{busca && <BotaoLimpar aoLimpar={() => setBusca('')} />}</label>
         {colunasFiltro.map((c) => (
           <select key={c.titulo} value={filtros[c.titulo] ?? ''} onChange={(e) => setFiltros((f) => ({ ...f, [c.titulo]: e.target.value }))} aria-label={`Filtrar por ${c.titulo.toLowerCase()}`}>
             <option value="">{c.titulo}: todas</option>

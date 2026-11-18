@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Icone } from '../icones';
 import { api } from '../api';
@@ -144,7 +145,7 @@ export function Ajuda({ irPara }: { irPara: (t: 'pessoas') => void }) {
       {aba === 'manuais' ? <Manuais /> : <>
       <label className="busca-pagina">
         <Icone nome="busca" tamanho={18} />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nas perguntas" aria-label="Buscar na ajuda" />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nas perguntas" aria-label="Buscar na ajuda" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}
       </label>
       <div className="barra">
         <div className="pilulas filtros" role="group" aria-label="Filtrar por assunto">

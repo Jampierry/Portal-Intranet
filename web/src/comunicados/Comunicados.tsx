@@ -1,3 +1,4 @@
+import { BotaoLimpar } from '../BotaoLimpar';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -105,7 +106,7 @@ function ListaDeComunicados({ busca, limparBusca }: { busca: string; limparBusca
         <div className="com-ferramentas">
           <label className="busca-pagina">
             <Icone nome="busca" tamanho={18} />
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar comunicados" aria-label="Buscar comunicados" />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar comunicados" aria-label="Buscar comunicados" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}
           </label>
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)} aria-label="Filtrar por área">
             {categorias.map((c) => <option key={c} value={c}>{c === 'Todas' ? 'Todas as áreas' : c}</option>)}
