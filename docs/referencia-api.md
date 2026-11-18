@@ -122,6 +122,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/gestao/comunicados/:id/data` | pub.comunicados.editar |
 | PUT | `/api/gestao/comunicados/:id` | pub.comunicados.editar |
 | GET | `/api/gestao/comunicados/:id/leituras` | pub.comunicados.ver (`{ titulo, exige_leitura, total, lidos[{nome,login,funcao,departamento,lido_em}], pendentes[{nome,login,funcao,departamento}], por_funcao[{nome,total,lidos}], por_departamento[...] }`; função = nome do perfil) |
+| GET | `/api/gestao/departamentos-keycloak` | cfg.usuarios.criar ou editar: `{ itens: string[], aviso }` com os nomes dos grupos do Keycloak (todos os níveis, cache de 10 min); vazio com aviso se o Keycloak não responde ou a conta de serviço não lê grupos |
 | GET | `/api/gestao/pessoas-portal` | pub.destaques / aniversariantes / novos / contatos (criar ou editar): `[{ id, nome, login, email, departamento }]` das pessoas ativas, para preencher os formulários |
 | DELETE | `/api/gestao/comunicados/:id` | pub.comunicados.excluir |
 

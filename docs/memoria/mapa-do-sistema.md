@@ -73,3 +73,4 @@ Falta / decisões em aberto:
 - Rotina de trabalho: mudar → `npm run typecheck` → `npm test` → `npm run build` → atualizar `docs/memoria/estado-e-ponto-de-parada.md` → commit → push.
 
 - **Padrões de tela (18/11/2026):** pesquisa + filtros em todas as listas de Publicar (`Coluna.filtro/texto` no `Crud`), Aprovações e Auditoria (`useFiltros` em `web/src/gestao/Filtros.tsx`); `BotaoLimpar` (×) nas barras de busca; `maiusc()` (`web/src/caixaAlta.ts`) deixa nome/área/departamento em CAIXA ALTA só na exibição; `EscolherPessoa` + `GET /api/gestao/pessoas-portal` preenchem Destaque/Aniversariantes/Novos/Contatos; janela Leituras com indicadores (geral, função, departamento) e botão "Confirmação de leituras" na aba Comunicados.
+- **Departamento no cadastro de usuário:** além dos do portal, lista os grupos do Keycloak (`/api/gestao/departamentos-keycloak`); escolher cria o departamento.

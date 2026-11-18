@@ -2,6 +2,10 @@
 
 > O histórico abaixo não é cronológico: o mais recente está **no fim do arquivo**; esta seção é a mais nova.
 
+## 18/11/2026 (noite) — departamentos do Keycloak no cadastro de usuário
+- Campo **Departamento** (Configurações › Usuários › Novo/Editar) lista também os **grupos do Keycloak** (`GET /api/gestao/departamentos-keycloak`, todos os níveis, cache 10 min) no bloco "Do Keycloak (ainda não cadastrados)"; escolher um cria o departamento no portal na hora. Lista tudo que é grupo (se vier ruído, restringir a um grupo-raiz: precisa saber como a TI organizou). Sem permissão de leitura de grupos o bloco some, sem erro. Teste novo (mock de grupos). **Enviado:** `org/develop` (hml) = `ce47171`, `org/main` = `de25762`; 216 testes OK.
+- **Próximo:** conferir em hml se o bloco "Do Keycloak" aparece (senão: `query-groups`/`view-users` na conta de serviço, ou o setor não está em grupos); demais itens do ponto de parada anterior.
+
 ## 18/11/2026 (tarde/noite) — Leituras, filtros padronizados, departamento do Keycloak, pessoas do portal, caixa alta
 - **Leituras de comunicado:** janela larga com indicadores (geral, por função = perfil, por departamento) e dois cartões (Confirmaram × Faltam) com rolagem só dentro deles; botão **Confirmação de leituras** ao lado de "Novo comunicado" abre a escolha (cartões com andamento) e a janela de leituras tem "← Escolher outro comunicado". Backend: `por_funcao`/`por_departamento` em `/leituras`.
 - **Pesquisa e filtros padronizados** em todas as abas de Publicar (`Coluna.filtro`/`texto` no `Crud`), Aprovações e Auditoria (`useFiltros`); botão **×** (`BotaoLimpar`) em todas as barras de busca principais (ficaram de fora: busca global do topo, "Buscar pessoa" do Uso, pesquisadores de pasta e de link).
