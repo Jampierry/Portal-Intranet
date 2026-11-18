@@ -241,3 +241,12 @@
 
 /* Vídeo no lugar da imagem (banners) */
 .aprov-previa video { max-width: 100%; border-radius: 8px; }
+
+/* ===== Banner padrão do Início cabe no espaço do carrossel (sem passar por cima dos cartões abaixo) =====
+   A linha do grid de banners era "auto" e crescia com o conteúdo do banner padrão (título + texto + botão), invadindo os cartões.
+   Agora a linha tem a altura da faixa e o banner padrão esconde o texto/selo quando o espaço fica pequeno (container query). */
+.novidades-grade { grid-template-rows: minmax(0, 1fr); }
+.nov-slot { container-type: size; min-height: 0; }
+.nov-slot > .hero { overflow: hidden; }
+@container (max-height: 200px) { .nov-slot .hero-texto p { display: none; } .nov-slot .hero-texto { padding-block: 12px; gap: 6px; justify-content: center; } }
+@container (max-height: 150px) { .nov-slot .hero-texto .eyebrow { display: none; } .nov-slot .hero h2 { font-size: clamp(20px, 3vh, 28px); } }
