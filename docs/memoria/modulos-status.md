@@ -8,7 +8,7 @@
 | comunicados | ✅ | Lista, detalhe e gestão (rascunho, publicar, arquivar, janela de exibição) |
 | documentos | ✅ | Versão, responsável, revisão, classificação; origem = link, pasta do portal ou pasta do servidor cadastrada (Configurações › Pastas de documentos) com seletor e pesquisa. Anexos ⬜ |
 | aplicacoes | ✅ | Barra da direita (favoritos por usuário no servidor) + Gestão › Aplicativos (cadastro: admin) |
-| pessoas | ✅ | Contatos por área, sem dados pessoais; gestão na aba Contatos |
+| pessoas | ✅ | Contatos por área, sem dados pessoais; gestão na aba Contatos (preenche com pessoa do portal); nomes/áreas em caixa alta |
 | ajuda | ✅ | FAQ em `web/src/ajuda/Ajuda.tsx` (texto no código) |
 | publicar | ✅ | Editor/admin: abas Comunicados, Documentos, Colaborador Destaque, Contatos, Aplicativos (`#publicar/<aba>`; código em `web/src/gestao/Gestao.tsx`, rotas da API seguem em `/api/gestao/*`) |
 | banners / institucional | ✅ | Banners do carrossel do Início e texto de missão, visão e valores (Publicar › Banners / Missão, Visão e Valores) |

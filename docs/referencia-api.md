@@ -29,7 +29,7 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/eu/senha` | — |
 | GET | `/api/usuarios` | cfg.usuarios.ver |
 | POST | `/api/usuarios` | cfg.usuarios.criar (com `sso: true`: pessoa do Keycloak, e-mail obrigatório, sem senha local) |
-| GET | `/api/gestao/usuarios/keycloak` (`?atualizar=1` ignora o cache de 2 min) | cfg.usuarios.criar (pessoas do Keycloak sem usuário no portal: `{ total, cadastrados, itens: [{ id, nome, login, email, ativo }] }`; 502 com mensagem da TI se a conta de serviço não pode listar) |
+| GET | `/api/gestao/usuarios/keycloak` (`?atualizar=1` ignora o cache de 2 min) | cfg.usuarios.criar (pessoas do Keycloak sem usuário no portal: `{ total, cadastrados, itens: [{ id, nome, login, email, ativo, departamento, departamento_campo, grupos[], atributos{} }] }`; 502 com mensagem da TI se a conta de serviço não pode listar) |
 | PUT | `/api/usuarios/:id` | cfg.usuarios.editar |
 | POST | `/api/usuarios/:id/senha` | cfg.usuarios.senha |
 | POST | `/api/esqueci-senha` | — |
@@ -121,7 +121,8 @@ Erros: `400` entrada inválida · `401` sem login · `403` sem permissão (ou `p
 | POST | `/api/gestao/comunicados` | pub.comunicados.criar |
 | POST | `/api/gestao/comunicados/:id/data` | pub.comunicados.editar |
 | PUT | `/api/gestao/comunicados/:id` | pub.comunicados.editar |
-| GET | `/api/gestao/comunicados/:id/leituras` | pub.comunicados.ver |
+| GET | `/api/gestao/comunicados/:id/leituras` | pub.comunicados.ver (`{ titulo, exige_leitura, total, lidos[{nome,login,funcao,departamento,lido_em}], pendentes[{nome,login,funcao,departamento}], por_funcao[{nome,total,lidos}], por_departamento[...] }`; função = nome do perfil) |
+| GET | `/api/gestao/pessoas-portal` | pub.destaques / aniversariantes / novos / contatos (criar ou editar): `[{ id, nome, login, email, departamento }]` das pessoas ativas, para preencher os formulários |
 | DELETE | `/api/gestao/comunicados/:id` | pub.comunicados.excluir |
 
 ## demonstracao

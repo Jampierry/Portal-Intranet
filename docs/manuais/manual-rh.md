@@ -14,6 +14,8 @@ Em **Publicar › Aprovações** o RH vê a **fila** (pendentes) e o **históric
 
 ## 2. Aniversariantes e novos colaboradores
 
+> **Dica:** em Colaborador Destaque, Aniversariantes, Novos colaboradores e Contatos, o campo **Preencher com uma pessoa do portal** (topo do formulário) busca quem já tem cadastro e preenche nome e área (em Contatos, área e e-mail). Todas as abas de Publicar, Aprovações e Auditoria têm **pesquisa e filtros** e o botão × para limpar a pesquisa. Em Comunicados, **Confirmação de leituras** mostra, por comunicado, o andamento geral, por função e por departamento, e quem confirmou ou falta.
+
 ![Aniversariantes: cadastre um a um ou importe a planilha.](img/rh-aniversariantes.png)
 - **Aniversariantes:** cadastre manualmente ou **importe**. A **data de admissão** (opcional) mostra "N anos de casa".
 - **Novos colaboradores:** cadastro de quem acabou de entrar.
