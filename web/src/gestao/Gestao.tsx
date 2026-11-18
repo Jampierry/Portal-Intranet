@@ -1,6 +1,6 @@
 import { api } from '../api';
 import { Icone } from '../icones';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Crud, JanelaForm, PermissoesCtx, Selo } from './Crud';
 import { CampoPublico } from './CampoPublico';
 import { Aplicacoes } from '../aplicacoes/Aplicacoes';
@@ -25,6 +25,7 @@ import { Aprovacoes } from './Aprovacoes';
 import { UsoPortal } from './Uso';
 import { PreviaBanner } from './PreviaBanner';
 import { RotuloDica } from '../Dica';
+import { EscolherPessoa } from './EscolherPessoa';
 import { mesAno, PreviaAplicativo, PreviaComunicado, PreviaDocumento, PreviaPessoa } from './PreviasCadastro';
 
 const s = (v: string | null | undefined) => v ?? '';
@@ -47,7 +48,7 @@ function IndicadorGrupo({ titulo, itens }: { titulo: string; itens: Grupo[] }) {
   );
 }
 /** Janela "Leituras": quem já confirmou e quem falta confirmar um comunicado. */
-function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
+function LeiturasComunicado({ c, aoFechar, aoVoltar }: { c: Com; aoFechar: () => void; /** Quando veio da lista de comunicados: volta para escolher outro. */ aoVoltar?: () => void }) {
   const { dados, erro } = useLeituras(c.id);
   const pct = dados && dados.total ? Math.round((dados.lidos.length / dados.total) * 100) : 0;
   return (
@@ -56,6 +57,7 @@ function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
       {!dados && !erro && <p className="suave">Carregando…</p>}
       {dados && (
         <div className="leitura-rel">
+          {aoVoltar && <button type="button" className="btn btn-sec btn-pequeno leitura-voltar" onClick={aoVoltar}>← Escolher outro comunicado</button>}
           <div className="leitura-indicadores">
             <section className="leitura-card leitura-geral" aria-label="Geral">
               <h3>Geral</h3>
@@ -77,6 +79,39 @@ function LeiturasComunicado({ c, aoFechar }: { c: Com; aoFechar: () => void }) {
     </JanelaForm>
   );
 }
+/** Escolha do comunicado cujas leituras serão vistas (só os que exigem confirmação), com o andamento de cada um. */
+function EscolherLeitura({ itens, aoEscolher, aoFechar }: { itens: Com[]; aoEscolher: (c: Com) => void; aoFechar: () => void }) {
+  const [res, setRes] = useState<Record<number, { total: number; lidos: number } | null>>({});
+  useEffect(() => {
+    let vivo = true;
+    itens.forEach((c) => {
+      api<Leituras>(`/api/gestao/comunicados/${c.id}/leituras`)
+        .then((d) => { if (vivo) setRes((r) => ({ ...r, [c.id]: { total: d.total, lidos: d.lidos.length } })); })
+        .catch(() => { if (vivo) setRes((r) => ({ ...r, [c.id]: null })); });
+    });
+    return () => { vivo = false; };
+  }, [itens]);
+  return (
+    <JanelaForm extra titulo="Confirmação de leituras" rotuloEnviar="Fechar" aoFechar={aoFechar} aoEnviar={async () => aoFechar()}>
+      <p className="suave" style={{ margin: 0 }}>Escolha o comunicado para ver quem já confirmou a leitura e quem falta. Aparecem só os que exigem confirmação.</p>
+      {itens.length === 0
+        ? <p className="vazio">Nenhum comunicado exige confirmação de leitura. Marque “Exigir confirmação de leitura” ao publicar um comunicado.</p>
+        : <ul className="leitura-escolha">{itens.map((c) => {
+            const r = res[c.id];
+            const p = r ? pctDe(r.lidos, r.total) : 0;
+            return (
+              <li key={c.id}>
+                <button type="button" onClick={() => aoEscolher(c)}>
+                  <span className="le-topo"><b>{c.titulo}</b><small className="suave">{c.categoria}{c.status === 'publicado' ? '' : ` · ${c.status}`}{c.publicado_em ? ` · ${dataCurta(c.publicado_em.slice(0, 10))}` : ''}</small></span>
+                  <span className="leitura-barra" aria-hidden="true"><i style={{ width: `${p}%` }} /></span>
+                  <small className="le-num">{r === undefined ? 'Carregando…' : r === null ? 'Não foi possível ler' : `${r.lidos} de ${r.total} confirmaram · ${p}%`}</small>
+                </button>
+              </li>
+            );
+          })}</ul>}
+    </JanelaForm>
+  );
+}
 function useLeituras(id: number) {
   const [dados, setDados] = useState<Leituras | null>(null);
   const [erro, setErro] = useState('');
@@ -86,9 +121,12 @@ function useLeituras(id: number) {
 
 function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
   const [leituras, setLeituras] = useState<Com | null>(null);
+  const [escolhendo, setEscolhendo] = useState(false);
+  const [doEscolha, setDoEscolha] = useState(false); // a janela de leituras foi aberta pela lista (mostra "voltar")
   const [mudandoData, setMudandoData] = useState<{ r: Com; recarregar: () => void } | null>(null);
   const { dados } = useLista<Com>('/api/gestao/comunicados');
   const categorias = [...new Set((dados ?? []).map((c) => c.categoria))];
+  const comExigencia = useMemo(() => (dados ?? []).filter((c) => c.exige_leitura), [dados]);
   return (
     <>
     <Crud<Com> base="/api/gestao/comunicados" rotuloItem="comunicado" idDe={(r) => r.id}
@@ -109,18 +147,19 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
       previa={(v) => <PreviaComunicado v={v} />}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
-        { titulo: 'Categoria', ver: (r) => r.categoria },
-        { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <>{r.aprovacao_status === 'pendente' ? <Selo texto="Aguardando o RH" tom="aviso" /> : <Selo texto={x} tom={t} />}{r.aprovacao_status === 'rejeitado' && r.status === 'rascunho' && <> <Selo texto="Rejeitado" tom="erro" /><small className="motivo-rej">Motivo: {r.aprovacao_motivo}</small></>}{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
+        { titulo: 'Categoria', ver: (r) => r.categoria, filtro: true },
+        { titulo: 'Situação', filtro: (r) => (r.aprovacao_status === 'pendente' ? 'Aguardando o RH' : (SIT_COM[r.status]?.[1] ?? r.status)), texto: (r) => `${SIT_COM[r.status]?.[1] ?? r.status} ${r.aprovacao_status === 'pendente' ? 'Aguardando o RH' : ''} ${r.prioridade === 'urgente' ? 'Urgente' : ''}`, ver: (r) => { const [t, x] = SIT_COM[r.status] ?? ['neutro', r.status]; return <>{r.aprovacao_status === 'pendente' ? <Selo texto="Aguardando o RH" tom="aviso" /> : <Selo texto={x} tom={t} />}{r.aprovacao_status === 'rejeitado' && r.status === 'rascunho' && <> <Selo texto="Rejeitado" tom="erro" /><small className="motivo-rej">Motivo: {r.aprovacao_motivo}</small></>}{r.prioridade === 'urgente' && <> <Selo texto="Urgente" tom="erro" /></>}</>; } },
         { titulo: 'Para', ver: (r) => r.publico_texto ?? 'Todos' },
         { titulo: 'Publicado em', ver: (r) => dataCurta(r.publicado_em) || '—' },
       ]}
       valoresNovos={{ titulo: '', resumo: '', corpo: '', imagem: '', categoria: '', prioridade: 'normal', status: 'rascunho', exige_leitura: false, exibir_de: '', exibir_ate: '', departamentos: [] }}
       paraForm={(r) => ({ titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, status: r.status, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate), departamentos: r.departamentos ?? [] })}
       podeApagar={() => true}
+      barraExtra={<button className="btn btn-sec" onClick={() => { setDoEscolha(true); setEscolhendo(true); }}><Icone nome="olho" tamanho={15} /> Confirmação de leituras</button>}
       acoesExtra={(r, salvar, recarregar) => {
         const base = { titulo: r.titulo, resumo: r.resumo, corpo: s(r.corpo), imagem: s(r.imagem), categoria: r.categoria, prioridade: r.prioridade, exige_leitura: !!r.exige_leitura, exibir_de: s(r.exibir_de), exibir_ate: s(r.exibir_ate), departamentos: r.departamentos ?? [] };
         return <>
-          {r.exige_leitura ? <button className="btn btn-sec btn-pequeno" onClick={() => setLeituras(r)}>Leituras</button> : null}
+          {r.exige_leitura ? <button className="btn btn-sec btn-pequeno" onClick={() => { setDoEscolha(false); setLeituras(r); }}>Leituras</button> : null}
           {r.status === 'publicado' && <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
           {r.status === 'publicado'
             ? <button className="btn btn-sec btn-pequeno" onClick={() => void salvar({ ...base, status: 'arquivado' })}>Arquivar</button>
@@ -128,7 +167,8 @@ function Comunicados({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         </>;
       }}
     />
-    {leituras && <LeiturasComunicado c={leituras} aoFechar={() => setLeituras(null)} />}
+    {escolhendo && <EscolherLeitura itens={comExigencia} aoEscolher={(c) => { setEscolhendo(false); setLeituras(c); }} aoFechar={() => setEscolhendo(false)} />}
+    {leituras && <LeiturasComunicado c={leituras} aoFechar={() => setLeituras(null)} aoVoltar={doEscolha ? () => { setLeituras(null); setEscolhendo(true); } : undefined} />}
     {mudandoData && <MudarData item={mudandoData.r.titulo} dataAtual={mudandoData.r.exibir_de} url={`/api/gestao/comunicados/${mudandoData.r.id}/data`} campo="exibir_de" exigeAprovacao={exigeAprovacao} aoFechar={() => setMudandoData(null)} aoConcluir={() => { mudandoData.recarregar(); setMudandoData(null); }} />}
     </>
   );
@@ -159,11 +199,11 @@ function Banners({ exigeAprovacao }: { exigeAprovacao: boolean }) {
       ]}
       previa={(v) => <PreviaBanner v={v} />}
       colunas={[
-        { titulo: 'Carrossel', ver: (r) => NOME_POSICAO[r.posicao] ?? r.posicao },
+        { titulo: 'Carrossel', ver: (r) => NOME_POSICAO[r.posicao] ?? r.posicao, filtro: true },
         { titulo: 'Ordem', ver: (r) => r.ordem },
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Imagem', ver: (r) => (r.imagem ? (/.(mp4|webm)$/i.test(r.imagem) ? 'Vídeo' : 'Sim') : 'Cor do tema') },
-        { titulo: 'Situação', ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
+        { titulo: 'Situação', filtro: (r) => (r.ativo ? 'Ativo' : 'Inativo'), ver: (r) => <Selo texto={r.ativo ? 'Ativo' : 'Inativo'} tom={r.ativo ? 'ok' : 'neutro'} /> },
       ]}
       acoesExtra={(r, _salvar, recarregar) => (r.ativo ? <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button> : null)}
       valoresNovos={{ posicao: 'principal', titulo: '', subtitulo: '', imagem: '', botao_texto: '', link: '', ordem: '1', ativo: true, exibir_de: '', exibir_ate: '' }}
@@ -200,11 +240,11 @@ function Documentos({ exigeAprovacao }: { exigeAprovacao: boolean }) {
       previa={(v) => <PreviaDocumento v={v} />}
       colunas={[
         { titulo: 'Título', ver: (r) => r.titulo },
-        { titulo: 'Categoria', ver: (r) => r.categoria },
+        { titulo: 'Categoria', ver: (r) => r.categoria, filtro: true },
         { titulo: 'Versão', ver: (r) => r.versao ?? '—' },
         { titulo: 'Responsável', ver: (r) => r.responsavel ?? '—' },
-        { titulo: 'Acesso', ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
-        { titulo: 'Origem', ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
+        { titulo: 'Acesso', filtro: (r) => (r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'), ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
+        { titulo: 'Origem', filtro: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? 'Servidor' : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link'), ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
       ]}
       acoesExtra={(r, _salvar, recarregar) => <button className="btn btn-sec btn-pequeno" onClick={() => setMudandoData({ r, recarregar })}>Mudar a data</button>}
       valoresNovos={{ titulo: '', resumo: '', categoria: '', formato: 'PDF', versao: '', responsavel: '', classificacao: 'interno', revisado_em: '', exibir_de: '', origem: 'envio', link_oficial: '' }}
@@ -223,6 +263,7 @@ function Destaques() {
     <Crud<Dest> base="/api/gestao/destaques" rotuloItem="destaque" idDe={(r) => r.id}
       introducao="Reconhecimento sem ranking. Só aparece no portal o que estiver Aprovado, e para aprovar é preciso registrar o consentimento da pessoa (LGPD)."
       campos={[
+        { chave: '_pessoa', rotulo: 'Pessoa do portal', tipo: 'custom', fora: true, render: (_v, _m, _t, varios) => <EscolherPessoa aoEscolher={(p) => varios({ nome: p.nome.slice(0, 80), area: p.departamento.slice(0, 60) })} /> },
         { chave: 'foto', rotulo: 'Foto da pessoa (opcional)', tipo: 'imagem', dica: 'Foto quadrada (rosto centralizado) fica melhor. PNG, JPG, WebP ou GIF, até 5 MB. Use só com o consentimento da pessoa; sem foto, aparecem as iniciais.' },
         { chave: 'nome', rotulo: 'Nome da pessoa', obrigatorio: true, max: 80, metade: true },
         { chave: 'area', rotulo: 'Área', obrigatorio: true, max: 60, metade: true },
@@ -235,9 +276,9 @@ function Destaques() {
       previa={(v) => <PreviaPessoa v={v} periodo={mesAno(v)} extra={String(v.apresentacao ?? '').trim() || 'O texto de reconhecimento aparece aqui.'} dica="Assim a pessoa aparece no bloco Colaborador Destaque do Início (a faixa com o mês e ano aparece na aba Ano)." avisos={v.status === 'aprovado' ? [] : ['Só aparece no portal quando estiver Aprovado.']} />}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
-        { titulo: 'Área', ver: (r) => r.area },
+        { titulo: 'Área', ver: (r) => r.area, filtro: true },
         { titulo: 'Mês/Ano', ver: (r) => (r.ano ? periodoDe({ mes: r.mes, ano: r.ano }) : '— (definir)') },
-        { titulo: 'Situação', ver: (r) => { const [t, x] = SIT_DEST[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
+        { titulo: 'Situação', filtro: (r) => SIT_DEST[r.status]?.[1] ?? r.status, ver: (r) => { const [t, x] = SIT_DEST[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
       ]}
       valoresNovos={{ foto: '', nome: '', area: '', mes: String(new Date().getMonth() + 1), ano: String(new Date().getFullYear()), apresentacao: '', consentimento_ref: '', status: 'rascunho' }}
       paraForm={(r) => ({ foto: s(r.foto), nome: r.nome, area: r.area, mes: String(r.mes ?? new Date().getMonth() + 1), ano: String(r.ano ?? new Date().getFullYear()), apresentacao: r.apresentacao, consentimento_ref: s(r.consentimento_ref), status: r.status })}
@@ -253,6 +294,7 @@ function Contatos() {
     <Crud<Cont> base="/api/gestao/contatos" rotuloItem="contato" idDe={(r) => r.id}
       introducao="Canais das áreas (e-mail, ramal, celular corporativo, ferramenta). Não cadastre dados pessoais de funcionários. A área nova é criada ao salvar."
       campos={[
+        { chave: '_pessoa', rotulo: 'Pessoa do portal', tipo: 'custom', fora: true, render: (_v, _m, _t, varios) => <EscolherPessoa dica="Preenche a área e o e-mail da pessoa como canal. Contato é um canal da área: ajuste o assunto." aoEscolher={(p) => varios({ ...(p.departamento ? { departamento: p.departamento.slice(0, 60) } : {}), ...(p.email ? { canal: p.email.slice(0, 120) } : {}) })} /> },
         { chave: 'departamento', rotulo: 'Área', obrigatorio: true, max: 60, sugestoes: areas, metade: true },
         { chave: 'nome', rotulo: 'Assunto / contato', obrigatorio: true, max: 80, dica: 'Ex.: Folha de pagamento', metade: true },
         { chave: 'canal', rotulo: 'Canal (e-mail ou link)', max: 120, dica: 'E-mail ou endereço http(s) de chamados', metade: true },
@@ -261,12 +303,12 @@ function Contatos() {
         { chave: 'publicavel', rotulo: 'Aparece no portal', tipo: 'check' },
       ]}
       colunas={[
-        { titulo: 'Área', ver: (r) => r.departamento },
+        { titulo: 'Área', ver: (r) => r.departamento, filtro: true },
         { titulo: 'Assunto', ver: (r) => r.nome },
         { titulo: 'Canal', ver: (r) => r.canal },
         { titulo: 'Ramal', ver: (r) => r.ramal ?? '' },
         { titulo: 'Celular', ver: (r) => r.celular ?? '' },
-        { titulo: 'Situação', ver: (r) => <Selo texto={r.publicavel ? 'Publicado' : 'Oculto'} tom={r.publicavel ? 'ok' : 'neutro'} /> },
+        { titulo: 'Situação', filtro: (r) => (r.publicavel ? 'Publicado' : 'Oculto'), ver: (r) => <Selo texto={r.publicavel ? 'Publicado' : 'Oculto'} tom={r.publicavel ? 'ok' : 'neutro'} /> },
       ]}
       valoresNovos={{ departamento: '', nome: '', canal: '', ramal: '', celular: '', publicavel: true }}
       paraForm={(r) => ({ departamento: r.departamento, nome: r.nome, canal: r.canal, ramal: s(r.ramal), celular: s(r.celular), publicavel: !!r.publicavel })}
@@ -294,9 +336,9 @@ function CadastroAplicacoes() {
       previa={(v) => <PreviaAplicativo v={v} />}
       colunas={[
         { titulo: 'Nome', ver: (r) => r.nome },
-        { titulo: 'Categoria', ver: (r) => r.categoria },
-        { titulo: 'Endereço', ver: (r) => <span className="trunca" title={r.url}>{r.url}</span> },
-        { titulo: 'Situação', ver: (r) => <><Selo texto={r.ativo ? 'Ativa' : 'Inativa'} tom={r.ativo ? 'ok' : 'neutro'} />{r.restrita ? <> <Selo texto="Restrita" tom="aviso" /></> : null}</> },
+        { titulo: 'Categoria', ver: (r) => r.categoria, filtro: true },
+        { titulo: 'Endereço', texto: (r) => r.url, ver: (r) => <span className="trunca" title={r.url}>{r.url}</span> },
+        { titulo: 'Situação', filtro: (r) => (r.restrita ? 'Restrita' : r.ativo ? 'Ativa' : 'Inativa'), texto: (r) => `${r.ativo ? 'Ativa' : 'Inativa'}${r.restrita ? ' Restrita' : ''}`, ver: (r) => <><Selo texto={r.ativo ? 'Ativa' : 'Inativa'} tom={r.ativo ? 'ok' : 'neutro'} />{r.restrita ? <> <Selo texto="Restrita" tom="aviso" /></> : null}</> },
       ]}
       valoresNovos={{ nome: '', categoria: '', descricao: '', url: 'https://', acesso: '', responsavel: '', icone: 'auto', logo: '', ativo: true, restrita: false }}
       paraForm={(r) => ({ nome: r.nome, categoria: r.categoria, descricao: r.descricao, url: r.url, acesso: r.acesso, responsavel: s(r.responsavel), icone: r.icone === 'users' ? 'pessoas' : r.icone === 'apps' ? 'auto' : r.icone, logo: s(r.logo), ativo: !!r.ativo, restrita: !!r.restrita })}

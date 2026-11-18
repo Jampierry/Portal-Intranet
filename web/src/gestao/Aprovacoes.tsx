@@ -6,6 +6,7 @@ import { ehVideo } from '../midia';
 import { dataCurta } from '../dados';
 import { ListaAnexos, type Anexo } from './Anexos';
 import { DetalhePedido } from './DetalhePedido';
+import { useFiltros } from './Filtros';
 
 type TipoPedido = 'comunicado' | 'rede_social' | 'banner' | 'documento';
 const NOME_TIPO: Record<TipoPedido, string> = { comunicado: 'Comunicado', rede_social: 'Rede social', banner: 'Banner', documento: 'Documento' };
@@ -35,6 +36,12 @@ export function Aprovacoes() {
   const [lendo, setLendo] = useState<Pedido | null>(null);
   const carregar = () => api<Pedido[]>(`/api/aprovacoes?situacao=${ver}`).then((r) => { setLista(r); setErro(''); }).catch((e: Error) => setErro(e.message));
   useEffect(() => { setLista(null); void carregar(); }, [ver]); // eslint-disable-line react-hooks/exhaustive-deps
+  const nomeTipo = (p: Pedido) => (p.tipo === 'rede_social' ? p.previa?.plataforma_nome ?? 'Rede social' : NOME_TIPO[p.tipo]);
+  const { filtradas, barra } = useFiltros(lista, [
+    { chave: 'tipo', rotulo: 'Tipo', valor: nomeTipo },
+    { chave: 'solicitante', rotulo: 'Enviado por', valor: (p) => p.solicitante },
+    ...(ver === 'historico' ? [{ chave: 'sit', rotulo: 'Situação', valor: (p: Pedido) => SIT[p.status]?.[1] ?? p.status }, { chave: 'decisor', rotulo: 'Decidido por', valor: (p: Pedido) => p.decisor ?? '' }] : []),
+  ], (p) => `${p.titulo} ${nomeTipo(p)} ${p.solicitante} ${p.decisor ?? ''} ${p.motivo ?? ''} ${p.detalhe ?? ''} ${SIT[p.status]?.[1] ?? ''}`);
   const aviso = () => window.dispatchEvent(new Event('aprovacoes')); // atualiza o sino
   const aprovar = async (p: Pedido) => {
     const onde = p.tipo === 'comunicado' ? 'O comunicado sobe no portal agora e todos são avisados.' : p.tipo === 'banner' ? 'O banner passa a aparecer no Início.' : p.tipo === 'documento' ? 'O documento fica visível para os colaboradores.' : 'A pessoa é avisada para publicar na plataforma.';
@@ -49,11 +56,13 @@ export function Aprovacoes() {
           <button role="tab" aria-selected={ver === 'historico'} onClick={() => setVer('historico')}>Histórico</button>
         </div>
       </div>
+      {barra()}
       {erro && <p className="erro" role="alert">{erro}</p>}
       {lista === null && !erro && <p className="vazio">Carregando…</p>}
       {lista && lista.length === 0 && <p className="vazio">{ver === 'pendentes' ? 'Nada aguardando aprovação.' : 'Nenhuma decisão registrada ainda.'}</p>}
+      {lista && lista.length > 0 && filtradas?.length === 0 && <p className="vazio">Nada encontrado com essa pesquisa e esses filtros.</p>}
       <div className="aprov-lista">
-        {(lista ?? []).map((p) => {
+        {(filtradas ?? []).map((p) => {
           const [t, x] = SIT[p.status] ?? ['neutro', p.status];
           const v = p.previa;
           return (

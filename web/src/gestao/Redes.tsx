@@ -57,12 +57,12 @@ export function RedesSociais({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         ]}
         previa={(v) => <PreviaRede v={v} plataforma={nomeDe(String(v.plataforma ?? ''))} />}
         colunas={[
-          { titulo: 'Plataforma', ver: (r) => nomeDe(r.plataforma) },
+          { titulo: 'Plataforma', ver: (r) => nomeDe(r.plataforma), filtro: true },
           { titulo: 'Título', ver: (r) => r.titulo },
-          { titulo: 'Situação', ver: (r) => { const [t, x] = SIT[r.status] ?? ['neutro', r.status]; return <><Selo texto={x} tom={t} />{r.status === 'rejeitada' && r.motivo && <small className="motivo-rej">Motivo: {r.motivo}</small>}</>; } },
+          { titulo: 'Situação', filtro: (r) => SIT[r.status]?.[1] ?? r.status, texto: (r) => `${SIT[r.status]?.[1] ?? r.status} ${r.motivo ?? ''}`, ver: (r) => { const [t, x] = SIT[r.status] ?? ['neutro', r.status]; return <><Selo texto={x} tom={t} />{r.status === 'rejeitada' && r.motivo && <small className="motivo-rej">Motivo: {r.motivo}</small>}</>; } },
           { titulo: 'Anexos', ver: (r) => <ListaAnexos anexos={r.anexos ?? []} compacta />, ordem: (r) => r.anexos?.length ?? 0 },
           { titulo: 'Data prevista', ver: (r) => dataCurta(r.data_prevista) || '—' },
-          { titulo: 'Criada por', ver: (r) => r.autor ?? '—' },
+          { titulo: 'Criada por', ver: (r) => r.autor ?? '—', filtro: true },
         ]}
         valoresNovos={{ plataforma: 'instagram', data_prevista: '', titulo: '', legenda: '', imagem: '', link: '', anexos: [] }}
         paraForm={(r) => ({ plataforma: r.plataforma, data_prevista: s(r.data_prevista), titulo: r.titulo, legenda: s(r.legenda), imagem: s(r.imagem), link: s(r.link), anexos: r.anexos ?? [] })}

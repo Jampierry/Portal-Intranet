@@ -14,6 +14,12 @@ export async function rotasPessoas(app: FastifyInstance, { db }: { db: Banco; pr
       .all(),
   );
 
+  // Pessoas com cadastro no portal (muitas vieram do Keycloak): o RH escolhe uma para preencher Destaque, Aniversariantes, Novos colaboradores e Contatos.
+  // Só nome, login, e-mail e departamento; quem não tem permissão de publicar nessas abas não vê a lista.
+  app.get('/api/gestao/pessoas-portal', { preHandler: exigirPerm('pub.destaques.criar', 'pub.destaques.editar', 'pub.aniversariantes.criar', 'pub.aniversariantes.editar', 'pub.novos.criar', 'pub.novos.editar', 'pub.contatos.criar', 'pub.contatos.editar') }, async () =>
+    db.prepare(`SELECT u.id, u.nome, u.login, COALESCE(u.email, '') AS email, COALESCE(d.nome, '') AS departamento
+                FROM usuarios u LEFT JOIN departamentos d ON d.id = u.departamento_id WHERE u.ativo = 1 ORDER BY u.nome`).all());
+
   // ----- Gestão (editor e admin) -----
   const CAMPOS = 'c.id, d.nome AS departamento, c.nome, c.canal, c.ramal, c.celular, c.publicavel';
   const buscar = (id: number) => db.prepare(`SELECT ${CAMPOS} FROM contatos c JOIN departamentos d ON d.id = c.departamento_id WHERE c.id = ?`).get(id);

@@ -248,3 +248,23 @@
   .conteudo > :first-child:not(.abas-gestao) { margin-top: 8px; }
 }
 
+
+.leitura-escolha { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.leitura-escolha button { width: 100%; display: grid; gap: 8px; text-align: left; padding: 12px 14px; border: 1px solid var(--linha); border-radius: 12px; background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+.leitura-escolha button:hover { background: var(--hover); border-color: var(--vinho); }
+.leitura-escolha button:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }
+.leitura-escolha .le-topo { display: grid; gap: 2px; }
+.leitura-escolha .le-topo b { font-size: 14px; }
+.leitura-escolha .le-num { font-size: 12px; color: var(--suave); }
+.leitura-voltar { justify-self: start; }
+@media (max-width: 860px) { .leitura-escolha { grid-template-columns: 1fr; } }
+
+/* Escolher uma pessoa do portal dentro dos formulários de Publicar */
+.escolher-pessoa { display: grid; gap: 6px; padding: 10px 12px; border: 1px dashed var(--linha); border-radius: 12px; background: var(--afundado); }
+.escolher-pessoa label { display: grid; gap: 6px; font-weight: 600; }
+.escolher-pessoa .busca-pagina { margin: 0; font-weight: 400; }
+.escolher-pessoa-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
+.escolher-pessoa-lista li { font-size: 13px; padding: 2px; }
+.escolher-pessoa-lista button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 6px 10px; border: 1px solid var(--linha); border-radius: 8px; background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+.escolher-pessoa-lista button:hover { background: var(--hover); border-color: var(--vinho); }
+.escolher-pessoa-lista button:focus-visible { outline: 2px solid var(--vinho); outline-offset: 2px; }

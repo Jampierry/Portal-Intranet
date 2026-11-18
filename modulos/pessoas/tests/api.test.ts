@@ -49,3 +49,14 @@ test('ramal e celular: validação, canal opcional quando há outro meio, e apar
   const c = pub.find((x) => x.nome === 'Plantão da manutenção')!;
   assert.deepEqual([c.ramal, c.celular, c.canal], ['2400', '(62) 99999-0000', '']);
 });
+
+test('pessoas do portal: quem publica Destaque/Aniversariantes/Novos/Contatos vê a lista; consulta não', async () => {
+  const { app } = await criarAppTeste();
+  assert.equal((await app.inject('/api/gestao/pessoas-portal')).statusCode, 401);
+  assert.equal((await app.inject({ url: '/api/gestao/pessoas-portal', headers: await entrar(app, 'le') })).statusCode, 403);
+  const r = await app.inject({ url: '/api/gestao/pessoas-portal', headers: await entrar(app, 'edita') });
+  assert.equal(r.statusCode, 200);
+  const lista = r.json<{ login: string; nome: string; email: string; departamento: string }[]>();
+  assert.ok(lista.some((p) => p.login === 'edita'));
+  assert.deepEqual(Object.keys(lista[0]).sort(), ['departamento', 'email', 'id', 'login', 'nome']); // sem senha nem permissões
+});

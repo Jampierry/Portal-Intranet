@@ -116,9 +116,9 @@ export function PesquisaPulso() {
         colunas={[
           { titulo: 'Pesquisa', ver: (r) => r.pergunta },
           { titulo: 'Perguntas', ver: (r) => r.n_perguntas, ordem: (r) => r.n_perguntas },
-          { titulo: 'Tipo', ver: (r) => (r.anonima ? 'Anônima' : 'Identificada') },
+          { titulo: 'Tipo', ver: (r) => (r.anonima ? 'Anônima' : 'Identificada'), filtro: true },
           { titulo: 'Para', ver: (r) => r.publico_texto ?? 'Todos' },
-          { titulo: 'Situação', ver: (r) => { const [t, x] = SIT[r.situacao ?? r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
+          { titulo: 'Situação', filtro: (r) => SIT[r.situacao ?? r.status]?.[1] ?? r.status, ver: (r) => { const [t, x] = SIT[r.situacao ?? r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
           { titulo: 'No ar', ver: (r) => (r.abre_em || r.fecha_em ? `${r.abre_em ? dataHora(r.abre_em) : 'já'} → ${r.fecha_em ? dataHora(r.fecha_em) : 'sem prazo'}` : '—') },
           { titulo: 'Respostas', ver: (r) => `${r.respostas}${r.rodada > 1 ? ` (rodada ${r.rodada})` : ''}`, ordem: (r) => r.respostas },
         ]}

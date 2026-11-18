@@ -1,7 +1,7 @@
 import { confirmar } from '../Confirmar.tsx';
 import { ehVideo } from '../midia';
 import { CampoDocumento } from './CampoDocumento';
-import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { useLista } from '../dados';
@@ -22,7 +22,9 @@ export interface Campo {
   /** Só para tipo 'area': altura em linhas (padrão 5). */
   linhas?: number;
   /** Só para tipo 'custom': editor próprio do campo (o valor pode ser um objeto/lista). */
-  render?: (valor: unknown, mudar: (v: unknown) => void, todos: Valores) => ReactNode;
+  render?: (valor: unknown, mudar: (v: unknown) => void, todos: Valores, mudarVarios: (p: Valores) => void) => ReactNode;
+  /** Campo só de apoio ao formulário (ex.: escolher uma pessoa): não vai no corpo salvo. */
+  fora?: boolean;
   opcoes?: [string, string][];
   obrigatorio?: boolean;
   dica?: string;
@@ -36,12 +38,12 @@ export interface Campo {
   /** Classe extra na caixa do campo (posição própria na grade do formulário). */
   classe?: string;
 }
-export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode; /** Valor para ordenar ao clicar no cabeçalho (padrão: o próprio texto da coluna). */ ordem?: (r: T) => string | number | null }
+export interface Coluna<T> { titulo: string; ver: (r: T) => ReactNode; /** Texto para a pesquisa quando a coluna é visual (selo, botão). Padrão: o próprio valor, se for texto ou número. */ texto?: (r: T) => string; /** Cria um filtro (lista de opções tiradas dos próprios dados) por esta coluna: `true` usa o texto da coluna; ou informe o valor de cada linha. */ filtro?: boolean | ((r: T) => string); /** Valor para ordenar ao clicar no cabeçalho (padrão: o próprio texto da coluna). */ ordem?: (r: T) => string | number | null }
 type Valores = Record<string, string | boolean | object>;
 
 /** Janela (dialog nativo) com formulário. Fecha com Esc ou clicando fora; erros aparecem dentro dela. */
-export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', extra, previa, children }: {
-  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; /** Janela bem larga (formulários com muito conteúdo). */ extra?: boolean; /** Seção de prévia à direita do formulário (no celular vai para baixo). */ previa?: ReactNode; children: ReactNode;
+export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar', extra, classe, previa, children }: {
+  titulo: string; aoFechar: () => void; aoEnviar: () => Promise<void>; rotuloEnviar?: string; /** Janela bem larga (formulários com muito conteúdo). */ extra?: boolean; /** Classe CSS extra da janela. */ classe?: string; /** Seção de prévia à direita do formulário (no celular vai para baixo). */ previa?: ReactNode; children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [erro, setErro] = useState('');
@@ -52,7 +54,7 @@ export function JanelaForm({ titulo, aoFechar, aoEnviar, rotuloEnviar = 'Salvar'
     try { await aoEnviar(); } catch (x) { setErro((x as Error).message); } finally { setEnviando(false); }
   };
   return (
-    <dialog className={`janela janela-larga${extra ? ' janela-extra' : ''}${previa ? ' janela-previa' : ''}`} ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
+    <dialog className={`janela janela-larga${extra ? ' janela-extra' : ''}${previa ? ' janela-previa' : ''}${classe ? ` ${classe}` : ''}`} ref={ref} onClose={aoFechar} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }} aria-label={titulo}>
       <form className="janela-form" onSubmit={enviar}>
         <header><h2>{titulo}</h2><button type="button" className="fechar" aria-label="Fechar" onClick={() => ref.current?.close()}>×</button></header>
         {previa
@@ -78,7 +80,7 @@ export function mascaraTelefone(v: string): string {
 
 function CampoForm({ c, valor, mudar, mudarVarios, todos }: { c: Campo; valor: string | boolean | object; mudar: (v: string | boolean | object) => void; mudarVarios: (p: Valores) => void; todos: Valores }) {
   const id = `f-${c.chave}`;
-  if (c.tipo === 'custom') return <div>{c.render!(valor, mudar as (v: unknown) => void, todos)}</div>;
+  if (c.tipo === 'custom') return <div>{c.render!(valor, mudar as (v: unknown) => void, todos, mudarVarios)}</div>;
   if (c.tipo === 'check') return <label className="linha" htmlFor={id}><input id={id} type="checkbox" checked={!!valor} onChange={(e) => mudar(e.target.checked)} /><RotuloDica texto={c.rotulo} dica={c.dica} /></label>;
   const comum = { id, value: String(valor ?? ''), required: c.obrigatorio, maxLength: c.max };
   if (c.tipo === 'link') return <CampoLink rotulo={c.rotulo} id={id} valor={String(valor ?? '')} mudar={mudar} dica={c.dica} obrigatorio={c.obrigatorio} metade={c.metade} />;
@@ -177,14 +179,25 @@ function SeletorComNova({ c, id, valor, mudar }: { c: Campo; id: string; valor: 
 }
 
 /** Tela de cadastro genérica (lista + novo/editar/apagar) usada em comunicados, documentos, destaques e aplicações. */
-export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, introducao, feminino, larga, gradeClasse, previa }: {
+export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos, paraForm, podeApagar, acoesExtra, barraExtra, introducao, feminino, larga, gradeClasse, previa }: {
   base: string; rotuloItem: string; idDe: (r: T) => string | number; campos: Campo[]; colunas: Coluna<T>[];
   valoresNovos: Valores; paraForm: (r: T) => Valores; podeApagar?: (r: T) => boolean;
-  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>, recarregar: () => void) => ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
+  acoesExtra?: (r: T, salvar: (v: Valores) => Promise<void>, recarregar: () => void) => ReactNode; /** Botões extras na barra do topo, à direita do botão de novo item. */ barraExtra?: ReactNode; introducao?: string; /** Item de gênero feminino ("Nova pesquisa", "salva"). */ feminino?: boolean; /** Janela de cadastro larga. */ larga?: boolean; /** Classe extra na grade do formulário. */ gradeClasse?: string;
   /** Prévia ao vivo à direita do formulário, recebe os valores digitados. */ previa?: (v: Valores) => ReactNode;
 }) {
   const { dados, erro, recarregar } = useLista<T>(base);
-  const ord = useOrdenacao(dados, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
+  const [busca, setBusca] = useState('');
+  const [filtros, setFiltros] = useState<Record<string, string>>({});
+  const textoDe = (c: Coluna<T>, r: T): string => { if (c.texto) return c.texto(r); if (typeof c.filtro === 'function') return c.filtro(r); const v = c.ver(r); return typeof v === 'string' || typeof v === 'number' ? String(v) : ''; };
+  const valorFiltro = (c: Coluna<T>, r: T) => (typeof c.filtro === 'function' ? c.filtro(r) : textoDe(c, r));
+  const colunasFiltro = colunas.filter((c) => c.filtro);
+  const opcoesFiltro = useMemo(() => Object.fromEntries(colunasFiltro.map((c) => [c.titulo, [...new Set((dados ?? []).map((r) => valorFiltro(c, r)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))])), [dados]); // eslint-disable-line react-hooks/exhaustive-deps
+  const filtradas = useMemo(() => {
+    if (!dados) return dados;
+    const alvo = semAcentoBusca(busca.trim());
+    return dados.filter((r) => colunasFiltro.every((c) => !filtros[c.titulo] || valorFiltro(c, r) === filtros[c.titulo]) && (!alvo || semAcentoBusca(colunas.map((c) => textoDe(c, r)).join(' ')).includes(alvo)));
+  }, [dados, busca, filtros]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ord = useOrdenacao(filtradas, Object.fromEntries(colunas.map((c) => [c.titulo, (r: T) => (c.ordem ? c.ordem(r) : valorOrdenavel(c.ver(r)))])));
   const perms = usePermissoes();
   const area = areaDe(base);
   const libera = (acao: string) => perms === null || perms.includes(`pub.${area}.${acao}`);
@@ -195,7 +208,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
 
   const salvar = async (id: string | number | null, v: Valores) => {
     const corpo: Record<string, unknown> = {};
-    for (const c of campos) corpo[c.chave] = v[c.chave];
+    for (const c of campos) if (!c.fora) corpo[c.chave] = v[c.chave];
     if (id === null) await api(base, corpo); else await api(`${base}/${encodeURIComponent(String(id))}`, corpo, 'PUT');
     recarregar();
   };
@@ -209,10 +222,22 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
   return (
     <section className="crud">
       {introducao && !libera('criar') && <DicaAba>{introducao}</DicaAba>}
-      {libera('criar') && <div className="barra barra-fim">
-        {introducao && <Dica lado="dir">{introducao}</Dica>}
-        <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> {g.novo} {rotuloItem}</button>
-      </div>}
+      <div className="barra filtros-usuarios">
+        <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar nesta lista" aria-label={`Pesquisar ${rotuloItem}`} /></label>
+        {colunasFiltro.map((c) => (
+          <select key={c.titulo} value={filtros[c.titulo] ?? ''} onChange={(e) => setFiltros((f) => ({ ...f, [c.titulo]: e.target.value }))} aria-label={`Filtrar por ${c.titulo.toLowerCase()}`}>
+            <option value="">{c.titulo}: todas</option>
+            {(opcoesFiltro[c.titulo] ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ))}
+        {(busca || Object.values(filtros).some(Boolean)) && <button type="button" className="btn btn-sec btn-pequeno" onClick={() => { setBusca(''); setFiltros({}); }}>Limpar</button>}
+        {dados && <span className="suave" aria-live="polite">{filtradas?.length ?? 0} de {dados.length}</span>}
+        {libera('criar') && <span className="barra-fim-grupo">
+          {introducao && <Dica lado="dir">{introducao}</Dica>}
+          <button className="btn" onClick={() => setEdit({ id: null, v: valoresNovos })}><Icone nome="mais" tamanho={15} /> {g.novo} {rotuloItem}</button>
+          {barraExtra}
+        </span>}
+      </div>
       {aviso && <p className="ok" role="status">{aviso}</p>}
       {(erro || falha) && <p className="erro" role="alert">{erro || falha}</p>}
       {dados === null && !erro && <p className="vazio">Carregando…</p>}
@@ -221,7 +246,7 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
           <table className="dados">
             <thead><tr>{colunas.map((c) => ord.cab(c.titulo, c.titulo))}<th className="col-acoes">Ações</th></tr></thead>
             <tbody>
-              {dados.length === 0 && <tr><td colSpan={colunas.length + 1} className="vazio">Nada cadastrado ainda.</td></tr>}
+              {(ord.linhas ?? []).length === 0 && <tr><td colSpan={colunas.length + 1} className="vazio">{dados.length === 0 ? 'Nada cadastrado ainda.' : 'Nada encontrado com essa pesquisa e esses filtros.'}</td></tr>}
               {(ord.linhas ?? []).map((r) => {
                 const nome = String(colunas[0].ver(r));
                 return (
@@ -254,6 +279,8 @@ export function Crud<T>({ base, rotuloItem, idDe, campos, colunas, valoresNovos,
     </section>
   );
 }
+
+const semAcentoBusca = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Etiqueta de situação (rascunho, publicado…). */
 export function Selo({ texto, tom }: { texto: string; tom: 'ok' | 'aviso' | 'neutro' | 'erro' }) {

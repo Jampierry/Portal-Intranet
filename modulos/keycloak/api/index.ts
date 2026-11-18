@@ -41,7 +41,7 @@ function loginLivre(db: Banco, sugestao: string): string {
 }
 
 /** Pessoa do realm do Keycloak, no formato que a tela de Usuários usa. */
-export interface PessoaKeycloak { id: string; nome: string; login: string; email: string; ativo: boolean; /** Setor/departamento, se algum atributo conhecido do usuário no Keycloak o traz. */ departamento: string; /** Nome do atributo de onde veio o departamento (ou vazio). */ departamento_campo: string; /** Todos os atributos do usuário (primeiro valor de cada), para a tela mostrar o que existe. */ atributos: Record<string, string> }
+export interface PessoaKeycloak { id: string; nome: string; login: string; email: string; ativo: boolean; /** Setor/departamento, se algum atributo conhecido do usuário no Keycloak o traz. */ departamento: string; /** Nome do atributo de onde veio o departamento (ou vazio). */ departamento_campo: string; /** Caminhos dos grupos do Keycloak a que a pessoa pertence (ex.: /Lojas/Goiânia). */ grupos: string[]; /** Todos os atributos do usuário (primeiro valor de cada), para a tela mostrar o que existe. */ atributos: Record<string, string> }
 
 /** Atributos comuns de setor em Keycloak/AD/LDAP, em ordem de preferência (KEYCLOAK_ATRIBUTO_DEPARTAMENTO força um nome). */
 const ATRIBUTOS_DEPARTAMENTO = ['department', 'departamento', 'setor', 'sector', 'departmentnumber', 'ou', 'organizationalunit', 'area', 'área', 'lotacao', 'lotação', 'unidade', 'division', 'divisao', 'company', 'empresa', 'physicaldeliveryofficename'];
@@ -78,11 +78,41 @@ export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env
       const atributos: Record<string, string> = {};
       for (const [k, v] of Object.entries(u.attributes ?? {})) { const x = String(Array.isArray(v) ? v[0] ?? '' : v ?? '').trim(); if (x) atributos[k] = x.slice(0, 200); }
       const dep = departamentoDe(atributos, env.KEYCLOAK_ATRIBUTO_DEPARTAMENTO?.trim());
-      lista.push({ id: u.id, nome: nome || u.username || '', login: String(u.username ?? ''), email: String(u.email ?? '').trim().toLowerCase(), ativo: u.enabled !== false, departamento: dep.valor.slice(0, 80), departamento_campo: dep.campo, atributos });
+      lista.push({ id: u.id, nome: nome || u.username || '', login: String(u.username ?? ''), email: String(u.email ?? '').trim().toLowerCase(), ativo: u.enabled !== false, departamento: dep.valor.slice(0, 80), departamento_campo: dep.campo, grupos: [], atributos });
     }
     if (pagina.length < TAM) break;
   }
+  await anexarGrupos(cfg.admin, tj.access_token, lista);
   return lista;
+}
+
+/** Lê a árvore de grupos e os membros de cada um (somente leitura) e preenche `grupos`; sem atributo de setor, o grupo vira o departamento.
+ *  Falha em silêncio (a lista de pessoas continua valendo) se a conta de serviço não puder ler grupos. Limites: 600 grupos. */
+async function anexarGrupos(admin: string, token: string, lista: PessoaKeycloak[]) {
+  const H = { Authorization: `Bearer ${token}` };
+  const ler = async <T>(url: string): Promise<T | null> => {
+    const r = await fetch(url, { headers: H, signal: AbortSignal.timeout(15_000) }).catch(() => null);
+    return r && r.ok ? await r.json() as T : null;
+  };
+  interface G { id: string; name: string; path: string; subGroupCount?: number; subGroups?: G[] }
+  const grupos: G[] = [];
+  const fila: G[] = (await ler<G[]>(`${admin}/groups?first=0&max=500&briefRepresentation=true`)) ?? [];
+  while (fila.length && grupos.length < 600) {
+    const g = fila.shift()!;
+    grupos.push(g);
+    const filhos = g.subGroups?.length ? g.subGroups : (g.subGroupCount ?? 0) > 0 ? ((await ler<G[]>(`${admin}/groups/${g.id}/children?first=0&max=500`)) ?? []) : [];
+    fila.push(...filhos);
+  }
+  const porId = new Map(lista.map((p) => [p.id, p]));
+  for (const g of grupos) {
+    for (let primeiro = 0; primeiro < 10_000; primeiro += 200) {
+      const m = await ler<{ id: string }[]>(`${admin}/groups/${g.id}/members?first=${primeiro}&max=200&briefRepresentation=true`);
+      if (!m) break;
+      for (const u of m) porId.get(u.id)?.grupos.push(g.path || `/${g.name}`);
+      if (m.length < 200) break;
+    }
+  }
+  for (const p of lista) if (!p.departamento && p.grupos.length) { p.departamento = p.grupos.map((c) => c.split('/').filter(Boolean).pop() ?? c).join(', ').slice(0, 80); p.departamento_campo = 'grupo'; }
 }
 export class ErroKeycloak extends Error {
   status: number;

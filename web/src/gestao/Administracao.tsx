@@ -1,3 +1,4 @@
+import { useFiltros } from './Filtros';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../api';
 import { confirmar } from '../Confirmar';
@@ -151,7 +152,7 @@ function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id:
   );
 }
 
-interface PessoaKc { id: string; nome: string; login: string; email: string; ativo: boolean; departamento: string; departamento_campo: string; atributos: Record<string, string> }
+interface PessoaKc { id: string; nome: string; login: string; email: string; ativo: boolean; departamento: string; departamento_campo: string; grupos: string[]; atributos: Record<string, string> }
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Aba "Sem cadastro": pessoas do Keycloak que ainda não têm usuário no portal. Cadastrar abre o formulário já preenchido, para ajustar o que for preciso. */
@@ -188,7 +189,7 @@ function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => vo
               {(ord.linhas ?? []).map((p) => (
                 <tr key={p.id}>
                   <td data-rotulo="Nome">{p.nome || '—'}</td><td data-rotulo="Login no Keycloak">{p.login || '—'}</td><td data-rotulo="E-mail">{p.email || '—'}</td>
-                  <td data-rotulo="Departamento (Keycloak)" title={p.departamento_campo ? `Atributo "${p.departamento_campo}"` : Object.keys(p.atributos).length ? `Atributos existentes: ${Object.keys(p.atributos).join(', ')}` : 'Nenhum atributo preenchido no Keycloak'}>{p.departamento || '—'}</td>
+                  <td data-rotulo="Departamento (Keycloak)" title={p.grupos.length ? `Grupos no Keycloak: ${p.grupos.join(' · ')}` : p.departamento_campo ? `Atributo "${p.departamento_campo}"` : Object.keys(p.atributos).length ? `Atributos existentes: ${Object.keys(p.atributos).join(', ')}` : 'Sem atributo de setor nem grupo no Keycloak'}>{p.departamento || '—'}</td>
                   <td data-rotulo="Situação no Keycloak"><Selo texto={p.ativo ? 'Ativa' : 'Desativada'} tom={p.ativo ? 'ok' : 'neutro'} /></td>
                   <td className="col-acoes"><button className="btn btn-pequeno" onClick={() => aoCadastrar(p)}><Icone nome="mais" tamanho={13} /> Cadastrar</button></td>
                 </tr>
@@ -396,17 +397,22 @@ function resumo(detalhe: string | null): string {
 
 function Auditoria() {
   const { dados, erro } = useLista<{ id: number; quando: string; usuario: string | null; acao: string; detalhe: string | null }>('/api/auditoria');
-  const ord = useOrdenacao(dados, { quando: (l) => l.quando, quem: (l) => l.usuario, acao: (l) => ACAO[l.acao] ?? l.acao, detalhe: (l) => resumo(l.detalhe) });
+  const { filtradas, barra } = useFiltros(dados, [
+    { chave: 'quem', rotulo: 'Quem', valor: (l) => l.usuario ?? '' },
+    { chave: 'acao', rotulo: 'O quê', valor: (l) => ACAO[l.acao] ?? l.acao },
+  ], (l) => `${l.usuario ?? ''} ${ACAO[l.acao] ?? l.acao} ${resumo(l.detalhe)} ${new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`);
+  const ord = useOrdenacao(filtradas, { quando: (l) => l.quando, quem: (l) => l.usuario, acao: (l) => ACAO[l.acao] ?? l.acao, detalhe: (l) => resumo(l.detalhe) });
   return (
     <section className="crud">
       <DicaAba>Últimos 200 registros. A auditoria só aceita inclusão: ninguém consegue alterar ou apagar o histórico. Senhas nunca são gravadas.</DicaAba>
+      {barra()}
       {erro && <p className="erro" role="alert">{erro}</p>}
       {dados && (
         <div className="rolagem">
           <table className="dados">
             <thead><tr>{ord.cab('quando', 'Quando')}{ord.cab('quem', 'Quem')}{ord.cab('acao', 'O quê')}{ord.cab('detalhe', 'Detalhe')}</tr></thead>
             <tbody>
-              {dados.length === 0 && <tr><td colSpan={4} className="vazio">Sem registros.</td></tr>}
+              {(ord.linhas ?? []).length === 0 && <tr><td colSpan={4} className="vazio">{dados.length === 0 ? 'Sem registros.' : 'Nada encontrado com essa pesquisa e esses filtros.'}</td></tr>}
               {(ord.linhas ?? []).map((l) => (
                 <tr key={l.id}>
                   <td className="nowrap" data-rotulo="Quando">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
