@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { BotaoLimpar } from '../BotaoLimpar';
 import { useEffect, useId, useState } from 'react';
 import { api } from '../api';
@@ -30,14 +31,14 @@ export function EscolherPessoa({ aoEscolher, dica }: { aoEscolher: (p: PessoaPor
       </label>
       {dica && <small className="suave">{dica}</small>}
       {erro && <p className="erro" role="alert">{erro}</p>}
-      {escolhida && !alvo && <small className="ok" role="status">Preenchido com os dados de {escolhida.nome}. Ajuste o que for preciso.</small>}
+      {escolhida && !alvo && <small className="ok" role="status">Preenchido com os dados de {maiusc(escolhida.nome)}. Ajuste o que for preciso.</small>}
       {alvo && (
         <ul id={idLista} className="escolher-pessoa-lista" role="listbox" aria-label="Pessoas encontradas">
           {achadas.length === 0 && <li className="suave">Ninguém encontrado. Quem ainda não tem cadastro entra em Configurações › Usuários › Sem cadastro.</li>}
           {achadas.map((p) => (
             <li key={p.id} role="option" aria-selected={escolhida?.id === p.id}>
               <button type="button" onClick={() => { setEscolhida(p); setQ(''); aoEscolher(p); }}>
-                <b>{p.nome}</b><small className="suave">{[p.departamento, p.email || p.login].filter(Boolean).join(' · ')}</small>
+                <b>{maiusc(p.nome)}</b><small className="suave">{[maiusc(p.departamento), p.email || p.login].filter(Boolean).join(' · ')}</small>
               </button>
             </li>
           ))}

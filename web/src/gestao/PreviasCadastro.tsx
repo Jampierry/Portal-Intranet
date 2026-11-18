@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import type { ReactNode } from 'react';
 import { Capa } from '../Capa';
 import { Icone } from '../icones';
@@ -82,7 +83,7 @@ export function PreviaPessoa({ v, periodo, extra, dica, avisos }: { v: V; period
             <Capa semente={nome} icone="pessoas" foto={t(v.foto) || null} classe="capa-pessoa">{!t(v.foto) && <span className="iniciais-capa">{iniciais(nome) || '?'}</span>}</Capa>
             {periodo && <span className="pessoa-periodo">{periodo}</span>}
           </div>
-          <div><h3 title={nome}>{nome}</h3><small className="area">{t(v.area) || 'Área'}</small>{extra && <p>{extra}</p>}</div>
+          <div><h3 title={maiusc(nome)}>{maiusc(nome)}</h3><small className="area">{maiusc(t(v.area)) || 'ÁREA'}</small>{extra && <p>{extra}</p>}</div>
         </article>
       </div>
     </Painel>

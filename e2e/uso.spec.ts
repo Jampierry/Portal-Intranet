@@ -23,15 +23,15 @@ test('administrador vê o uso por departamento e por pessoa e pode filtrar; sem 
   await page.getByRole('tab', { name: 'Uso do portal' }).click();
   await expect(page.getByText('Pessoas ativas', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Telas mais usadas' })).toBeVisible();
-  const linhaDepto = page.getByRole('row', { name: new RegExp(`^Vendas ${id}`) });
+  const linhaDepto = page.getByRole('row', { name: new RegExp(`^Vendas ${id}`, 'i') });
   await expect(linhaDepto).toContainText('100%');
-  const linhaPessoa = page.getByRole('row', { name: new RegExp(`Vendedora ${id}`) });
-  await expect(linhaPessoa).toContainText(`Vendas ${id}`);
+  const linhaPessoa = page.getByRole('row', { name: new RegExp(`Vendedora ${id}`, 'i') });
+  await expect(linhaPessoa).toContainText(new RegExp(`Vendas ${id}`, 'i'));
   await expect(linhaPessoa).toContainText('Comunicados');
 
   // filtrar por departamento
-  await page.getByLabel('Departamento', { exact: true }).selectOption({ label: `Vendas ${id}` });
-  await expect(page.getByRole('row', { name: new RegExp(`Vendedora ${id}`) })).toBeVisible();
+  await page.getByLabel('Departamento', { exact: true }).selectOption({ label: `VENDAS ${id}`.toUpperCase() });
+  await expect(page.getByRole('row', { name: new RegExp(`Vendedora ${id}`, 'i') })).toBeVisible();
   await expect(page.getByRole('row', { name: /Admin/ })).toHaveCount(0);
 
   expect((await ctx.get('/api/gestao/uso/resumo')).status()).toBe(403);

@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { useEffect, useRef, useState } from 'react';
 import { Icone } from '../icones';
 import { periodoDe, useLista, type Destaque } from '../dados';
@@ -58,7 +59,7 @@ export function Destaques({ compacto = false }: { compacto?: boolean }) {
                           <Capa semente={d.nome} icone="pessoas" foto={d.foto} classe="capa-pessoa">{!d.foto && <span className="iniciais-capa">{d.iniciais}</span>}</Capa>
                           {tipo === 'ano' && <span className="pessoa-periodo" title={`Colaborador destaque de ${periodoDe(d)}`}>{periodoDe(d)}</span>}
                         </div>
-                        <div><h3 title={d.nome}>{d.nome}</h3><small className="area">{d.area}</small><p>{d.apresentacao}</p></div>
+                        <div><h3 title={maiusc(d.nome)}>{maiusc(d.nome)}</h3><small className="area">{maiusc(d.area)}</small><p>{d.apresentacao}</p></div>
                       </article>
                     ))}
                   </div>

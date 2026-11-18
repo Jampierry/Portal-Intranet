@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { Icone } from '../icones';
@@ -45,7 +46,7 @@ function CartaoPessoas({ id, titulo, itens, vazio, deslocar = 0 }: { id: string;
                       <Capa semente={t.nome} icone="pessoas" foto={t.foto} classe="capa-pessoa">{!t.foto && <span className="iniciais-capa">{t.iniciais}</span>}</Capa>
                       <span className="pessoa-periodo">{t.chip}</span>
                     </div>
-                    <div><h3 title={t.nome}>{t.nome}</h3><small className="area">{t.linha}</small></div>
+                    <div><h3 title={maiusc(t.nome)}>{maiusc(t.nome)}</h3><small className="area">{t.linha}</small></div>
                   </article>
                 ))}
               </div>
@@ -93,11 +94,11 @@ export function PessoasDoMes() {
     {aniversarioEmpresa}
     <div className="pessoas-mes" aria-label="Pessoas do mês">
       <CartaoPessoas id="pm-aniv" titulo={`Aniversariantes de ${mes}`} vazio={`Nenhum aniversariante em ${mes} por enquanto.`}
-          itens={aniversariantes.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: a.area, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
+          itens={aniversariantes.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: maiusc(a.area), chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
       <CartaoPessoas id="pm-casa" titulo="Tempo de casa" deslocar={600} vazio={`Ninguém completa ano de casa em ${mes}.`}
           itens={casa.map((a) => ({ chave: `${a.nome}|${a.dia}`, nome: a.nome, foto: a.foto, iniciais: a.iniciais, linha: `${a.anos} ${a.anos === 1 ? 'ano' : 'anos'} · ${a.area}`, chip: a.hoje ? 'Hoje' : `${a.dia} ${mes.slice(0, 3)}`, hoje: a.hoje }))} />
       <CartaoPessoas id="pm-novos" titulo="Novos colaboradores" deslocar={1200} vazio="Nenhum novo colaborador nos últimos 30 dias."
-          itens={novos.map((n) => ({ chave: `${n.nome}|${n.entrada}`, nome: n.nome, foto: n.foto, iniciais: n.iniciais, linha: [n.funcao, n.area].filter(Boolean).join(' · '), chip: dataCurta(n.entrada), dica: n.mensagem ?? undefined }))} />
+          itens={novos.map((n) => ({ chave: `${n.nome}|${n.entrada}`, nome: n.nome, foto: n.foto, iniciais: n.iniciais, linha: [n.funcao, maiusc(n.area)].filter(Boolean).join(' · '), chip: dataCurta(n.entrada), dica: n.mensagem ?? undefined }))} />
     </div>
     </>
   );

@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { dataCurta } from '../dados';
@@ -137,7 +138,7 @@ export function UsoPortal() {
                 <tbody>
                   {resumo.departamentos.map((d) => (
                     <tr key={d.id ?? 'sem'}>
-                      <td data-rotulo="Departamento">{d.nome}</td><td data-rotulo="Pessoas">{d.pessoas}</td><td data-rotulo="Ativas">{d.ativos}</td>
+                      <td data-rotulo="Departamento">{maiusc(d.nome)}</td><td data-rotulo="Pessoas">{d.pessoas}</td><td data-rotulo="Ativas">{d.ativos}</td>
                       <td data-rotulo="Adoção" className="uso-adocao"><Barra valor={d.ativos} max={d.pessoas} rotulo={`${d.nome}: ${pct(d.ativos, d.pessoas)}%`} /> {pct(d.ativos, d.pessoas)}%</td>
                     </tr>
                   ))}
@@ -163,7 +164,7 @@ export function UsoPortal() {
             <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pessoa…" aria-label="Buscar pessoa" />
             <select value={depto} onChange={(e) => setDepto(e.target.value)} aria-label="Departamento">
               <option value="">Todos os departamentos</option>
-              {resumo.departamentos.map((d) => <option key={d.id ?? 0} value={d.id ?? 0}>{d.nome}</option>)}
+              {resumo.departamentos.map((d) => <option key={d.id ?? 0} value={d.id ?? 0}>{maiusc(d.nome)}</option>)}
             </select>
             <label className="linha"><input type="checkbox" checked={soSemAcesso} onChange={(e) => setSoSemAcesso(e.target.checked)} />Só quem não acessou</label>
           </div>
@@ -173,8 +174,8 @@ export function UsoPortal() {
               <tbody>
                 {(ord.linhas ?? []).map((p) => (
                   <tr key={p.id}>
-                    <td data-rotulo="Pessoa" title={`${p.nome} (${p.login}) · ${p.perfil_nome}`}>{p.nome}</td>
-                    <td data-rotulo="Departamento">{p.departamento ?? '—'}</td>
+                    <td data-rotulo="Pessoa" title={`${maiusc(p.nome)} (${p.login}) · ${p.perfil_nome}`}>{maiusc(p.nome)}</td>
+                    <td data-rotulo="Departamento">{maiusc(p.departamento) || '—'}</td>
                     <td data-rotulo="Último acesso">{p.ultimo_acesso ? dataCurta(p.ultimo_acesso) : 'Nunca'}</td>
                     <td data-rotulo="Dias ativos">{p.dias_ativos}</td><td data-rotulo="Entradas">{p.entradas}</td><td data-rotulo="Telas">{p.telas}</td>
                     <td data-rotulo="Aparelho">{p.aparelho ? (p.aparelho === 'celular' ? 'Celular' : 'Computador') : '—'}</td>

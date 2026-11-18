@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { BotaoLimpar } from '../BotaoLimpar';
 import { useMemo, useState } from 'react';
 import { Icone } from '../icones';
@@ -37,7 +38,7 @@ export function Pessoas({ busca, limparBusca }: { busca: string; limparBusca: ()
       <div className="grade-areas">
         {areas.map(([area, contatos]) => (
           <section className="cartao-area" key={area} aria-labelledby={`area-${area}`}>
-            <h2 id={`area-${area}`}><span className="mini-ico"><Icone nome="pessoas" tamanho={18} /></span>{area}</h2>
+            <h2 id={`area-${area}`}><span className="mini-ico"><Icone nome="pessoas" tamanho={18} /></span>{maiusc(area)}</h2>
             <ul>
               {contatos.map((c) => <li key={c.id}><b>{c.nome}</b><Canal canal={c.canal} />
                 {c.ramal && <span className="canal"><Icone nome="telefone" tamanho={14} /> Ramal {c.ramal}</span>}

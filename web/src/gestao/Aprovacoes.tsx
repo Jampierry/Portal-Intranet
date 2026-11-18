@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { avisar, confirmar } from '../Confirmar';
@@ -19,7 +20,7 @@ function Rejeitar({ p, aoFechar, aoConcluir }: { p: Pedido; aoFechar: () => void
   return (
     <JanelaForm titulo="Rejeitar publicação" rotuloEnviar="Rejeitar e avisar" aoFechar={aoFechar}
       aoEnviar={async () => { await api(`/api/aprovacoes/${p.id}/decidir`, { aprovar: false, motivo }); aoConcluir(); }}>
-      <p style={{ marginTop: 0 }}>«<b>{p.titulo}</b>», enviado por {p.solicitante}.</p>
+      <p style={{ marginTop: 0 }}>«<b>{p.titulo}</b>», enviado por {maiusc(p.solicitante)}.</p>
       <label>Motivo da rejeição *<textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={4} minLength={3} maxLength={500} required placeholder="Explique o que precisa mudar. A pessoa recebe esta mensagem." /></label>
     </JanelaForm>
   );
@@ -39,8 +40,8 @@ export function Aprovacoes() {
   const nomeTipo = (p: Pedido) => (p.tipo === 'rede_social' ? p.previa?.plataforma_nome ?? 'Rede social' : NOME_TIPO[p.tipo]);
   const { filtradas, barra } = useFiltros(lista, [
     { chave: 'tipo', rotulo: 'Tipo', valor: nomeTipo },
-    { chave: 'solicitante', rotulo: 'Enviado por', valor: (p) => p.solicitante },
-    ...(ver === 'historico' ? [{ chave: 'sit', rotulo: 'Situação', valor: (p: Pedido) => SIT[p.status]?.[1] ?? p.status }, { chave: 'decisor', rotulo: 'Decidido por', valor: (p: Pedido) => p.decisor ?? '' }] : []),
+    { chave: 'solicitante', rotulo: 'Enviado por', valor: (p) => maiusc(p.solicitante) },
+    ...(ver === 'historico' ? [{ chave: 'sit', rotulo: 'Situação', valor: (p: Pedido) => SIT[p.status]?.[1] ?? p.status }, { chave: 'decisor', rotulo: 'Decidido por', valor: (p: Pedido) => maiusc(p.decisor) }] : []),
   ], (p) => `${p.titulo} ${nomeTipo(p)} ${p.solicitante} ${p.decisor ?? ''} ${p.motivo ?? ''} ${p.detalhe ?? ''} ${SIT[p.status]?.[1] ?? ''}`);
   const aviso = () => window.dispatchEvent(new Event('aprovacoes')); // atualiza o sino
   const aprovar = async (p: Pedido) => {
@@ -72,7 +73,7 @@ export function Aprovacoes() {
                 <Selo texto={x} tom={t} />
               </header>
               <h3>{p.titulo}</h3>
-              <small className="suave">Enviado por {p.solicitante} · {dataCurta(p.criado_em)}{p.decisor ? ` · decidido por ${p.decisor}${p.decidido_em ? ` em ${dataCurta(p.decidido_em)}` : ''}` : ''}</small>
+              <small className="suave">Enviado por {maiusc(p.solicitante)} · {dataCurta(p.criado_em)}{p.decisor ? ` · decidido por ${maiusc(p.decisor)}${p.decidido_em ? ` em ${dataCurta(p.decidido_em)}` : ''}` : ''}</small>
               {v && (
                 <div className="aprov-previa">
                   {v.imagem && (ehVideo(v.imagem) ? <video src={v.imagem} muted loop playsInline autoPlay aria-hidden="true" /> : <img src={v.imagem} alt="" />)}

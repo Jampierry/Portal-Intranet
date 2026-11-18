@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { api } from '../api';
 import { Icone } from '../icones';
 import { useEffect, useMemo, useState } from 'react';
@@ -41,7 +42,7 @@ function IndicadorGrupo({ titulo, itens }: { titulo: string; itens: Grupo[] }) {
       <h3>{titulo}</h3>
       <ul className="leitura-ind">
         {itens.length === 0 ? <li className="suave">Sem dados.</li> : itens.map((g) => (
-          <li key={g.nome}><span className="leitura-ind-nome">{g.nome}</span><span className="leitura-barra" aria-hidden="true"><i style={{ width: `${pctDe(g.lidos, g.total)}%` }} /></span><small>{g.lidos}/{g.total} · {pctDe(g.lidos, g.total)}%</small></li>
+          <li key={g.nome}><span className="leitura-ind-nome">{maiusc(g.nome)}</span><span className="leitura-barra" aria-hidden="true"><i style={{ width: `${pctDe(g.lidos, g.total)}%` }} /></span><small>{g.lidos}/{g.total} · {pctDe(g.lidos, g.total)}%</small></li>
         ))}
       </ul>
     </section>
@@ -70,9 +71,9 @@ function LeiturasComunicado({ c, aoFechar, aoVoltar }: { c: Com; aoFechar: () =>
           </div>
           <div className="leitura-listas">
             <section className="leitura-card" aria-label="Confirmaram"><h3>Confirmaram ({dados.lidos.length})</h3>
-              <ul>{dados.lidos.length === 0 ? <li className="suave">Ninguém ainda.</li> : dados.lidos.map((p) => <li key={p.login}><span>{p.nome}<small className="suave">{[p.funcao, p.departamento].filter(Boolean).join(' · ')}</small></span><small className="suave">{dataCurta(p.lido_em.slice(0, 10))}</small></li>)}</ul></section>
+              <ul>{dados.lidos.length === 0 ? <li className="suave">Ninguém ainda.</li> : dados.lidos.map((p) => <li key={p.login}><span>{maiusc(p.nome)}<small className="suave">{[maiusc(p.funcao), maiusc(p.departamento)].filter(Boolean).join(' · ')}</small></span><small className="suave">{dataCurta(p.lido_em.slice(0, 10))}</small></li>)}</ul></section>
             <section className="leitura-card" aria-label="Faltam"><h3>Faltam ({dados.pendentes.length})</h3>
-              <ul>{dados.pendentes.length === 0 ? <li className="suave">Todos confirmaram.</li> : dados.pendentes.map((p) => <li key={p.login}><span>{p.nome}<small className="suave">{[p.funcao, p.departamento].filter(Boolean).join(' · ')}</small></span><small className="suave">{p.login}</small></li>)}</ul></section>
+              <ul>{dados.pendentes.length === 0 ? <li className="suave">Todos confirmaram.</li> : dados.pendentes.map((p) => <li key={p.login}><span>{maiusc(p.nome)}<small className="suave">{[maiusc(p.funcao), maiusc(p.departamento)].filter(Boolean).join(' · ')}</small></span><small className="suave">{p.login}</small></li>)}</ul></section>
           </div>
         </div>
       )}
@@ -242,7 +243,7 @@ function Documentos({ exigeAprovacao }: { exigeAprovacao: boolean }) {
         { titulo: 'Título', ver: (r) => r.titulo },
         { titulo: 'Categoria', ver: (r) => r.categoria, filtro: true },
         { titulo: 'Versão', ver: (r) => r.versao ?? '—' },
-        { titulo: 'Responsável', ver: (r) => r.responsavel ?? '—' },
+        { titulo: 'Responsável', ver: (r) => maiusc(r.responsavel) || '—' },
         { titulo: 'Acesso', filtro: (r) => (r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'), ver: (r) => <Selo texto={r.classificacao === 'restrito' ? 'Restrito' : 'Liberado'} tom={r.classificacao === 'restrito' ? 'aviso' : 'ok'} /> },
         { titulo: 'Origem', filtro: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? 'Servidor' : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link'), ver: (r) => (!r.link_oficial ? 'Sem endereço' : r.origem === 'pasta' ? 'Pasta do portal' : r.origem === 'servidor' ? `Servidor: ${(origens ?? []).find((o) => o.id === r.origem_id)?.nome ?? '—'}` : r.origem === 'rede' ? 'Caminho de rede (antigo)' : 'Link') },
       ]}
@@ -275,8 +276,8 @@ function Destaques() {
       ]}
       previa={(v) => <PreviaPessoa v={v} periodo={mesAno(v)} extra={String(v.apresentacao ?? '').trim() || 'O texto de reconhecimento aparece aqui.'} dica="Assim a pessoa aparece no bloco Colaborador Destaque do Início (a faixa com o mês e ano aparece na aba Ano)." avisos={v.status === 'aprovado' ? [] : ['Só aparece no portal quando estiver Aprovado.']} />}
       colunas={[
-        { titulo: 'Nome', ver: (r) => r.nome },
-        { titulo: 'Área', ver: (r) => r.area, filtro: true },
+        { titulo: 'Nome', ver: (r) => maiusc(r.nome) },
+        { titulo: 'Área', ver: (r) => maiusc(r.area), filtro: true },
         { titulo: 'Mês/Ano', ver: (r) => (r.ano ? periodoDe({ mes: r.mes, ano: r.ano }) : '— (definir)') },
         { titulo: 'Situação', filtro: (r) => SIT_DEST[r.status]?.[1] ?? r.status, ver: (r) => { const [t, x] = SIT_DEST[r.status] ?? ['neutro', r.status]; return <Selo texto={x} tom={t} />; } },
       ]}
@@ -303,7 +304,7 @@ function Contatos() {
         { chave: 'publicavel', rotulo: 'Aparece no portal', tipo: 'check' },
       ]}
       colunas={[
-        { titulo: 'Área', ver: (r) => r.departamento, filtro: true },
+        { titulo: 'Área', ver: (r) => maiusc(r.departamento), filtro: true },
         { titulo: 'Assunto', ver: (r) => r.nome },
         { titulo: 'Canal', ver: (r) => r.canal },
         { titulo: 'Ramal', ver: (r) => r.ramal ?? '' },

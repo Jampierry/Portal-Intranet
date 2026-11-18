@@ -1,3 +1,4 @@
+import { maiusc } from './caixaAlta';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import { OfertaBiometria } from './biometria';
@@ -116,7 +117,7 @@ function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: cai
           {semDepto.length > 0 && <small className="aviso-grupo">Cadastros sem departamento</small>}
           {semDepto.slice(0, 5).map((p) => (
             <div key={p.id} className="aviso">
-              <b>{p.nome} está sem departamento</b>
+              <b>{maiusc(p.nome)} está sem departamento</b>
               <small>Login {p.login} · só vê o que é para todos os colaboradores até o cadastro ser atualizado</small>
               <span style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button className="btn btn-pri btn-pequeno" onClick={() => { setAberto(false); irCadastro(p.id); }}>Atualizar cadastro</button>
@@ -136,7 +137,7 @@ function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: cai
           {edicoes.pendentes.length > 0 && <small className="aviso-grupo">Pedidos para editar conteúdo</small>}
           {edicoes.pendentes.map((p) => (
             <div key={p.id} className="aviso">
-              <b>{p.solicitante} quer editar {p.rotulo.toLowerCase()}{p.titulo ? `: ${p.titulo}` : ''}</b>
+              <b>{maiusc(p.solicitante)} quer editar {p.rotulo.toLowerCase()}{p.titulo ? `: ${p.titulo}` : ''}</b>
               <small>{p.dono ? `Criado por ${p.dono}` : 'Sem autor registrado (só o administrador decide)'} · {dataCurta(p.criado_em)}</small>
               <span style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button className="btn btn-pri" onClick={() => decidir(p.id, true)}>Autorizar</button>
@@ -150,7 +151,7 @@ function Sino({ itens: todosItens, leitura, ir, pedidos, irPedidos, edicoes: cai
           ))}
           {pedidos.length > 0 && <small className="aviso-grupo">Pedidos de nova senha</small>}
           {pedidos.map((p) => (
-            <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{p.nome} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
+            <button key={p.id} className="aviso" onClick={() => { setAberto(false); irPedidos(); }}><b>{maiusc(p.nome)} pediu uma nova senha</b><small>Login {p.login} · {dataCurta(p.criado_em)} · clique para redefinir</small></button>
           ))}
           {(pedidos.length > 0 || leitura.length > 0) && itens.length > 0 && <small className="aviso-grupo">Comunicados urgentes</small>}
           {itens.length === 0 && leitura.length === 0 && pedidos.length === 0 && edicoes.pendentes.length === 0 && edicoes.respostas.length === 0 ? <p className="suave" style={{ margin: 0 }}>Nenhum aviso no momento.</p> : itens.map((c) => (
@@ -311,7 +312,7 @@ function Portal({ usuario, sair }: { usuario: Usuario; sair: () => Promise<void>
         <header className={`topo${['comunicados', 'documentos', 'pessoas', 'ajuda'].includes(tela) ? ' tem-busca-propria' : ''}`}>
           <h1 className="titulo-tela">{TITULOS[tela]}</h1>
           <DicaTela texto={AVISOS[tela]} />
-          <span className="bemvindo">Bem-vindo(a), <b>{perfil.nome}</b></span>
+          <span className="bemvindo">Bem-vindo(a), <b>{maiusc(perfil.nome)}</b></span>
           <span className="faixa-espaco" aria-hidden="true" />
           <span className="versao" title="Estado da API"><i aria-hidden="true" />v{saude?.versao ?? '…'}</span>
           <BuscaGlobal valor={busca} mudar={setBusca} irPara={irPara} permissoes={usuario.permissoes} />

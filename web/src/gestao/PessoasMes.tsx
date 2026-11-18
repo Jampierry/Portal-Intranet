@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { EscolherPessoa } from './EscolherPessoa';
 import { PreviaPessoa } from './PreviasCadastro';
 import { useContext, useEffect, useState } from 'react';
@@ -126,8 +127,8 @@ export function Aniversariantes() {
         ]}
         previa={(v) => <PreviaPessoa v={v} extra={`Aniversário em ${String(v.dia).padStart(2, '0')}/${String(v.mes).padStart(2, '0')}`} dica="Assim a pessoa aparece no cartão Pessoas do mês, no Início (só dia e mês, sem a idade)." avisos={v.autorizado ? [] : ['Sem “Autorizou divulgar”, a pessoa não aparece no portal.']} />}
         colunas={[
-          { titulo: 'Nome', ver: (r) => r.nome },
-          { titulo: 'Área', ver: (r) => r.area, filtro: true },
+          { titulo: 'Nome', ver: (r) => maiusc(r.nome) },
+          { titulo: 'Área', ver: (r) => maiusc(r.area), filtro: true },
           { titulo: 'Aniversário', ver: (r) => `${String(r.dia).padStart(2, '0')}/${String(r.mes).padStart(2, '0')}`, ordem: (r) => r.mes * 100 + r.dia },
           { titulo: 'Divulgação', filtro: (r) => (r.autorizado ? 'Autorizado' : 'Não aparece'), ver: (r) => (r.autorizado ? <Selo texto="Autorizado" tom="ok" /> : <Selo texto="Não aparece" tom="aviso" />) },
         ]}
@@ -157,8 +158,8 @@ export function NovosColaboradores() {
       ]}
       previa={(v) => <PreviaPessoa v={v} extra={[String(v.funcao ?? '').trim(), String(v.mensagem ?? '').trim()].filter(Boolean).join(' · ') || 'A função e a mensagem de boas-vindas aparecem aqui.'} dica="Assim a pessoa aparece no cartão Pessoas do mês, no Início, por 30 dias a partir da entrada." avisos={v.autorizado ? [] : ['Sem “Autorizou divulgar”, a pessoa não aparece no portal.']} />}
       colunas={[
-        { titulo: 'Nome', ver: (r) => r.nome },
-        { titulo: 'Área', ver: (r) => r.area, filtro: true },
+        { titulo: 'Nome', ver: (r) => maiusc(r.nome) },
+        { titulo: 'Área', ver: (r) => maiusc(r.area), filtro: true },
         { titulo: 'Entrada', ver: (r) => dataCurta(r.entrada), ordem: (r) => r.entrada },
         { titulo: 'Divulgação', filtro: (r) => (r.autorizado ? 'Autorizado' : 'Não aparece'), ver: (r) => (r.autorizado ? <Selo texto="Autorizado" tom="ok" /> : <Selo texto="Não aparece" tom="aviso" />) },
       ]}

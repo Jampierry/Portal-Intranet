@@ -1,3 +1,4 @@
+import { maiusc } from '../caixaAlta';
 import { BotaoLimpar } from '../BotaoLimpar';
 import { useFiltros } from './Filtros';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -86,7 +87,7 @@ function FichaUsuario({ u, aoFechar }: { u: Usr; aoFechar: () => void }) {
         <div className="janela-corpo ficha">
           <div className="ficha-quem">
             <Avatar nome={u.nome} avatar={null} tamanho={48} />
-            <div><b>{u.nome}</b><small className="suave">{u.login} · {u.perfil_nome}</small></div>
+            <div><b>{maiusc(u.nome)}</b><small className="suave">{u.login} · {u.perfil_nome}</small></div>
           </div>
           {erro && <p className="erro" role="alert">{erro}</p>}
           {!d && !erro && <p className="suave">Carregando…</p>}
@@ -138,7 +139,7 @@ function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id:
     <label>Departamento
       <select value={valor ?? ''} onChange={(e) => { if (e.target.value === '+') setNovo(''); else mudar(e.target.value ? Number(e.target.value) : null); }}>
         <option value="">Sem departamento</option>
-        {lista.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+        {lista.map((d) => <option key={d.id} value={d.id}>{maiusc(d.nome)}</option>)}
         <option value="+">＋ Novo departamento…</option>
       </select>
       {novo !== null && (
@@ -189,8 +190,8 @@ function SemCadastro({ aoCadastrar, versao }: { aoCadastrar: (p: PessoaKc) => vo
               {(ord.linhas ?? []).length === 0 && <tr><td colSpan={6} className="vazio">{res.itens.length === 0 ? 'Todas as pessoas do Keycloak já têm cadastro no portal.' : 'Nenhuma pessoa encontrada com esses filtros.'}</td></tr>}
               {(ord.linhas ?? []).map((p) => (
                 <tr key={p.id}>
-                  <td data-rotulo="Nome">{p.nome || '—'}</td><td data-rotulo="Login no Keycloak">{p.login || '—'}</td><td data-rotulo="E-mail">{p.email || '—'}</td>
-                  <td data-rotulo="Departamento (Keycloak)" title={p.grupos.length ? `Grupos no Keycloak: ${p.grupos.join(' · ')}` : p.departamento_campo ? `Atributo "${p.departamento_campo}"` : Object.keys(p.atributos).length ? `Atributos existentes: ${Object.keys(p.atributos).join(', ')}` : 'Sem atributo de setor nem grupo no Keycloak'}>{p.departamento || '—'}</td>
+                  <td data-rotulo="Nome">{maiusc(p.nome) || '—'}</td><td data-rotulo="Login no Keycloak">{p.login || '—'}</td><td data-rotulo="E-mail">{p.email || '—'}</td>
+                  <td data-rotulo="Departamento (Keycloak)" title={p.grupos.length ? `Grupos no Keycloak: ${p.grupos.join(' · ')}` : p.departamento_campo ? `Atributo "${p.departamento_campo}"` : Object.keys(p.atributos).length ? `Atributos existentes: ${Object.keys(p.atributos).join(', ')}` : 'Sem atributo de setor nem grupo no Keycloak'}>{maiusc(p.departamento) || '—'}</td>
                   <td data-rotulo="Situação no Keycloak"><Selo texto={p.ativo ? 'Ativa' : 'Desativada'} tom={p.ativo ? 'ok' : 'neutro'} /></td>
                   <td className="col-acoes"><button className="btn btn-pequeno" onClick={() => aoCadastrar(p)}><Icone nome="mais" tamanho={13} /> Cadastrar</button></td>
                 </tr>
@@ -268,7 +269,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
       {aba === 'com' && <div className="barra filtros-usuarios">
         <label className="busca-pagina"><Icone nome="busca" tamanho={16} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar por nome, login ou e-mail" aria-label="Pesquisar usuários" />{q && <BotaoLimpar aoLimpar={() => setQ('')} />}</label>
         <select value={fPerfil} onChange={(e) => setFPerfil(e.target.value)} aria-label="Filtrar por perfil"><option value="">Todos os perfis</option>{perfisNaLista.map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select>
-        <select value={fDepto} onChange={(e) => setFDepto(e.target.value)} aria-label="Filtrar por departamento"><option value="">Todos os departamentos</option><option value="__nenhum">Sem departamento</option>{departamentos.map((d) => <option key={d} value={d}>{d}</option>)}</select>
+        <select value={fDepto} onChange={(e) => setFDepto(e.target.value)} aria-label="Filtrar por departamento"><option value="">Todos os departamentos</option><option value="__nenhum">Sem departamento</option>{departamentos.map((d) => <option key={d} value={d}>{maiusc(d)}</option>)}</select>
         <select value={fSit} onChange={(e) => setFSit(e.target.value)} aria-label="Filtrar por situação"><option value="">Todas as situações</option><option>Ativo</option><option>Aguardando 1º acesso</option><option>Desativado</option></select>
         {dados && <span className="suave" aria-live="polite">{visiveis.length} de {dados.length}</span>}
         <span className="barra-fim-grupo">
@@ -287,7 +288,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
             const u = (dados ?? []).find((x) => x.id === p.usuario_id);
             return (
               <div key={p.id} className="pedido-senha">
-                <span><b>{p.nome}</b> <small className="suave">({p.login}) · pediu em {dataCurta(p.criado_em)}</small></span>
+                <span><b>{maiusc(p.nome)}</b> <small className="suave">({p.login}) · pediu em {dataCurta(p.criado_em)}</small></span>
                 <span className="pedido-acoes">
                   {u && <button className="btn btn-pequeno" onClick={() => setReset({ u, senha: gerarSenha() })}><Icone nome="chave" tamanho={13} /> Redefinir senha</button>}
                   <button className="btn btn-sec btn-pequeno" onClick={() => void dispensar(p.id)}>Dispensar</button>
@@ -305,7 +306,7 @@ function Usuarios({ souAdmin, permissoes }: { souAdmin: boolean; permissoes: str
               {dados.length > 0 && visiveis.length === 0 && <tr><td colSpan={7} className="vazio">Nenhum usuário encontrado com esses filtros.</td></tr>}
               {visiveis.map((u) => (
                 <tr key={u.id}>
-                  <td data-rotulo="Nome">{u.nome}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td><td data-rotulo="Departamento">{u.departamento ?? '—'}</td>
+                  <td data-rotulo="Nome">{maiusc(u.nome)}</td><td data-rotulo="Login">{u.login}</td><td data-rotulo="Perfil">{u.perfil_nome}</td><td data-rotulo="Departamento">{maiusc(u.departamento) || '—'}</td>
                   <td data-rotulo="Situação">{u.ativo ? <Selo texto={u.trocar_senha ? 'Aguardando 1º acesso' : 'Ativo'} tom={u.trocar_senha ? 'aviso' : 'ok'} /> : <Selo texto="Desativado" tom="neutro" />}</td>
                   <td data-rotulo="Último acesso">{u.ultimo_acesso ? dataCurta(u.ultimo_acesso) : '—'}</td>
                   <td className="col-acoes">
@@ -399,7 +400,7 @@ function resumo(detalhe: string | null): string {
 function Auditoria() {
   const { dados, erro } = useLista<{ id: number; quando: string; usuario: string | null; acao: string; detalhe: string | null }>('/api/auditoria');
   const { filtradas, barra } = useFiltros(dados, [
-    { chave: 'quem', rotulo: 'Quem', valor: (l) => l.usuario ?? '' },
+    { chave: 'quem', rotulo: 'Quem', valor: (l) => maiusc(l.usuario) },
     { chave: 'acao', rotulo: 'O quê', valor: (l) => ACAO[l.acao] ?? l.acao },
   ], (l) => `${l.usuario ?? ''} ${ACAO[l.acao] ?? l.acao} ${resumo(l.detalhe)} ${new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`);
   const ord = useOrdenacao(filtradas, { quando: (l) => l.quando, quem: (l) => l.usuario, acao: (l) => ACAO[l.acao] ?? l.acao, detalhe: (l) => resumo(l.detalhe) });
@@ -417,7 +418,7 @@ function Auditoria() {
               {(ord.linhas ?? []).map((l) => (
                 <tr key={l.id}>
                   <td className="nowrap" data-rotulo="Quando">{new Date(l.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                  <td data-rotulo="Quem">{l.usuario ?? '—'}</td><td data-rotulo="O quê">{ACAO[l.acao] ?? l.acao}</td><td className="suave" data-rotulo="Detalhe">{resumo(l.detalhe)}</td>
+                  <td data-rotulo="Quem">{maiusc(l.usuario) || '—'}</td><td data-rotulo="O quê">{ACAO[l.acao] ?? l.acao}</td><td className="suave" data-rotulo="Detalhe">{resumo(l.detalhe)}</td>
                 </tr>
               ))}
             </tbody>
