@@ -22,6 +22,10 @@ before(async () => {
         if (ultimoToken.get('client_secret') !== 'segredo-de-teste' || ultimoToken.get('code') !== 'codigo-ok') return fim(400, { error: 'invalid_grant' });
         fim(200, { access_token: 'tok' });
       });
+    } else if (req.url?.includes('/admin/realms/dipaula/groups')) {
+      if (req.headers.authorization !== 'Bearer tok-admin') return fim(403, {});
+      if (req.url.includes('/members')) return fim(200, []);
+      fim(200, [{ id: 'g1', name: 'TI', path: '/TI', subGroupCount: 1, subGroups: [{ id: 'g2', name: 'Suporte', path: '/TI/Suporte', subGroupCount: 0 }] }, { id: 'g3', name: 'Recursos Humanos', path: '/Recursos Humanos', subGroupCount: 0 }]);
     } else if (req.url?.includes('/admin/realms/dipaula/users')) {
       if (req.headers.authorization !== 'Bearer tok-admin') return fim(403, {});
       const q = new URL(req.url, 'http://x').searchParams;
@@ -196,4 +200,14 @@ test('conta de serviço recusada pelo Keycloak devolve uma mensagem que diz o qu
     assert.equal(r.statusCode, 502);
     assert.match(r.json<{ erro: string }>().erro, /Service accounts.*view-users/s);
   } finally { contaDeServicoOk = true; }
+});
+
+test('departamentos do Keycloak: nomes dos grupos (todos os níveis) para o campo Departamento; só quem cadastra usuários vê', async () => {
+  const { app } = await criarAppTeste();
+  const adm = await entrar(app, 'master');
+  const r = await app.inject({ url: '/api/gestao/departamentos-keycloak', headers: adm });
+  assert.equal(r.statusCode, 200);
+  assert.deepEqual(r.json<{ itens: string[] }>().itens, ['Recursos Humanos', 'Suporte', 'TI']);
+  assert.equal((await app.inject({ url: '/api/gestao/departamentos-keycloak', headers: await entrar(app, 'le') })).statusCode, 403);
+  assert.equal((await app.inject({ url: '/api/gestao/departamentos-keycloak' })).statusCode, 401);
 });

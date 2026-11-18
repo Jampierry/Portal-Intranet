@@ -57,7 +57,7 @@ export function departamentoDe(atributos: Record<string, string>, forcado = ''):
 
 /** Lê todas as pessoas do realm pela API de administração do Keycloak (somente leitura), com a conta de serviço do cliente do portal.
  *  KEYCLOAK_ADMIN_CLIENT_ID / KEYCLOAK_ADMIN_CLIENT_SECRET usam outro cliente só para isso; sem elas vale o cliente do login. */
-export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env): Promise<PessoaKeycloak[]> {
+async function tokenAdmin(env: NodeJS.ProcessEnv): Promise<{ cfg: NonNullable<ReturnType<typeof lerCfg>>; token: string }> {
   const cfg = lerCfg(env);
   if (!cfg) throw new ErroKeycloak(503, 'O Keycloak não está configurado neste ambiente.');
   const id = env.KEYCLOAK_ADMIN_CLIENT_ID?.trim() || cfg.clientId, segredo = env.KEYCLOAK_ADMIN_CLIENT_SECRET?.trim() || cfg.segredo;
@@ -65,6 +65,12 @@ export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env
     .catch((e: Error) => { throw new ErroKeycloak(502, `Não foi possível falar com o Keycloak (${e.message}).`); });
   const tj = await t.json().catch(() => ({})) as { access_token?: string; error?: string };
   if (!t.ok || !tj.access_token) throw new ErroKeycloak(502, `O Keycloak recusou a conta de serviço do portal (HTTP ${t.status}${tj.error ? `, ${tj.error}` : ''}). Peça à TI para ligar "Service accounts" no cliente ${id} e dar à conta de serviço o papel view-users do realm-management (ou informe KEYCLOAK_ADMIN_CLIENT_ID e KEYCLOAK_ADMIN_CLIENT_SECRET).`);
+  return { cfg, token: tj.access_token };
+}
+
+export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env): Promise<PessoaKeycloak[]> {
+  const { cfg, token } = await tokenAdmin(env);
+  const tj = { access_token: token };
   const lista: PessoaKeycloak[] = [];
   const TAM = 200;
   for (let primeiro = 0; primeiro < 10_000; primeiro += TAM) {
@@ -88,21 +94,34 @@ export async function listarPessoasKeycloak(env: NodeJS.ProcessEnv = process.env
 
 /** Lê a árvore de grupos e os membros de cada um (somente leitura) e preenche `grupos`; sem atributo de setor, o grupo vira o departamento.
  *  Falha em silêncio (a lista de pessoas continua valendo) se a conta de serviço não puder ler grupos. Limites: 600 grupos. */
-async function anexarGrupos(admin: string, token: string, lista: PessoaKeycloak[]) {
-  const H = { Authorization: `Bearer ${token}` };
-  const ler = async <T>(url: string): Promise<T | null> => {
-    const r = await fetch(url, { headers: H, signal: AbortSignal.timeout(15_000) }).catch(() => null);
-    return r && r.ok ? await r.json() as T : null;
-  };
-  interface G { id: string; name: string; path: string; subGroupCount?: number; subGroups?: G[] }
-  const grupos: G[] = [];
-  const fila: G[] = (await ler<G[]>(`${admin}/groups?first=0&max=500&briefRepresentation=true`)) ?? [];
+interface GrupoKc { id: string; name: string; path: string; subGroupCount?: number; subGroups?: GrupoKc[] }
+const lerKc = async <T>(token: string, url: string): Promise<T | null> => {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) }).catch(() => null);
+  return r && r.ok ? await r.json() as T : null;
+};
+/** Todos os grupos do realm (árvore achatada, até 600). Vazio se a conta de serviço não puder ler grupos. */
+async function arvoreGrupos(admin: string, token: string): Promise<GrupoKc[]> {
+  const grupos: GrupoKc[] = [];
+  const fila: GrupoKc[] = (await lerKc<GrupoKc[]>(token, `${admin}/groups?first=0&max=500&briefRepresentation=true`)) ?? [];
   while (fila.length && grupos.length < 600) {
     const g = fila.shift()!;
     grupos.push(g);
-    const filhos = g.subGroups?.length ? g.subGroups : (g.subGroupCount ?? 0) > 0 ? ((await ler<G[]>(`${admin}/groups/${g.id}/children?first=0&max=500`)) ?? []) : [];
+    const filhos = g.subGroups?.length ? g.subGroups : (g.subGroupCount ?? 0) > 0 ? ((await lerKc<GrupoKc[]>(token, `${admin}/groups/${g.id}/children?first=0&max=500`)) ?? []) : [];
     fila.push(...filhos);
   }
+  return grupos;
+}
+/** Departamentos que o Keycloak conhece: nomes dos grupos (último nível do caminho), sem repetir. */
+export async function listarDepartamentosKeycloak(env: NodeJS.ProcessEnv = process.env): Promise<string[]> {
+  const { cfg, token } = await tokenAdmin(env);
+  const nomes = new Map<string, string>();
+  for (const g of await arvoreGrupos(cfg.admin, token)) { const n = (g.name || g.path.split('/').filter(Boolean).pop() || '').trim(); if (n) nomes.set(n.toLocaleLowerCase('pt-BR'), n.slice(0, 60)); }
+  return [...nomes.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+async function anexarGrupos(admin: string, token: string, lista: PessoaKeycloak[]) {
+  const ler = <T>(url: string) => lerKc<T>(token, url);
+  const grupos = await arvoreGrupos(admin, token);
   const porId = new Map(lista.map((p) => [p.id, p]));
   for (const g of grupos) {
     for (let primeiro = 0; primeiro < 10_000; primeiro += 200) {
@@ -129,6 +148,16 @@ export async function rotasKeycloak(app: FastifyInstance, { db, producao }: { db
   const falha = (resp: FastifyReply, motivo: string, detalhe?: string) => resp.redirect(`/login?sso=${motivo}${config.modoDebug && detalhe ? `&detalhe=${encodeURIComponent(detalhe.slice(0, 300))}` : ''}`);
 
   app.get('/api/auth/keycloak/ativo', async () => ({ ativo: lerCfg() !== null }));
+
+  // Departamentos do Keycloak (grupos) para o campo Departamento do cadastro de usuário; cache de 10 min; sem Keycloak ou sem permissão devolve lista vazia com aviso.
+  let cacheDeps: { ate: number; itens: string[]; aviso: string } | null = null;
+  app.get('/api/gestao/departamentos-keycloak', { preHandler: exigirPerm('cfg.usuarios.criar', 'cfg.usuarios.editar') }, async () => {
+    if (!cacheDeps || cacheDeps.ate < Date.now()) {
+      try { const itens = await listarDepartamentosKeycloak(); cacheDeps = { ate: Date.now() + 600_000, itens, aviso: itens.length ? '' : 'O Keycloak não devolveu grupos (a conta de serviço pode não ter permissão de leitura de grupos).' }; }
+      catch (e) { if (!(e instanceof ErroKeycloak)) throw e; cacheDeps = { ate: Date.now() + 60_000, itens: [], aviso: e.message }; }
+    }
+    return { itens: cacheDeps.itens, aviso: cacheDeps.aviso };
+  });
 
   // Configurações › Usuários › "Sem cadastro": pessoas do Keycloak que ainda não têm usuário no portal (casa pelo e-mail ou pelo login).
   let cache: { ate: number; itens: PessoaKeycloak[] } | null = null;

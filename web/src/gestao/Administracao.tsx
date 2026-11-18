@@ -126,20 +126,25 @@ function CampoDepartamento({ valor, mudar }: { valor: number | null; mudar: (id:
   const [lista, setLista] = useState<{ id: number; nome: string }[]>([]);
   const [novo, setNovo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const [doKc, setDoKc] = useState<string[]>([]);
   useEffect(() => { api<{ id: number; nome: string }[]>('/api/departamentos').then(setLista).catch(() => { /* sem lista: só "sem departamento" */ }); }, []);
-  const criar = async () => {
+  useEffect(() => { api<{ itens: string[] }>('/api/gestao/departamentos-keycloak').then((r) => setDoKc(r.itens)).catch(() => { /* sem Keycloak: só os do portal */ }); }, []);
+  // Departamentos do Keycloak que o portal ainda não tem: escolher um cria o departamento na hora.
+  const faltam = doKc.filter((n) => !lista.some((d) => semAcento(d.nome) === semAcento(n)));
+  const criar = async (nome?: string) => {
     setErro('');
     try {
-      const d = await api<{ id: number; nome: string }>('/api/departamentos', { nome: novo ?? '' });
+      const d = await api<{ id: number; nome: string }>('/api/departamentos', { nome: nome ?? novo ?? '' });
       setLista((l) => (l.some((x) => x.id === d.id) ? l : [...l, d].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))));
       mudar(d.id); setNovo(null);
     } catch (e) { setErro((e as Error).message); }
   };
   return (
     <label>Departamento
-      <select value={valor ?? ''} onChange={(e) => { if (e.target.value === '+') setNovo(''); else mudar(e.target.value ? Number(e.target.value) : null); }}>
+      <select value={valor ?? ''} onChange={(e) => { if (e.target.value === '+') setNovo(''); else if (e.target.value.startsWith('kc:')) void criar(e.target.value.slice(3)); else mudar(e.target.value ? Number(e.target.value) : null); }}>
         <option value="">Sem departamento</option>
         {lista.map((d) => <option key={d.id} value={d.id}>{maiusc(d.nome)}</option>)}
+        {faltam.length > 0 && <optgroup label="Do Keycloak (ainda não cadastrados)">{faltam.map((n) => <option key={n} value={`kc:${n}`}>{maiusc(n)}</option>)}</optgroup>}
         <option value="+">＋ Novo departamento…</option>
       </select>
       {novo !== null && (
